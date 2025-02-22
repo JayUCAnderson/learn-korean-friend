@@ -1,11 +1,59 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { useToast } from "@/components/ui/use-toast";
+import { supabase } from "@/integrations/supabase/client";
 
 const LearningInterface = ({ userData }: { userData: any }) => {
-  const [dailyProgress, setDailyProgress] = useState(33);
+  const [dailyProgress, setDailyProgress] = useState(0);
+  const { toast } = useToast();
+
+  useEffect(() => {
+    const fetchDailyProgress = async () => {
+      try {
+        const { data: { user } } = await supabase.auth.getUser();
+        if (!user) return;
+
+        const today = new Date().toISOString().split('T')[0];
+        
+        const { data, error } = await supabase
+          .from('daily_progress')
+          .select('progress_percentage')
+          .eq('user_id', user.id)
+          .eq('date', today)
+          .maybeSingle();
+
+        if (error) throw error;
+
+        if (data) {
+          setDailyProgress(data.progress_percentage);
+        } else {
+          // Create today's progress entry if it doesn't exist
+          const { error: insertError } = await supabase
+            .from('daily_progress')
+            .insert([
+              {
+                user_id: user.id,
+                progress_percentage: 0,
+                minutes_studied: 0
+              }
+            ]);
+
+          if (insertError) throw insertError;
+        }
+      } catch (error: any) {
+        toast({
+          title: "Error fetching progress",
+          description: error.message,
+          variant: "destructive",
+        });
+      }
+    };
+
+    fetchDailyProgress();
+  }, [toast]);
 
   const getThemeColors = () => {
     const interest = userData.interests.toLowerCase();

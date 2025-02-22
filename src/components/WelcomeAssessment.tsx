@@ -10,6 +10,8 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
+import { useToast } from "@/components/ui/use-toast";
+import { supabase } from "@/integrations/supabase/client";
 
 const WelcomeAssessment = ({ onComplete }: { onComplete: (data: any) => void }) => {
   const [step, setStep] = useState(1);
@@ -19,19 +21,47 @@ const WelcomeAssessment = ({ onComplete }: { onComplete: (data: any) => void }) 
     interests: "",
     customInterest: "",
   });
+  const { toast } = useToast();
 
-  const handleNext = () => {
+  const handleNext = async () => {
     if (step < 3) {
       setStep(step + 1);
     } else {
-      // Combine the selected interest with custom interest if provided
-      const finalData = {
-        ...formData,
-        interests: formData.customInterest 
-          ? formData.customInterest 
-          : formData.interests,
-      };
-      onComplete(finalData);
+      try {
+        const { data: { user } } = await supabase.auth.getUser();
+        
+        if (!user) throw new Error("No user found");
+
+        const finalInterest = formData.customInterest 
+          ? [formData.customInterest]
+          : [formData.interests];
+
+        const { error } = await supabase
+          .from('profiles')
+          .update({
+            level: formData.level,
+            learning_goal: formData.goals,
+            interests: finalInterest
+          })
+          .eq('id', user.id);
+
+        if (error) throw error;
+
+        const finalData = {
+          ...formData,
+          interests: formData.customInterest 
+            ? formData.customInterest 
+            : formData.interests,
+        };
+        
+        onComplete(finalData);
+      } catch (error: any) {
+        toast({
+          title: "Error saving preferences",
+          description: error.message,
+          variant: "destructive",
+        });
+      }
     }
   };
 
