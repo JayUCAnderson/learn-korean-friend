@@ -27,12 +27,15 @@ const Index = () => {
           .eq('id', session.user.id)
           .single();
 
-        if (error) throw error;
+        if (error) {
+          console.error("Error fetching profile:", error);
+          throw error;
+        }
 
-        // Changed this condition to explicitly check if level is null
-        // This ensures new users see the welcome assessment
+        console.log("Profile data:", data); // Added for debugging
         setUserData(data);
       } catch (error: any) {
+        console.error("Session check error:", error); // Added for debugging
         toast({
           title: "Error",
           description: error.message,
@@ -74,11 +77,10 @@ const Index = () => {
     );
   }
 
-  // Changed this condition to explicitly check if level is null or undefined
-  // This ensures new users see the welcome assessment
+  // Ensure the assessment shows up for new users or users without complete profiles
   return (
     <div className="min-h-screen bg-gradient-to-b from-white to-gray-50">
-      {!userData?.level || !userData?.learning_goal ? (
+      {(!userData?.level || !userData?.learning_goal) ? (
         <WelcomeAssessment onComplete={handleAssessmentComplete} />
       ) : (
         <LearningInterface userData={userData} />
@@ -88,4 +90,3 @@ const Index = () => {
 };
 
 export default Index;
-
