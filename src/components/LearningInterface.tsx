@@ -91,6 +91,26 @@ const LearningInterface = ({ userData }: { userData: any }) => {
     }
   };
 
+  const generateLessonTitle = (interest: string, lessonNumber: number) => {
+    const titles = [
+      `Exploring ${interest} through Korean Dialogue`,
+      `Essential Korean for ${interest} Enthusiasts`,
+      `Korean Expressions in ${interest}`,
+      `Practical Korean for ${interest} Lovers`,
+    ];
+    return titles[lessonNumber % titles.length];
+  };
+
+  const generateDescription = (interest: string) => {
+    const descriptions = [
+      `Learn authentic Korean expressions used in ${interest.toLowerCase()}`,
+      `Master key phrases and vocabulary related to ${interest.toLowerCase()}`,
+      `Practice real-world conversations about ${interest.toLowerCase()}`,
+      `Discover cultural insights through ${interest.toLowerCase()}-related Korean`,
+    ];
+    return descriptions[Math.floor(Math.random() * descriptions.length)];
+  };
+
   const handleStartLearning = async () => {
     try {
       const interest = Array.isArray(userData.interests) && userData.interests.length > 0 
@@ -100,14 +120,15 @@ const LearningInterface = ({ userData }: { userData: any }) => {
       const content = await startSession(interest, userData.level, 'conversation');
       
       if (content) {
+        const lessonNumber = lessons.length + 1;
         const { error } = await supabase
           .from('lessons')
           .insert({
             user_id: userData.id,
-            title: `Lesson ${lessons.length + 1}`,
-            description: `Learn ${interest} related Korean`,
+            title: generateLessonTitle(interest, lessonNumber),
+            description: generateDescription(interest),
             content: content,
-            lesson_number: lessons.length + 1,
+            lesson_number: lessonNumber,
             status: 'not_started'
           });
 
@@ -129,7 +150,29 @@ const LearningInterface = ({ userData }: { userData: any }) => {
     }
   };
 
-  const getThemeColors = () => {
+  const theme = getThemeColors();
+
+  return (
+    <div className={`min-h-screen bg-gradient-to-b ${theme.gradient} p-4`}>
+      <div className="max-w-6xl mx-auto space-y-8">
+        <UserGreeting level={userData.level} />
+        <DailyProgress progress={dailyProgress} themeColors={theme} />
+        
+        <div className="space-y-6">
+          <h2 className="text-2xl font-bold text-gray-900">Your Learning Path</h2>
+          <LessonList 
+            lessons={lessons}
+            isLoadingLessons={isLoadingLessons}
+            themeColors={theme}
+            onGenerateLesson={handleStartLearning}
+            isGenerating={isLoading}
+          />
+        </div>
+      </div>
+    </div>
+  );
+
+  function getThemeColors() {
     const interest = Array.isArray(userData.interests) && userData.interests.length > 0 
       ? userData.interests[0].toLowerCase()
       : '';
@@ -172,29 +215,7 @@ const LearningInterface = ({ userData }: { userData: any }) => {
       border: "border-korean-100",
       button: "bg-korean-600 hover:bg-korean-700",
     };
-  };
-
-  const theme = getThemeColors();
-
-  return (
-    <div className={`min-h-screen bg-gradient-to-b ${theme.gradient} p-4`}>
-      <div className="max-w-6xl mx-auto space-y-8">
-        <UserGreeting level={userData.level} />
-        <DailyProgress progress={dailyProgress} themeColors={theme} />
-        
-        <div className="space-y-6">
-          <h2 className="text-2xl font-bold text-gray-900">Your Learning Path</h2>
-          <LessonList 
-            lessons={lessons}
-            isLoadingLessons={isLoadingLessons}
-            themeColors={theme}
-            onGenerateLesson={handleStartLearning}
-            isGenerating={isLoading}
-          />
-        </div>
-      </div>
-    </div>
-  );
+  }
 };
 
 export default LearningInterface;
