@@ -44,6 +44,87 @@ export type Database = {
           },
         ]
       }
+      learning_content: {
+        Row: {
+          content: Json
+          content_type: Database["public"]["Enums"]["content_type"]
+          created_at: string
+          id: string
+          interest_category: string[]
+          level: Database["public"]["Enums"]["korean_level"]
+          topic: string
+          usage_count: number
+        }
+        Insert: {
+          content: Json
+          content_type: Database["public"]["Enums"]["content_type"]
+          created_at?: string
+          id?: string
+          interest_category: string[]
+          level: Database["public"]["Enums"]["korean_level"]
+          topic: string
+          usage_count?: number
+        }
+        Update: {
+          content?: Json
+          content_type?: Database["public"]["Enums"]["content_type"]
+          created_at?: string
+          id?: string
+          interest_category?: string[]
+          level?: Database["public"]["Enums"]["korean_level"]
+          topic?: string
+          usage_count?: number
+        }
+        Relationships: []
+      }
+      learning_sessions: {
+        Row: {
+          completed_at: string | null
+          content_id: string | null
+          created_at: string
+          feedback: string | null
+          id: string
+          performance_score: number | null
+          session_type: Database["public"]["Enums"]["content_type"]
+          user_id: string
+        }
+        Insert: {
+          completed_at?: string | null
+          content_id?: string | null
+          created_at?: string
+          feedback?: string | null
+          id?: string
+          performance_score?: number | null
+          session_type: Database["public"]["Enums"]["content_type"]
+          user_id: string
+        }
+        Update: {
+          completed_at?: string | null
+          content_id?: string | null
+          created_at?: string
+          feedback?: string | null
+          id?: string
+          performance_score?: number | null
+          session_type?: Database["public"]["Enums"]["content_type"]
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "learning_sessions_content_id_fkey"
+            columns: ["content_id"]
+            isOneToOne: false
+            referencedRelation: "learning_content"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "learning_sessions_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       profiles: {
         Row: {
           created_at: string
@@ -82,6 +163,7 @@ export type Database = {
       [_ in never]: never
     }
     Enums: {
+      content_type: "vocabulary" | "grammar" | "conversation" | "culture"
       korean_level: "beginner" | "intermediate" | "advanced"
       learning_goal: "casual" | "business" | "academic" | "culture"
     }
