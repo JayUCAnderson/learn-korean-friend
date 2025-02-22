@@ -24,6 +24,12 @@ interface Lesson {
   audio_content?: AudioContent | null;
 }
 
+interface LessonContent {
+  content?: {
+    content?: string;
+  };
+}
+
 export default function LessonDetail() {
   const { id } = useParams<{ id: string }>();
   const [lesson, setLesson] = useState<Lesson | null>(null);
@@ -60,16 +66,20 @@ export default function LessonDetail() {
             : lessonData.audio_content) as AudioContent
         : null;
 
-      // Extract the actual content string from the nested structure
-      const content = typeof lessonData.content === 'string' 
-        ? lessonData.content 
-        : lessonData.content?.content?.content || '';
+      // Extract the content string with proper type checking
+      let contentStr = '';
+      if (typeof lessonData.content === 'string') {
+        contentStr = lessonData.content;
+      } else if (lessonData.content && typeof lessonData.content === 'object') {
+        const typedContent = lessonData.content as LessonContent;
+        contentStr = typedContent.content?.content || '';
+      }
 
       const typedLesson: Lesson = {
         id: lessonData.id,
         title: lessonData.title,
         description: lessonData.description,
-        content: content,
+        content: contentStr,
         status: lessonData.status || 'not_started',
         vocabulary: lessonData.vocabulary,
         audio_content: parsedAudioContent
