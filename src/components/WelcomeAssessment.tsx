@@ -12,10 +12,21 @@ import {
 import { Input } from "@/components/ui/input";
 import { useToast } from "@/components/ui/use-toast";
 import { supabase } from "@/integrations/supabase/client";
+import type { Database } from "@/integrations/supabase/types";
+
+type KoreanLevel = Database["public"]["Enums"]["korean_level"];
+type LearningGoal = Database["public"]["Enums"]["learning_goal"];
+
+interface FormData {
+  level: KoreanLevel | "";
+  goals: LearningGoal | "";
+  interests: string;
+  customInterest: string;
+}
 
 const WelcomeAssessment = ({ onComplete }: { onComplete: (data: any) => void }) => {
   const [step, setStep] = useState(1);
-  const [formData, setFormData] = useState({
+  const [formData, setFormData] = useState<FormData>({
     level: "",
     goals: "",
     interests: "",
@@ -39,22 +50,19 @@ const WelcomeAssessment = ({ onComplete }: { onComplete: (data: any) => void }) 
         const { error } = await supabase
           .from('profiles')
           .update({
-            level: formData.level,
-            learning_goal: formData.goals,
+            level: formData.level as KoreanLevel,
+            learning_goal: formData.goals as LearningGoal,
             interests: finalInterest
           })
           .eq('id', user.id);
 
         if (error) throw error;
 
-        const finalData = {
-          ...formData,
-          interests: formData.customInterest 
-            ? formData.customInterest 
-            : formData.interests,
-        };
-        
-        onComplete(finalData);
+        onComplete({
+          level: formData.level,
+          learning_goal: formData.goals,
+          interests: formData.customInterest || formData.interests,
+        });
       } catch (error: any) {
         toast({
           title: "Error saving preferences",
@@ -91,7 +99,7 @@ const WelcomeAssessment = ({ onComplete }: { onComplete: (data: any) => void }) 
             {step === 1 && (
               <Select
                 value={formData.level}
-                onValueChange={(value) =>
+                onValueChange={(value: KoreanLevel) =>
                   setFormData({ ...formData, level: value })
                 }
               >
@@ -100,10 +108,7 @@ const WelcomeAssessment = ({ onComplete }: { onComplete: (data: any) => void }) 
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="beginner">Complete Beginner</SelectItem>
-                  <SelectItem value="elementary">Elementary (TOPIK I)</SelectItem>
-                  <SelectItem value="intermediate">
-                    Intermediate (TOPIK II)
-                  </SelectItem>
+                  <SelectItem value="intermediate">Intermediate (TOPIK II)</SelectItem>
                   <SelectItem value="advanced">Advanced (TOPIK II)</SelectItem>
                 </SelectContent>
               </Select>
@@ -112,7 +117,7 @@ const WelcomeAssessment = ({ onComplete }: { onComplete: (data: any) => void }) 
             {step === 2 && (
               <Select
                 value={formData.goals}
-                onValueChange={(value) =>
+                onValueChange={(value: LearningGoal) =>
                   setFormData({ ...formData, goals: value })
                 }
               >
@@ -176,6 +181,11 @@ const WelcomeAssessment = ({ onComplete }: { onComplete: (data: any) => void }) 
           <Button
             className="w-full bg-korean-600 hover:bg-korean-700 transition-colors"
             onClick={handleNext}
+            disabled={
+              (step === 1 && !formData.level) ||
+              (step === 2 && !formData.goals) ||
+              (step === 3 && !formData.interests && !formData.customInterest)
+            }
           >
             {step === 3 ? "Start Learning" : "Next"}
           </Button>
@@ -186,3 +196,4 @@ const WelcomeAssessment = ({ onComplete }: { onComplete: (data: any) => void }) 
 };
 
 export default WelcomeAssessment;
+
