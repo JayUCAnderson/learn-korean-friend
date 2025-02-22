@@ -2,14 +2,20 @@
 import { useState } from 'react';
 import { useToast } from "@/components/ui/use-toast";
 import { supabase } from "@/integrations/supabase/client";
+import type { Database } from '@/integrations/supabase/types';
+
+type ContentType = Database['public']['Enums']['content_type'];
+type KoreanLevel = Database['public']['Enums']['korean_level'];
 
 export const useLearningSession = () => {
   const [isLoading, setIsLoading] = useState(false);
   const { toast } = useToast();
 
-  const startSession = async (interest: string, level: string, contentType: string) => {
+  const startSession = async (interest: string, level: KoreanLevel, contentType: ContentType) => {
     setIsLoading(true);
     try {
+      console.log("Starting session with:", { interest, level, contentType });
+      
       // Check for existing content first
       const { data: existingContent } = await supabase
         .from('learning_content')
@@ -21,6 +27,7 @@ export const useLearningSession = () => {
         .maybeSingle();
 
       if (existingContent) {
+        console.log("Found existing content:", existingContent);
         // Increment usage count
         await supabase
           .from('learning_content')
@@ -30,19 +37,15 @@ export const useLearningSession = () => {
         return existingContent;
       }
 
-      // Generate new content
-      const response = await fetch('/functions/v1/generate-learning-content', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${(await supabase.auth.getSession()).data.session?.access_token}`
-        },
-        body: JSON.stringify({ interest, level, contentType }),
+      // Generate new content via edge function
+      const response = await supabase.functions.invoke('generate-learning-content', {
+        body: { interest, level, contentType }
       });
 
-      if (!response.ok) throw new Error('Failed to generate content');
+      if (response.error) throw new Error('Failed to generate content');
       
-      const { content } = await response.json();
+      const generatedContent = response.data;
+      console.log("Generated new content:", generatedContent);
       
       // Store the generated content
       const { data: newContent, error } = await supabase
@@ -52,7 +55,8 @@ export const useLearningSession = () => {
           topic: interest,
           interest_category: [interest],
           level,
-          content,
+          content: generatedContent,
+          usage_count: 1
         })
         .select()
         .single();
@@ -61,6 +65,7 @@ export const useLearningSession = () => {
       
       return newContent;
     } catch (error: any) {
+      console.error("Error in startSession:", error);
       toast({
         title: "Error",
         description: error.message,
@@ -72,7 +77,7 @@ export const useLearningSession = () => {
     }
   };
 
-  const recordSession = async (contentId: string, sessionType: string, performance?: number, feedback?: string) => {
+  const recordSession = async (contentId: string, sessionType: ContentType, performance?: number, feedback?: string) => {
     try {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error('User not authenticated');
@@ -88,6 +93,7 @@ export const useLearningSession = () => {
           feedback,
         });
     } catch (error: any) {
+      console.error("Error in recordSession:", error);
       toast({
         title: "Error recording session",
         description: error.message,
