@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { supabase } from "@/integrations/supabase/client";
@@ -7,6 +6,7 @@ import { Card } from "@/components/ui/card";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { useToast } from "@/components/ui/use-toast";
 import { Volume2, ArrowLeft, Play, Pause } from "lucide-react";
+import { ReactMarkdown } from 'react-markdown';
 
 interface AudioContent {
   url?: string;
@@ -17,7 +17,16 @@ interface Lesson {
   id: string;
   title: string;
   description: string | null;
-  content: any;
+  content: {
+    content: {
+      content: string;
+      metadata: {
+        level: string;
+        interest: string;
+        contentType: string;
+      };
+    };
+  };
   status: 'not_started' | 'in_progress' | 'completed';
   vocabulary?: any[];
   audio_content?: AudioContent | null;
@@ -49,8 +58,6 @@ export default function LessonDetail() {
 
       if (error) throw error;
 
-      console.log('Fetched lesson data:', lessonData);
-
       if (!lessonData) {
         throw new Error('Lesson not found');
       }
@@ -62,12 +69,7 @@ export default function LessonDetail() {
         : null;
 
       const typedLesson: Lesson = {
-        id: lessonData.id,
-        title: lessonData.title,
-        description: lessonData.description,
-        content: lessonData.content,
-        status: lessonData.status,
-        vocabulary: lessonData.vocabulary,
+        ...lessonData,
         audio_content: parsedAudioContent
       };
 
@@ -240,8 +242,8 @@ export default function LessonDetail() {
                     Previous
                   </Button>
                   <div className="text-center flex-1">
-                    <p className="text-2xl font-bold mb-2">{lesson.vocabulary[currentVocabIndex].korean}</p>
-                    <p className="text-lg text-gray-600">{lesson.vocabulary[currentVocabIndex].english}</p>
+                    <p className="text-2xl font-bold mb-2">{lesson.vocabulary[currentVocabIndex]?.korean}</p>
+                    <p className="text-lg text-gray-600">{lesson.vocabulary[currentVocabIndex]?.english}</p>
                   </div>
                   <Button
                     variant="ghost"
@@ -249,15 +251,6 @@ export default function LessonDetail() {
                     disabled={currentVocabIndex === lesson.vocabulary.length - 1}
                   >
                     Next
-                  </Button>
-                </div>
-                <div className="mt-4 flex justify-center">
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => {/* TODO: Implement vocabulary audio */}}
-                  >
-                    <Volume2 className="h-4 w-4" />
                   </Button>
                 </div>
               </Card>
@@ -268,9 +261,11 @@ export default function LessonDetail() {
             <h2 className="text-lg font-semibold">Lesson Content</h2>
             <Card className="p-6 bg-white/50 backdrop-blur">
               <div className="prose max-w-none">
-                <pre className="whitespace-pre-wrap bg-transparent">
-                  {JSON.stringify(lesson.content, null, 2)}
-                </pre>
+                {lesson.content?.content?.content && (
+                  <div className="whitespace-pre-wrap">
+                    {lesson.content.content.content}
+                  </div>
+                )}
               </div>
             </Card>
           </div>
