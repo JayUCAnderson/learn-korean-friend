@@ -34,7 +34,11 @@ export const useLearningSession = () => {
           .update({ usage_count: existingContent.usage_count + 1 })
           .eq('id', existingContent.id);
           
-        return existingContent;
+        return {
+          ...existingContent.content,
+          title: existingContent.content.title,
+          description: existingContent.content.description
+        };
       }
 
       // Generate new content via edge function
@@ -63,7 +67,7 @@ export const useLearningSession = () => {
 
       if (error) throw error;
       
-      return newContent;
+      return generatedContent;
     } catch (error: any) {
       console.error("Error in startSession:", error);
       toast({

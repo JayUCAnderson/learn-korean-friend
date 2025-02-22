@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { useToast } from "@/components/ui/use-toast";
 import { supabase } from "@/integrations/supabase/client";
@@ -91,26 +90,6 @@ const LearningInterface = ({ userData }: { userData: any }) => {
     }
   };
 
-  const generateLessonTitle = (interest: string, lessonNumber: number) => {
-    const titles = [
-      `Exploring ${interest} through Korean Dialogue`,
-      `Essential Korean for ${interest} Enthusiasts`,
-      `Korean Expressions in ${interest}`,
-      `Practical Korean for ${interest} Lovers`,
-    ];
-    return titles[lessonNumber % titles.length];
-  };
-
-  const generateDescription = (interest: string) => {
-    const descriptions = [
-      `Learn authentic Korean expressions used in ${interest.toLowerCase()}`,
-      `Master key phrases and vocabulary related to ${interest.toLowerCase()}`,
-      `Practice real-world conversations about ${interest.toLowerCase()}`,
-      `Discover cultural insights through ${interest.toLowerCase()}-related Korean`,
-    ];
-    return descriptions[Math.floor(Math.random() * descriptions.length)];
-  };
-
   const handleStartLearning = async () => {
     try {
       const interest = Array.isArray(userData.interests) && userData.interests.length > 0 
@@ -125,9 +104,9 @@ const LearningInterface = ({ userData }: { userData: any }) => {
           .from('lessons')
           .insert({
             user_id: userData.id,
-            title: generateLessonTitle(interest, lessonNumber),
-            description: generateDescription(interest),
-            content: content,
+            title: content.title,
+            description: content.description,
+            content: content.content,
             lesson_number: lessonNumber,
             status: 'not_started'
           });

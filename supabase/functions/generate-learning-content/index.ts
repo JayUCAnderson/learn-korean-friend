@@ -18,40 +18,8 @@ serve(async (req) => {
     const { interest, level, contentType } = await req.json();
     console.log("Generating content for:", { interest, level, contentType });
 
-    // Create a contextual system prompt based on content type
-    let systemPrompt = "You are a Korean language tutor specializing in creating personalized learning content. ";
-    systemPrompt += "Your responses should be structured, educational, and engaging. ";
-    systemPrompt += "Always include Korean text (in Hangul), romanization, and English translations. ";
-    systemPrompt += "Format responses in clear sections for easy reading and learning.";
-
-    // Create a specific prompt based on content type
-    let promptPrefix = "";
-    switch (contentType) {
-      case "vocabulary":
-        promptPrefix = "Create a list of 10 Korean vocabulary words related to";
-        break;
-      case "grammar":
-        promptPrefix = "Explain a Korean grammar pattern commonly used in";
-        break;
-      case "conversation":
-        promptPrefix = "Create a practical dialogue scenario about";
-        break;
-      case "culture":
-        promptPrefix = "Explain a Korean cultural aspect related to";
-        break;
-    }
-
-    // Add level-specific instructions
-    const levelInstructions = {
-      beginner: "Use basic vocabulary and simple sentence structures. Include lots of examples.",
-      intermediate: "Use moderate vocabulary and introduce some complex grammar patterns.",
-      advanced: "Use sophisticated vocabulary and advanced grammar constructions."
-    };
-
-    const prompt = `${promptPrefix} ${interest} for ${level} level students. ${levelInstructions[level]}`;
-    console.log("Using prompt:", prompt);
-
-    const response = await fetch('https://api.openai.com/v1/chat/completions', {
+    // First, generate the lesson title and description
+    const titleDescResponse = await fetch('https://api.openai.com/v1/chat/completions', {
       method: 'POST',
       headers: {
         'Authorization': `Bearer ${openAIApiKey}`,
@@ -60,22 +28,52 @@ serve(async (req) => {
       body: JSON.stringify({
         model: 'gpt-4o-mini',
         messages: [
-          { role: 'system', content: systemPrompt },
-          { role: 'user', content: prompt }
+          {
+            role: 'system',
+            content: `You are a Korean language tutor creating engaging lesson titles and descriptions. 
+            Generate a title and description for a Korean language lesson about ${interest} for ${level} level students.
+            Make them natural, engaging, and specific to the topic. The title should be concise (max 50 chars) and the description
+            should be 1-2 sentences (max 150 chars). Respond in JSON format with "title" and "description" fields.`
+          },
         ],
         temperature: 0.7,
       }),
     });
 
-    if (!response.ok) {
-      const error = await response.json();
-      console.error("OpenAI API error:", error);
-      throw new Error(error.error?.message || 'Failed to generate content');
-    }
+    const titleDescData = await titleDescResponse.json();
+    const { title, description } = JSON.parse(titleDescData.choices[0].message.content);
+    
+    // Then generate the lesson content
+    const contentResponse = await fetch('https://api.openai.com/v1/chat/completions', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${openAIApiKey}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        model: 'gpt-4o-mini',
+        messages: [
+          { 
+            role: 'system', 
+            content: "You are a Korean language tutor specializing in creating personalized learning content. " +
+                    "Your responses should be structured, educational, and engaging. " +
+                    "Always include Korean text (in Hangul), romanization, and English translations. " +
+                    "Format responses in clear sections for easy reading and learning."
+          },
+          { 
+            role: 'user', 
+            content: `Create a ${contentType} lesson about ${interest} for ${level} level students. Include relevant vocabulary and phrases.` 
+          }
+        ],
+        temperature: 0.7,
+      }),
+    });
 
-    const data = await response.json();
+    const contentData = await contentResponse.json();
     const generatedContent = {
-      content: data.choices[0].message.content,
+      title,
+      description,
+      content: contentData.choices[0].message.content,
       metadata: {
         model: 'gpt-4o-mini',
         interest,
@@ -85,7 +83,7 @@ serve(async (req) => {
       }
     };
 
-    console.log("Successfully generated content");
+    console.log("Successfully generated content with title:", title);
 
     return new Response(
       JSON.stringify(generatedContent),
