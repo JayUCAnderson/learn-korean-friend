@@ -9,12 +9,13 @@ import { cn } from "@/lib/utils";
 
 interface DialogueMessageProps {
   content: string;
-  speaker: "teacher" | "student";
+  speaker: string;
   koreanText?: string;
   englishText?: string;
   className?: string;
   showEnglish: boolean;
   onToggleTranslation: () => void;
+  isFirst?: boolean;
 }
 
 export function DialogueMessage({ 
@@ -24,35 +25,37 @@ export function DialogueMessage({
   englishText, 
   className,
   showEnglish,
-  onToggleTranslation
+  onToggleTranslation,
+  isFirst
 }: DialogueMessageProps) {
   const [isHovering, setIsHovering] = useState(false);
-  const isTeacher = speaker === "teacher";
+  const isFirstSpeaker = speaker.toLowerCase() === "min-jun";
   
   return (
     <div 
       className={cn(
         "flex gap-4 group max-w-[85%]",
-        isTeacher ? "mr-auto" : "ml-auto flex-row-reverse",
+        isFirstSpeaker ? "mr-auto" : "ml-auto flex-row-reverse",
         className
       )}
     >
       <Avatar className={cn(
         "h-12 w-12 shrink-0",
-        "transition-transform duration-300 group-hover:scale-110"
+        "transition-transform duration-300 group-hover:scale-110",
+        isFirstSpeaker ? "bg-korean-100" : "bg-korean-200"
       )}>
-        <AvatarImage 
-          src={isTeacher ? "/teacher-avatar.png" : "/student-avatar.png"} 
-          alt={isTeacher ? "Teacher" : "Student"}
-        />
-        <AvatarFallback>{isTeacher ? "선생" : "학생"}</AvatarFallback>
+        <AvatarImage alt={speaker} />
+        <AvatarFallback>{speaker.charAt(0)}</AvatarFallback>
       </Avatar>
       
       <div className="space-y-2 relative group">
+        {isFirst && (
+          <span className="text-sm text-gray-500 mb-1 block">{speaker}</span>
+        )}
         <Card 
           className={cn(
             "p-4 relative",
-            isTeacher 
+            isFirstSpeaker 
               ? "bg-white hover:bg-white/90 border-korean-100" 
               : "bg-korean-50 hover:bg-korean-100/80 border-korean-200",
             "border-2 shadow-md transition-all duration-300",
@@ -87,7 +90,7 @@ export function DialogueMessage({
                 size="sm"
                 className={cn(
                   "absolute top-2",
-                  isTeacher ? "-right-12" : "-left-12",
+                  isFirstSpeaker ? "-right-12" : "-left-12",
                   "opacity-0 group-hover:opacity-100",
                   "transition-all duration-300"
                 )}
