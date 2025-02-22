@@ -7,6 +7,11 @@ import { Card } from "@/components/ui/card";
 import { useToast } from "@/components/ui/use-toast";
 import { Play, Pause, Volume2, ArrowLeft } from "lucide-react";
 
+interface AudioContent {
+  url?: string;
+  last_generated?: string;
+}
+
 interface Lesson {
   id: string;
   title: string;
@@ -14,10 +19,7 @@ interface Lesson {
   content: any;
   status: 'not_started' | 'in_progress' | 'completed';
   vocabulary?: any[];
-  audio_content?: {
-    url?: string;
-    last_generated?: string;
-  } | null;
+  audio_content?: AudioContent | null;
 }
 
 export default function LessonDetail() {
@@ -30,7 +32,9 @@ export default function LessonDetail() {
   const navigate = useNavigate();
 
   useEffect(() => {
-    fetchLesson();
+    if (id) {
+      fetchLesson();
+    }
   }, [id]);
 
   const fetchLesson = async () => {
@@ -43,6 +47,19 @@ export default function LessonDetail() {
 
       if (error) throw error;
 
+      console.log('Fetched lesson data:', lessonData); // Debug log
+
+      if (!lessonData) {
+        throw new Error('Lesson not found');
+      }
+
+      // Parse the audio_content before setting it in the state
+      const parsedAudioContent = lessonData.audio_content 
+        ? (typeof lessonData.audio_content === 'string' 
+            ? JSON.parse(lessonData.audio_content) 
+            : lessonData.audio_content) as AudioContent
+        : null;
+
       // Type assertion to ensure the data matches our Lesson interface
       const typedLesson: Lesson = {
         id: lessonData.id,
@@ -51,14 +68,14 @@ export default function LessonDetail() {
         content: lessonData.content,
         status: lessonData.status,
         vocabulary: lessonData.vocabulary,
-        audio_content: lessonData.audio_content as Lesson['audio_content']
+        audio_content: parsedAudioContent
       };
 
       setLesson(typedLesson);
       
       // If we have cached audio content, set it up
-      if (typedLesson.audio_content?.url) {
-        setAudioUrl(typedLesson.audio_content.url);
+      if (parsedAudioContent?.url) {
+        setAudioUrl(parsedAudioContent.url);
       }
     } catch (error) {
       console.error('Error fetching lesson:', error);
