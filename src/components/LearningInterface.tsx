@@ -15,7 +15,7 @@ const LearningInterface = ({ userData }: { userData: any }) => {
     <div className={`min-h-screen bg-gradient-to-b ${theme.gradient} p-4`}>
       <div className="max-w-6xl mx-auto space-y-8">
         <UserGreeting level={userData.level} />
-        <LearningProgress />
+        <LearningProgress themeColors={theme} />
         <LearningPathContainer userData={userData} themeColors={theme} />
       </div>
     </div>

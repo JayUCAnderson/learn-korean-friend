@@ -1,5 +1,5 @@
 
-interface ThemeColors {
+export interface ThemeColors {
   gradient: string;
   accent: string;
   border: string;

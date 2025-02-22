@@ -3,8 +3,13 @@ import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/components/ui/use-toast";
 import { DailyProgress } from "./DailyProgress";
+import type { ThemeColors } from "./ThemeProvider";
 
-export const LearningProgress = () => {
+interface LearningProgressProps {
+  themeColors: Pick<ThemeColors, 'border' | 'accent'>;
+}
+
+export const LearningProgress = ({ themeColors }: LearningProgressProps) => {
   const [dailyProgress, setDailyProgress] = useState(0);
   const { toast } = useToast();
 
@@ -53,5 +58,5 @@ export const LearningProgress = () => {
     }
   };
 
-  return <DailyProgress progress={dailyProgress} />;
+  return <DailyProgress progress={dailyProgress} themeColors={themeColors} />;
 };
