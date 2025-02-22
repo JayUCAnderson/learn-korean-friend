@@ -5,8 +5,7 @@ import WelcomeAssessment from "@/components/WelcomeAssessment";
 import LearningInterface from "@/components/LearningInterface";
 import { useToast } from "@/components/ui/use-toast";
 import { supabase } from "@/integrations/supabase/client";
-import { Button } from "@/components/ui/button";
-import { LogOut } from "lucide-react";
+import { Header } from "@/components/Header";
 
 const Index = () => {
   const [userData, setUserData] = useState<any>(null);
@@ -71,22 +70,6 @@ const Index = () => {
     });
   };
 
-  const handleLogout = async () => {
-    try {
-      await supabase.auth.signOut();
-      toast({
-        title: "Goodbye! 안녕히 가세요!",
-        description: "You've been successfully logged out.",
-      });
-    } catch (error: any) {
-      toast({
-        title: "Error",
-        description: "Failed to log out. Please try again.",
-        variant: "destructive",
-      });
-    }
-  };
-
   if (isLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
@@ -97,21 +80,14 @@ const Index = () => {
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-white to-gray-50">
-      <div className="absolute top-4 right-4">
-        <Button
-          onClick={handleLogout}
-          variant="outline"
-          className="flex items-center gap-2 hover:bg-korean-50"
-        >
-          <LogOut className="w-4 h-4" />
-          Logout
-        </Button>
-      </div>
-      {(!userData?.level || !userData?.learning_goal) ? (
-        <WelcomeAssessment onComplete={handleAssessmentComplete} />
-      ) : (
-        <LearningInterface userData={userData} />
-      )}
+      <Header />
+      <main className="pt-16 md:pt-20">
+        {(!userData?.level || !userData?.learning_goal) ? (
+          <WelcomeAssessment onComplete={handleAssessmentComplete} />
+        ) : (
+          <LearningInterface userData={userData} />
+        )}
+      </main>
     </div>
   );
 };
