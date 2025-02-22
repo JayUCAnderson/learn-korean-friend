@@ -6,10 +6,13 @@ import { Progress } from "@/components/ui/progress";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useToast } from "@/components/ui/use-toast";
 import { supabase } from "@/integrations/supabase/client";
+import { useLearningSession } from "@/hooks/useLearningSession";
+import { Loader2 } from "lucide-react";
 
 const LearningInterface = ({ userData }: { userData: any }) => {
   const [dailyProgress, setDailyProgress] = useState(0);
   const { toast } = useToast();
+  const { startSession, isLoading } = useLearningSession();
 
   useEffect(() => {
     const fetchDailyProgress = async () => {
@@ -45,6 +48,7 @@ const LearningInterface = ({ userData }: { userData: any }) => {
           if (insertError) throw insertError;
         }
       } catch (error: any) {
+        console.error("Error fetching progress:", error);
         toast({
           title: "Error fetching progress",
           description: error.message,
@@ -56,8 +60,31 @@ const LearningInterface = ({ userData }: { userData: any }) => {
     fetchDailyProgress();
   }, [toast]);
 
+  const handleStartLearning = async () => {
+    try {
+      const interest = Array.isArray(userData.interests) && userData.interests.length > 0 
+        ? userData.interests[0]
+        : 'general';
+
+      const content = await startSession(interest, userData.level, 'conversation');
+      
+      if (content) {
+        toast({
+          title: "Lesson ready!",
+          description: "Your personalized lesson has been generated.",
+        });
+        console.log("Generated content:", content);
+      }
+    } catch (error: any) {
+      toast({
+        title: "Error",
+        description: "Failed to generate lesson content. Please try again.",
+        variant: "destructive",
+      });
+    }
+  };
+
   const getThemeColors = () => {
-    // Get the first interest from the array, or default to an empty string
     const interest = Array.isArray(userData.interests) && userData.interests.length > 0 
       ? userData.interests[0].toLowerCase()
       : '';
@@ -110,7 +137,6 @@ const LearningInterface = ({ userData }: { userData: any }) => {
   };
 
   const getLessonsByInterest = () => {
-    // Get the first interest from the array, or default to an empty string
     const interest = Array.isArray(userData.interests) && userData.interests.length > 0 
       ? userData.interests[0].toLowerCase()
       : '';
@@ -172,7 +198,7 @@ const LearningInterface = ({ userData }: { userData: any }) => {
         <Card className={`p-6 ${theme.border} backdrop-blur-sm bg-white/50`}>
           <div className="flex items-center justify-between mb-4">
             <h2 className="text-xl font-semibold">Today's Learning Journey</h2>
-            <p className="text-sm text-gray-500">33% Complete</p>
+            <p className="text-sm text-gray-500">{dailyProgress}% Complete</p>
           </div>
           <Progress value={dailyProgress} className={`mb-2 ${theme.accent}`} />
           <p className="text-sm text-gray-500">Keep going! You're doing great!</p>
@@ -182,8 +208,19 @@ const LearningInterface = ({ userData }: { userData: any }) => {
           <Card className={`p-6 hover:shadow-lg transition-shadow cursor-pointer backdrop-blur-sm bg-white/50 ${theme.border}`}>
             <h3 className="text-lg font-semibold mb-2">{getLessonsByInterest()}</h3>
             <p className="text-gray-500 mb-4">Tailored to your interests</p>
-            <Button className={`w-full ${theme.button}`}>
-              Start Learning
+            <Button 
+              className={`w-full ${theme.button}`}
+              onClick={handleStartLearning}
+              disabled={isLoading}
+            >
+              {isLoading ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Generating...
+                </>
+              ) : (
+                'Start Learning'
+              )}
             </Button>
           </Card>
 
@@ -209,3 +246,4 @@ const LearningInterface = ({ userData }: { userData: any }) => {
 };
 
 export default LearningInterface;
+
