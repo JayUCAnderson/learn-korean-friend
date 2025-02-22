@@ -125,6 +125,53 @@ export type Database = {
           },
         ]
       }
+      lessons: {
+        Row: {
+          completed_at: string | null
+          content: Json
+          created_at: string | null
+          description: string | null
+          id: string
+          lesson_number: number
+          status: Database["public"]["Enums"]["lesson_status"] | null
+          title: string
+          user_id: string
+          vocabulary: Json[] | null
+        }
+        Insert: {
+          completed_at?: string | null
+          content: Json
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          lesson_number: number
+          status?: Database["public"]["Enums"]["lesson_status"] | null
+          title: string
+          user_id: string
+          vocabulary?: Json[] | null
+        }
+        Update: {
+          completed_at?: string | null
+          content?: Json
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          lesson_number?: number
+          status?: Database["public"]["Enums"]["lesson_status"] | null
+          title?: string
+          user_id?: string
+          vocabulary?: Json[] | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "lessons_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       profiles: {
         Row: {
           created_at: string
@@ -166,6 +213,7 @@ export type Database = {
       content_type: "vocabulary" | "grammar" | "conversation" | "culture"
       korean_level: "beginner" | "intermediate" | "advanced"
       learning_goal: "casual" | "business" | "academic" | "culture"
+      lesson_status: "not_started" | "in_progress" | "completed"
     }
     CompositeTypes: {
       [_ in never]: never

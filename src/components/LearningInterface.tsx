@@ -7,58 +7,91 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useToast } from "@/components/ui/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { useLearningSession } from "@/hooks/useLearningSession";
-import { Loader2 } from "lucide-react";
+import { Loader2, BookOpen, Check, ChevronRight, Star } from "lucide-react";
+
+interface Lesson {
+  id: string;
+  title: string;
+  description: string;
+  status: 'not_started' | 'in_progress' | 'completed';
+  lesson_number: number;
+  vocabulary: any[];
+}
 
 const LearningInterface = ({ userData }: { userData: any }) => {
   const [dailyProgress, setDailyProgress] = useState(0);
+  const [lessons, setLessons] = useState<Lesson[]>([]);
+  const [isLoadingLessons, setIsLoadingLessons] = useState(true);
   const { toast } = useToast();
   const { startSession, isLoading } = useLearningSession();
 
   useEffect(() => {
-    const fetchDailyProgress = async () => {
-      try {
-        const { data: { user } } = await supabase.auth.getUser();
-        if (!user) return;
-
-        const today = new Date().toISOString().split('T')[0];
-        
-        const { data, error } = await supabase
-          .from('daily_progress')
-          .select('progress_percentage')
-          .eq('user_id', user.id)
-          .eq('date', today)
-          .maybeSingle();
-
-        if (error) throw error;
-
-        if (data) {
-          setDailyProgress(data.progress_percentage);
-        } else {
-          // Create today's progress entry if it doesn't exist
-          const { error: insertError } = await supabase
-            .from('daily_progress')
-            .insert([
-              {
-                user_id: user.id,
-                progress_percentage: 0,
-                minutes_studied: 0
-              }
-            ]);
-
-          if (insertError) throw insertError;
-        }
-      } catch (error: any) {
-        console.error("Error fetching progress:", error);
-        toast({
-          title: "Error fetching progress",
-          description: error.message,
-          variant: "destructive",
-        });
-      }
-    };
-
     fetchDailyProgress();
-  }, [toast]);
+    fetchLessons();
+  }, []);
+
+  const fetchDailyProgress = async () => {
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+
+      const today = new Date().toISOString().split('T')[0];
+      
+      const { data, error } = await supabase
+        .from('daily_progress')
+        .select('progress_percentage')
+        .eq('user_id', user.id)
+        .eq('date', today)
+        .maybeSingle();
+
+      if (error) throw error;
+
+      if (data) {
+        setDailyProgress(data.progress_percentage);
+      } else {
+        const { error: insertError } = await supabase
+          .from('daily_progress')
+          .insert([
+            {
+              user_id: user.id,
+              progress_percentage: 0,
+              minutes_studied: 0
+            }
+          ]);
+
+        if (insertError) throw insertError;
+      }
+    } catch (error: any) {
+      console.error("Error fetching progress:", error);
+      toast({
+        title: "Error fetching progress",
+        description: error.message,
+        variant: "destructive",
+      });
+    }
+  };
+
+  const fetchLessons = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('lessons')
+        .select('*')
+        .order('lesson_number', { ascending: true });
+
+      if (error) throw error;
+
+      setLessons(data || []);
+    } catch (error: any) {
+      console.error("Error fetching lessons:", error);
+      toast({
+        title: "Error fetching lessons",
+        description: error.message,
+        variant: "destructive",
+      });
+    } finally {
+      setIsLoadingLessons(false);
+    }
+  };
 
   const handleStartLearning = async () => {
     try {
@@ -69,11 +102,26 @@ const LearningInterface = ({ userData }: { userData: any }) => {
       const content = await startSession(interest, userData.level, 'conversation');
       
       if (content) {
+        // Create a new lesson
+        const { error } = await supabase
+          .from('lessons')
+          .insert({
+            user_id: userData.id,
+            title: `Lesson ${lessons.length + 1}`,
+            description: `Learn ${interest} related Korean`,
+            content: content,
+            lesson_number: lessons.length + 1,
+            status: 'not_started'
+          });
+
+        if (error) throw error;
+
         toast({
           title: "Lesson ready!",
           description: "Your personalized lesson has been generated.",
         });
-        console.log("Generated content:", content);
+        
+        fetchLessons(); // Refresh lessons list
       }
     } catch (error: any) {
       toast({
@@ -204,41 +252,81 @@ const LearningInterface = ({ userData }: { userData: any }) => {
           <p className="text-sm text-gray-500">Keep going! You're doing great!</p>
         </Card>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          <Card className={`p-6 hover:shadow-lg transition-shadow cursor-pointer backdrop-blur-sm bg-white/50 ${theme.border}`}>
-            <h3 className="text-lg font-semibold mb-2">{getLessonsByInterest()}</h3>
-            <p className="text-gray-500 mb-4">Tailored to your interests</p>
-            <Button 
-              className={`w-full ${theme.button}`}
-              onClick={handleStartLearning}
-              disabled={isLoading}
-            >
-              {isLoading ? (
-                <>
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  Generating...
-                </>
-              ) : (
-                'Start Learning'
-              )}
-            </Button>
-          </Card>
-
-          <Card className={`p-6 hover:shadow-lg transition-shadow cursor-pointer backdrop-blur-sm bg-white/50 ${theme.border}`}>
-            <h3 className="text-lg font-semibold mb-2">{getGoalBasedContent()}</h3>
-            <p className="text-gray-500 mb-4">Aligned with your goals</p>
-            <Button className={`w-full ${theme.button}`}>
-              Continue Learning
-            </Button>
-          </Card>
-
-          <Card className={`p-6 hover:shadow-lg transition-shadow cursor-pointer backdrop-blur-sm bg-white/50 ${theme.border}`}>
-            <h3 className="text-lg font-semibold mb-2">Interactive Practice</h3>
-            <p className="text-gray-500 mb-4">Practice with AI conversation partner</p>
-            <Button className={`w-full ${theme.button}`}>
-              Start Conversation
-            </Button>
-          </Card>
+        <div className="space-y-6">
+          <h2 className="text-2xl font-bold text-gray-900">Your Learning Path</h2>
+          
+          {isLoadingLessons ? (
+            <div className="flex justify-center">
+              <Loader2 className="h-8 w-8 animate-spin text-korean-600" />
+            </div>
+          ) : lessons.length === 0 ? (
+            <Card className={`p-6 text-center ${theme.border} backdrop-blur-sm bg-white/50`}>
+              <h3 className="text-lg font-semibold mb-4">Start Your Korean Learning Journey</h3>
+              <Button 
+                className={`${theme.button}`}
+                onClick={handleStartLearning}
+                disabled={isLoading}
+              >
+                {isLoading ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    Generating your first lesson...
+                  </>
+                ) : (
+                  'Generate Your First Lesson'
+                )}
+              </Button>
+            </Card>
+          ) : (
+            <div className="grid gap-4">
+              {lessons.map((lesson) => (
+                <Card 
+                  key={lesson.id}
+                  className={`p-4 ${theme.border} backdrop-blur-sm bg-white/50 transition-all hover:shadow-lg`}
+                >
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-4">
+                      {lesson.status === 'completed' ? (
+                        <div className="h-10 w-10 rounded-full bg-green-100 flex items-center justify-center">
+                          <Check className="h-6 w-6 text-green-600" />
+                        </div>
+                      ) : lesson.status === 'in_progress' ? (
+                        <div className="h-10 w-10 rounded-full bg-blue-100 flex items-center justify-center">
+                          <BookOpen className="h-6 w-6 text-blue-600" />
+                        </div>
+                      ) : (
+                        <div className="h-10 w-10 rounded-full bg-gray-100 flex items-center justify-center">
+                          <Star className="h-6 w-6 text-gray-400" />
+                        </div>
+                      )}
+                      <div>
+                        <h3 className="font-semibold">{lesson.title}</h3>
+                        <p className="text-sm text-gray-500">{lesson.description}</p>
+                      </div>
+                    </div>
+                    <Button variant="ghost" size="icon">
+                      <ChevronRight className="h-5 w-5" />
+                    </Button>
+                  </div>
+                </Card>
+              ))}
+              
+              <Button 
+                className={`w-full ${theme.button} mt-4`}
+                onClick={handleStartLearning}
+                disabled={isLoading}
+              >
+                {isLoading ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    Generating...
+                  </>
+                ) : (
+                  'Generate Next Lesson'
+                )}
+              </Button>
+            </div>
+          )}
         </div>
       </div>
     </div>
@@ -246,4 +334,3 @@ const LearningInterface = ({ userData }: { userData: any }) => {
 };
 
 export default LearningInterface;
-
