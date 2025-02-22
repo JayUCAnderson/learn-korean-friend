@@ -1,13 +1,11 @@
 
 import { useState, useEffect } from "react";
-import { Button } from "@/components/ui/button";
-import { Card } from "@/components/ui/card";
-import { Progress } from "@/components/ui/progress";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useToast } from "@/components/ui/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { useLearningSession } from "@/hooks/useLearningSession";
-import { Loader2, BookOpen, Check, ChevronRight, Star } from "lucide-react";
+import { UserGreeting } from "./learning/UserGreeting";
+import { DailyProgress } from "./learning/DailyProgress";
+import { LessonList } from "./learning/LessonList";
 
 interface Lesson {
   id: string;
@@ -102,7 +100,6 @@ const LearningInterface = ({ userData }: { userData: any }) => {
       const content = await startSession(interest, userData.level, 'conversation');
       
       if (content) {
-        // Create a new lesson
         const { error } = await supabase
           .from('lessons')
           .insert({
@@ -121,7 +118,7 @@ const LearningInterface = ({ userData }: { userData: any }) => {
           description: "Your personalized lesson has been generated.",
         });
         
-        fetchLessons(); // Refresh lessons list
+        fetchLessons();
       }
     } catch (error: any) {
       toast({
@@ -177,156 +174,23 @@ const LearningInterface = ({ userData }: { userData: any }) => {
     };
   };
 
-  const getPersonalizedGreeting = () => {
-    const hour = new Date().getHours();
-    if (hour < 12) return "좋은 아침이에요!";
-    if (hour < 18) return "안녕하세요!";
-    return "좋은 저녁이에요!";
-  };
-
-  const getLessonsByInterest = () => {
-    const interest = Array.isArray(userData.interests) && userData.interests.length > 0 
-      ? userData.interests[0].toLowerCase()
-      : '';
-
-    if (interest.includes("kpop") || interest.includes("music")) {
-      return "Learn Korean through K-pop Lyrics";
-    }
-    if (interest.includes("drama") || interest.includes("movie")) {
-      return "Korean Phrases from Popular Dramas";
-    }
-    if (interest.includes("food")) {
-      return "Restaurant Conversations & Food Vocabulary";
-    }
-    if (interest.includes("tech")) {
-      return "Business & Technical Korean";
-    }
-    return "Personalized Korean Conversation Practice";
-  };
-
-  const getGoalBasedContent = () => {
-    switch (userData.learning_goal) {
-      case "casual":
-        return "Daily Conversation Skills";
-      case "business":
-        return "Business Korean Essentials";
-      case "academic":
-        return "Academic Writing in Korean";
-      case "culture":
-        return "Cultural Context & Etiquette";
-      default:
-        return "Korean Language Fundamentals";
-    }
-  };
-
   const theme = getThemeColors();
 
   return (
     <div className={`min-h-screen bg-gradient-to-b ${theme.gradient} p-4`}>
       <div className="max-w-6xl mx-auto space-y-8">
-        <div className="flex justify-between items-center">
-          <div className="flex items-center gap-4">
-            <Avatar className="h-16 w-16">
-              <AvatarImage src="https://api.dicebear.com/7.x/adventurer/svg?seed=Felix" />
-              <AvatarFallback>AI</AvatarFallback>
-            </Avatar>
-            <div>
-              <h1 className="text-3xl font-bold text-gray-900">{getPersonalizedGreeting()}</h1>
-              <p className="text-gray-500">Your personal Korean tutor is here to help!</p>
-            </div>
-          </div>
-          <div className="text-right">
-            <p className="text-sm text-gray-500">Current Level</p>
-            <p className="text-lg font-semibold text-korean-600">
-              {userData.level.charAt(0).toUpperCase() + userData.level.slice(1)}
-            </p>
-          </div>
-        </div>
-
-        <Card className={`p-6 ${theme.border} backdrop-blur-sm bg-white/50`}>
-          <div className="flex items-center justify-between mb-4">
-            <h2 className="text-xl font-semibold">Today's Learning Journey</h2>
-            <p className="text-sm text-gray-500">{dailyProgress}% Complete</p>
-          </div>
-          <Progress value={dailyProgress} className={`mb-2 ${theme.accent}`} />
-          <p className="text-sm text-gray-500">Keep going! You're doing great!</p>
-        </Card>
-
+        <UserGreeting level={userData.level} />
+        <DailyProgress progress={dailyProgress} themeColors={theme} />
+        
         <div className="space-y-6">
           <h2 className="text-2xl font-bold text-gray-900">Your Learning Path</h2>
-          
-          {isLoadingLessons ? (
-            <div className="flex justify-center">
-              <Loader2 className="h-8 w-8 animate-spin text-korean-600" />
-            </div>
-          ) : lessons.length === 0 ? (
-            <Card className={`p-6 text-center ${theme.border} backdrop-blur-sm bg-white/50`}>
-              <h3 className="text-lg font-semibold mb-4">Start Your Korean Learning Journey</h3>
-              <Button 
-                className={`${theme.button}`}
-                onClick={handleStartLearning}
-                disabled={isLoading}
-              >
-                {isLoading ? (
-                  <>
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    Generating your first lesson...
-                  </>
-                ) : (
-                  'Generate Your First Lesson'
-                )}
-              </Button>
-            </Card>
-          ) : (
-            <div className="grid gap-4">
-              {lessons.map((lesson) => (
-                <Card 
-                  key={lesson.id}
-                  className={`p-4 ${theme.border} backdrop-blur-sm bg-white/50 transition-all hover:shadow-lg`}
-                >
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-4">
-                      {lesson.status === 'completed' ? (
-                        <div className="h-10 w-10 rounded-full bg-green-100 flex items-center justify-center">
-                          <Check className="h-6 w-6 text-green-600" />
-                        </div>
-                      ) : lesson.status === 'in_progress' ? (
-                        <div className="h-10 w-10 rounded-full bg-blue-100 flex items-center justify-center">
-                          <BookOpen className="h-6 w-6 text-blue-600" />
-                        </div>
-                      ) : (
-                        <div className="h-10 w-10 rounded-full bg-gray-100 flex items-center justify-center">
-                          <Star className="h-6 w-6 text-gray-400" />
-                        </div>
-                      )}
-                      <div>
-                        <h3 className="font-semibold">{lesson.title}</h3>
-                        <p className="text-sm text-gray-500">{lesson.description}</p>
-                      </div>
-                    </div>
-                    <Button variant="ghost" size="icon">
-                      <ChevronRight className="h-5 w-5" />
-                    </Button>
-                  </div>
-                </Card>
-              ))}
-              
-              <Button 
-                className={`w-full ${theme.button} mt-4`}
-                onClick={handleStartLearning}
-                disabled={isLoading}
-              >
-                {isLoading ? (
-                  <>
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    Generating...
-                  </>
-                ) : (
-                  'Generate Next Lesson'
-                )}
-              </Button>
-            </div>
-          )}
+          <LessonList 
+            lessons={lessons}
+            isLoadingLessons={isLoadingLessons}
+            themeColors={theme}
+            onGenerateLesson={handleStartLearning}
+            isGenerating={isLoading}
+          />
         </div>
       </div>
     </div>
