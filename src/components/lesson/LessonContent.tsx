@@ -7,6 +7,12 @@ interface LessonContentProps {
   content: string;
 }
 
+type Speaker = "teacher" | "student";
+type DialoguePart = {
+  speaker: Speaker;
+  message: string;
+} | null;
+
 export function LessonContent({ content }: LessonContentProps) {
   // Parse the content to determine if it's a dialogue or regular markdown
   const isDialogueFormat = content.includes("Teacher:") || content.includes("Student:");
@@ -25,7 +31,7 @@ export function LessonContent({ content }: LessonContentProps) {
   }
 
   // Split content into dialogue parts
-  const dialogueParts = content
+  const dialogueParts: DialoguePart[] = content
     .split(/\n/)
     .filter(line => line.trim())
     .map(line => {
@@ -33,7 +39,7 @@ export function LessonContent({ content }: LessonContentProps) {
       const isStudent = line.startsWith("Student:");
       if (!isTeacher && !isStudent) return null;
 
-      const speaker = isTeacher ? "teacher" : "student";
+      const speaker: Speaker = isTeacher ? "teacher" : "student";
       const message = line.replace(/^(Teacher|Student):/, "").trim();
       
       return { speaker, message };
