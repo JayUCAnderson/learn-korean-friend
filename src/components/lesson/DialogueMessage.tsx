@@ -19,7 +19,6 @@ interface DialogueMessageProps {
 }
 
 export function DialogueMessage({ 
-  content, 
   speaker, 
   koreanText, 
   englishText, 
@@ -29,7 +28,7 @@ export function DialogueMessage({
   isFirst
 }: DialogueMessageProps) {
   const [isHovering, setIsHovering] = useState(false);
-  const isFirstSpeaker = speaker.toLowerCase() === "min-jun";
+  const isFirstSpeaker = speaker.toLowerCase() === "민준"; // Default first speaker
   
   return (
     <div 
@@ -64,11 +63,9 @@ export function DialogueMessage({
           onMouseEnter={() => setIsHovering(true)}
           onMouseLeave={() => setIsHovering(false)}
         >
-          {koreanText && (
-            <p className="text-gray-900 leading-relaxed mb-2 text-lg font-medium">
-              {koreanText}
-            </p>
-          )}
+          <p className="text-gray-900 leading-relaxed mb-2 text-lg font-medium">
+            {koreanText}
+          </p>
           
           {englishText && (
             <p className={cn(
