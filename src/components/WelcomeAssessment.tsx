@@ -9,6 +9,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { Input } from "@/components/ui/input";
 
 const WelcomeAssessment = ({ onComplete }: { onComplete: (data: any) => void }) => {
   const [step, setStep] = useState(1);
@@ -16,13 +17,21 @@ const WelcomeAssessment = ({ onComplete }: { onComplete: (data: any) => void }) 
     level: "",
     goals: "",
     interests: "",
+    customInterest: "",
   });
 
   const handleNext = () => {
     if (step < 3) {
       setStep(step + 1);
     } else {
-      onComplete(formData);
+      // Combine the selected interest with custom interest if provided
+      const finalData = {
+        ...formData,
+        interests: formData.customInterest 
+          ? formData.customInterest 
+          : formData.interests,
+      };
+      onComplete(finalData);
     }
   };
 
@@ -90,22 +99,47 @@ const WelcomeAssessment = ({ onComplete }: { onComplete: (data: any) => void }) 
             )}
 
             {step === 3 && (
-              <Select
-                value={formData.interests}
-                onValueChange={(value) =>
-                  setFormData({ ...formData, interests: value })
-                }
-              >
-                <SelectTrigger className="w-full">
-                  <SelectValue placeholder="Select your interests" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="kpop">K-pop & Music</SelectItem>
-                  <SelectItem value="kdrama">K-dramas & Movies</SelectItem>
-                  <SelectItem value="food">Korean Cuisine</SelectItem>
-                  <SelectItem value="tech">Technology</SelectItem>
-                </SelectContent>
-              </Select>
+              <div className="space-y-4">
+                <Select
+                  value={formData.interests}
+                  onValueChange={(value) =>
+                    setFormData({ ...formData, interests: value, customInterest: "" })
+                  }
+                >
+                  <SelectTrigger className="w-full">
+                    <SelectValue placeholder="Select your interests or enter custom below" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="kpop">K-pop & Music</SelectItem>
+                    <SelectItem value="kdrama">K-dramas & Movies</SelectItem>
+                    <SelectItem value="food">Korean Cuisine</SelectItem>
+                    <SelectItem value="tech">Technology</SelectItem>
+                  </SelectContent>
+                </Select>
+
+                <div className="relative">
+                  <div className="absolute inset-0 flex items-center">
+                    <div className="w-full border-t border-gray-300"></div>
+                  </div>
+                  <div className="relative flex justify-center text-sm">
+                    <span className="px-2 bg-white text-gray-500">Or</span>
+                  </div>
+                </div>
+
+                <Input
+                  type="text"
+                  placeholder="Enter your custom interest (e.g., Korean Spy Movies)"
+                  value={formData.customInterest}
+                  onChange={(e) => 
+                    setFormData({ 
+                      ...formData, 
+                      customInterest: e.target.value,
+                      interests: "" // Clear the dropdown selection when typing
+                    })
+                  }
+                  className="w-full"
+                />
+              </div>
             )}
           </div>
 
