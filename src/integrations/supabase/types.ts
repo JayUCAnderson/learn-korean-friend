@@ -49,8 +49,8 @@ export type Database = {
           created_at: string
           id: string
           interests: string[] | null
-          learning_goal: Database["public"]["Enums"]["learning_goal"]
-          level: Database["public"]["Enums"]["korean_level"]
+          learning_goal: Database["public"]["Enums"]["learning_goal"] | null
+          level: Database["public"]["Enums"]["korean_level"] | null
           updated_at: string
           username: string | null
         }
@@ -58,8 +58,8 @@ export type Database = {
           created_at?: string
           id: string
           interests?: string[] | null
-          learning_goal?: Database["public"]["Enums"]["learning_goal"]
-          level?: Database["public"]["Enums"]["korean_level"]
+          learning_goal?: Database["public"]["Enums"]["learning_goal"] | null
+          level?: Database["public"]["Enums"]["korean_level"] | null
           updated_at?: string
           username?: string | null
         }
@@ -67,8 +67,8 @@ export type Database = {
           created_at?: string
           id?: string
           interests?: string[] | null
-          learning_goal?: Database["public"]["Enums"]["learning_goal"]
-          level?: Database["public"]["Enums"]["korean_level"]
+          learning_goal?: Database["public"]["Enums"]["learning_goal"] | null
+          level?: Database["public"]["Enums"]["korean_level"] | null
           updated_at?: string
           username?: string | null
         }
