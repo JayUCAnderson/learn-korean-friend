@@ -10,14 +10,19 @@ import { Header } from "@/components/Header";
 const Index = () => {
   const [userData, setUserData] = useState<any>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [initialized, setInitialized] = useState(false);
   const { toast } = useToast();
   const navigate = useNavigate();
 
   useEffect(() => {
     const checkSession = async () => {
       try {
-        const { data: { session } } = await supabase.auth.getSession();
+        const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+        
+        if (sessionError) throw sessionError;
+
         if (!session) {
+          setInitialized(true);
           navigate("/auth");
           return;
         }
@@ -44,12 +49,14 @@ const Index = () => {
         });
       } finally {
         setIsLoading(false);
+        setInitialized(true);
       }
     };
 
     checkSession();
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
+      console.log("Auth state changed:", event, session);
       if (event === 'SIGNED_OUT') {
         navigate("/auth");
       } else if (event === 'SIGNED_IN') {
@@ -62,15 +69,8 @@ const Index = () => {
     };
   }, [navigate, toast]);
 
-  const handleAssessmentComplete = (data: any) => {
-    setUserData(data);
-    toast({
-      title: "Welcome to KoreanPal! 환영합니다!",
-      description: "We've personalized your learning experience based on your preferences.",
-    });
-  };
-
-  if (isLoading) {
+  // Only show loading spinner if we haven't completed initial session check
+  if (!initialized || isLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-korean-600"></div>
@@ -90,6 +90,14 @@ const Index = () => {
       </main>
     </div>
   );
+
+  function handleAssessmentComplete(data: any) {
+    setUserData(data);
+    toast({
+      title: "Welcome to KoreanPal! 환영합니다!",
+      description: "We've personalized your learning experience based on your preferences.",
+    });
+  }
 };
 
 export default Index;
