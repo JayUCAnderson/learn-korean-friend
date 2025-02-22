@@ -1,6 +1,10 @@
+
+import { useState } from "react";
 import { Card } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
 import ReactMarkdown from 'react-markdown';
 import { DialogueMessage } from "./DialogueMessage";
+import { Eye, EyeOff } from "lucide-react";
 
 interface LessonContentProps {
   content: string;
@@ -15,6 +19,8 @@ type DialoguePart = {
 } | null;
 
 export function LessonContent({ content }: LessonContentProps) {
+  const [showAllTranslations, setShowAllTranslations] = useState(false);
+  
   // Parse content to extract dialogue parts
   const dialogueParts: DialoguePart[] = [];
   const lines = content.split('\n').filter(line => line.trim());
@@ -85,7 +91,6 @@ export function LessonContent({ content }: LessonContentProps) {
   }
 
   if (dialogueParts.length === 0) {
-    // If no dialogue parts were found, render as regular markdown
     return (
       <div className="space-y-4">
         <h2 className="text-lg font-semibold">Lesson Content</h2>
@@ -100,9 +105,30 @@ export function LessonContent({ content }: LessonContentProps) {
 
   return (
     <div className="space-y-4">
-      <h2 className="text-lg font-semibold">Lesson Content</h2>
-      <Card className="p-6 bg-white/50 backdrop-blur">
-        <div className="space-y-6 max-w-3xl mx-auto">
+      <div className="flex items-center justify-between">
+        <h2 className="text-lg font-semibold">Lesson Content</h2>
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={() => setShowAllTranslations(!showAllTranslations)}
+          className="gap-2"
+        >
+          {showAllTranslations ? (
+            <>
+              <EyeOff className="h-4 w-4" />
+              Hide All Translations
+            </>
+          ) : (
+            <>
+              <Eye className="h-4 w-4" />
+              Show All Translations
+            </>
+          )}
+        </Button>
+      </div>
+      
+      <Card className="p-6 bg-gradient-to-b from-white/90 to-white/50 backdrop-blur border-2 border-korean-100">
+        <div className="space-y-8 max-w-3xl mx-auto">
           {dialogueParts.map((part, index) => (
             part && (
               <DialogueMessage
@@ -111,6 +137,9 @@ export function LessonContent({ content }: LessonContentProps) {
                 content={part.message}
                 koreanText={part.koreanText}
                 englishText={part.englishText}
+                showEnglish={showAllTranslations}
+                onToggleTranslation={() => setShowAllTranslations(!showAllTranslations)}
+                className={index === dialogueParts.length - 1 ? "animate-pulse" : ""}
               />
             )
           ))}
