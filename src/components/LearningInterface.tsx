@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -56,7 +57,11 @@ const LearningInterface = ({ userData }: { userData: any }) => {
   }, [toast]);
 
   const getThemeColors = () => {
-    const interest = userData.interests.toLowerCase();
+    // Get the first interest from the array, or default to an empty string
+    const interest = Array.isArray(userData.interests) && userData.interests.length > 0 
+      ? userData.interests[0].toLowerCase()
+      : '';
+
     if (interest.includes("kpop") || interest.includes("music")) {
       return {
         gradient: "from-pink-100 to-purple-100",
@@ -105,7 +110,11 @@ const LearningInterface = ({ userData }: { userData: any }) => {
   };
 
   const getLessonsByInterest = () => {
-    const interest = userData.interests.toLowerCase();
+    // Get the first interest from the array, or default to an empty string
+    const interest = Array.isArray(userData.interests) && userData.interests.length > 0 
+      ? userData.interests[0].toLowerCase()
+      : '';
+
     if (interest.includes("kpop") || interest.includes("music")) {
       return "Learn Korean through K-pop Lyrics";
     }
@@ -122,7 +131,7 @@ const LearningInterface = ({ userData }: { userData: any }) => {
   };
 
   const getGoalBasedContent = () => {
-    switch (userData.goals) {
+    switch (userData.learning_goal) {
       case "casual":
         return "Daily Conversation Skills";
       case "business":
