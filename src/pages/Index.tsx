@@ -29,9 +29,9 @@ const Index = () => {
 
         if (error) throw error;
 
-        if (data.level && data.learning_goal) {
-          setUserData(data);
-        }
+        // Changed this condition to explicitly check if level is null
+        // This ensures new users see the welcome assessment
+        setUserData(data);
       } catch (error: any) {
         toast({
           title: "Error",
@@ -74,9 +74,11 @@ const Index = () => {
     );
   }
 
+  // Changed this condition to explicitly check if level is null or undefined
+  // This ensures new users see the welcome assessment
   return (
     <div className="min-h-screen bg-gradient-to-b from-white to-gray-50">
-      {!userData?.level ? (
+      {!userData?.level || !userData?.learning_goal ? (
         <WelcomeAssessment onComplete={handleAssessmentComplete} />
       ) : (
         <LearningInterface userData={userData} />
@@ -86,3 +88,4 @@ const Index = () => {
 };
 
 export default Index;
+
