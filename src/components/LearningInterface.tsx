@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -7,6 +6,48 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 
 const LearningInterface = ({ userData }: { userData: any }) => {
   const [dailyProgress, setDailyProgress] = useState(33);
+
+  const getThemeColors = () => {
+    const interest = userData.interests.toLowerCase();
+    if (interest.includes("kpop") || interest.includes("music")) {
+      return {
+        gradient: "from-pink-100 to-purple-100",
+        accent: "bg-korean-500",
+        border: "border-pink-200",
+        button: "bg-gradient-to-r from-pink-500 to-purple-500 hover:from-pink-600 hover:to-purple-600",
+      };
+    }
+    if (interest.includes("drama") || interest.includes("movie")) {
+      return {
+        gradient: "from-blue-50 to-indigo-100",
+        accent: "bg-korean-600",
+        border: "border-blue-200",
+        button: "bg-gradient-to-r from-blue-500 to-indigo-500 hover:from-blue-600 hover:to-indigo-600",
+      };
+    }
+    if (interest.includes("food")) {
+      return {
+        gradient: "from-orange-50 to-red-100",
+        accent: "bg-korean-500",
+        border: "border-orange-200",
+        button: "bg-gradient-to-r from-orange-500 to-red-500 hover:from-orange-600 hover:to-red-600",
+      };
+    }
+    if (interest.includes("tech")) {
+      return {
+        gradient: "from-cyan-50 to-blue-100",
+        accent: "bg-korean-600",
+        border: "border-cyan-200",
+        button: "bg-gradient-to-r from-cyan-500 to-blue-500 hover:from-cyan-600 hover:to-blue-600",
+      };
+    }
+    return {
+      gradient: "from-white to-gray-50",
+      accent: "bg-korean-600",
+      border: "border-korean-100",
+      button: "bg-korean-600 hover:bg-korean-700",
+    };
+  };
 
   const getPersonalizedGreeting = () => {
     const hour = new Date().getHours();
@@ -47,8 +88,10 @@ const LearningInterface = ({ userData }: { userData: any }) => {
     }
   };
 
+  const theme = getThemeColors();
+
   return (
-    <div className="min-h-screen bg-gradient-to-b from-white to-gray-50 p-4">
+    <div className={`min-h-screen bg-gradient-to-b ${theme.gradient} p-4`}>
       <div className="max-w-6xl mx-auto space-y-8">
         <div className="flex justify-between items-center">
           <div className="flex items-center gap-4">
@@ -69,36 +112,36 @@ const LearningInterface = ({ userData }: { userData: any }) => {
           </div>
         </div>
 
-        <Card className="p-6">
+        <Card className={`p-6 ${theme.border} backdrop-blur-sm bg-white/50`}>
           <div className="flex items-center justify-between mb-4">
             <h2 className="text-xl font-semibold">Today's Learning Journey</h2>
             <p className="text-sm text-gray-500">33% Complete</p>
           </div>
-          <Progress value={dailyProgress} className="mb-2" />
+          <Progress value={dailyProgress} className={`mb-2 ${theme.accent}`} />
           <p className="text-sm text-gray-500">Keep going! You're doing great!</p>
         </Card>
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          <Card className="p-6 hover:shadow-lg transition-shadow cursor-pointer border-2 border-korean-100">
+          <Card className={`p-6 hover:shadow-lg transition-shadow cursor-pointer backdrop-blur-sm bg-white/50 ${theme.border}`}>
             <h3 className="text-lg font-semibold mb-2">{getLessonsByInterest()}</h3>
             <p className="text-gray-500 mb-4">Tailored to your interests</p>
-            <Button className="w-full bg-korean-600 hover:bg-korean-700">
+            <Button className={`w-full ${theme.button}`}>
               Start Learning
             </Button>
           </Card>
 
-          <Card className="p-6 hover:shadow-lg transition-shadow cursor-pointer">
+          <Card className={`p-6 hover:shadow-lg transition-shadow cursor-pointer backdrop-blur-sm bg-white/50 ${theme.border}`}>
             <h3 className="text-lg font-semibold mb-2">{getGoalBasedContent()}</h3>
             <p className="text-gray-500 mb-4">Aligned with your goals</p>
-            <Button className="w-full bg-korean-600 hover:bg-korean-700">
+            <Button className={`w-full ${theme.button}`}>
               Continue Learning
             </Button>
           </Card>
 
-          <Card className="p-6 hover:shadow-lg transition-shadow cursor-pointer">
+          <Card className={`p-6 hover:shadow-lg transition-shadow cursor-pointer backdrop-blur-sm bg-white/50 ${theme.border}`}>
             <h3 className="text-lg font-semibold mb-2">Interactive Practice</h3>
             <p className="text-gray-500 mb-4">Practice with AI conversation partner</p>
-            <Button className="w-full bg-korean-600 hover:bg-korean-700">
+            <Button className={`w-full ${theme.button}`}>
               Start Conversation
             </Button>
           </Card>
