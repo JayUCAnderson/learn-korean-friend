@@ -1,18 +1,16 @@
 
 import { useState, useEffect } from 'react';
-import { useParams } from 'react-router-dom';
+import { useParams, useNavigate } from 'react-router-dom';
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/components/ui/use-toast";
 import { Play, Pause, Volume2, ArrowLeft } from "lucide-react";
-import { useNavigate } from 'react-router-dom';
 
 interface Lesson {
   id: string;
   title: string;
-  description: string;
+  description: string | null;
   content: any;
   status: 'not_started' | 'in_progress' | 'completed';
   vocabulary?: any[];
@@ -37,18 +35,30 @@ export default function LessonDetail() {
 
   const fetchLesson = async () => {
     try {
-      const { data: lesson, error } = await supabase
+      const { data: lessonData, error } = await supabase
         .from('lessons')
         .select('*')
         .eq('id', id)
         .single();
 
       if (error) throw error;
-      setLesson(lesson);
+
+      // Type assertion to ensure the data matches our Lesson interface
+      const typedLesson: Lesson = {
+        id: lessonData.id,
+        title: lessonData.title,
+        description: lessonData.description,
+        content: lessonData.content,
+        status: lessonData.status,
+        vocabulary: lessonData.vocabulary,
+        audio_content: lessonData.audio_content as Lesson['audio_content']
+      };
+
+      setLesson(typedLesson);
       
       // If we have cached audio content, set it up
-      if (lesson.audio_content?.url) {
-        setAudioUrl(lesson.audio_content.url);
+      if (typedLesson.audio_content?.url) {
+        setAudioUrl(typedLesson.audio_content.url);
       }
     } catch (error) {
       console.error('Error fetching lesson:', error);
@@ -215,9 +225,7 @@ export default function LessonDetail() {
 
           <div className="space-y-4">
             <h2 className="text-lg font-semibold">Lesson Content</h2>
-            {/* Render lesson content based on the content structure */}
             <div className="prose max-w-none">
-              {/* This is a placeholder. Implement actual lesson content rendering based on your content structure */}
               <pre className="whitespace-pre-wrap bg-gray-50 p-4 rounded-lg">
                 {JSON.stringify(lesson.content, null, 2)}
               </pre>
@@ -227,4 +235,4 @@ export default function LessonDetail() {
       </div>
     </div>
   );
-};
+}
