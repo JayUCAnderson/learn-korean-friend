@@ -202,12 +202,62 @@ export type Database = {
         }
         Relationships: []
       }
+      vocabulary_progress: {
+        Row: {
+          created_at: string | null
+          id: string
+          last_reviewed: string | null
+          mastery_level: number | null
+          times_correct: number | null
+          times_encountered: number | null
+          user_id: string
+          vocabulary_item: Json
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          last_reviewed?: string | null
+          mastery_level?: number | null
+          times_correct?: number | null
+          times_encountered?: number | null
+          user_id: string
+          vocabulary_item: Json
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          last_reviewed?: string | null
+          mastery_level?: number | null
+          times_correct?: number | null
+          times_encountered?: number | null
+          user_id?: string
+          vocabulary_item?: Json
+        }
+        Relationships: [
+          {
+            foreignKeyName: "vocabulary_progress_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      get_user_vocabulary_stats: {
+        Args: {
+          user_id_param: string
+        }
+        Returns: {
+          total_vocabulary: number
+          mastered_vocabulary: number
+          average_mastery: number
+        }[]
+      }
     }
     Enums: {
       content_type: "vocabulary" | "grammar" | "conversation" | "culture"
