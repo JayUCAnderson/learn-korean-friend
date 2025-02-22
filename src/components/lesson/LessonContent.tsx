@@ -23,16 +23,32 @@ export function LessonContent({ content }: LessonContentProps) {
   
   // Parse content to extract dialogue parts
   const dialogueParts: DialoguePart[] = [];
-  const lines = content.split('\n').filter(line => line.trim());
+  const lines = content.split('\n');
   
   let currentSpeaker: Speaker | null = null;
   let koreanText = '';
   let englishText = '';
+  let currentSection = '';
   
   for (const line of lines) {
+    // Detect section headers
+    if (line.startsWith('###')) {
+      if (currentSpeaker && (koreanText || englishText)) {
+        dialogueParts.push({
+          speaker: currentSpeaker,
+          message: `${koreanText}\n${englishText}`,
+          koreanText,
+          englishText
+        });
+        koreanText = '';
+        englishText = '';
+      }
+      currentSection = line.replace('###', '').trim();
+      continue;
+    }
+    
     // Check for new speaker
     if (line.endsWith(':')) {
-      // If we have accumulated text from previous speaker, save it
       if (currentSpeaker && (koreanText || englishText)) {
         dialogueParts.push({
           speaker: currentSpeaker,
@@ -49,25 +65,19 @@ export function LessonContent({ content }: LessonContentProps) {
       continue;
     }
     
-    // Skip setting/character descriptions
-    if (line.startsWith('Setting:') || line.startsWith('Characters:') || line.startsWith('Dialogue')) {
-      continue;
-    }
-    
-    // If line is in parentheses, it's romanization - skip it
+    // Skip romanization
     if (line.startsWith('(') && line.endsWith(')')) {
       continue;
     }
     
-    // If line contains Korean characters, it's Korean text
+    // Detect Korean vs English text
     if (/[\u3131-\u314e\u314f-\u3163\uac00-\ud7a3]/.test(line)) {
       koreanText = line.trim();
-    } else {
-      // Otherwise it's English text
+    } else if (line.trim() && !line.startsWith('---')) {
       englishText = line.trim();
     }
     
-    // If we have both Korean and English, add the message
+    // Add message when we have both Korean and English
     if (currentSpeaker && koreanText && englishText) {
       dialogueParts.push({
         speaker: currentSpeaker,
@@ -127,8 +137,8 @@ export function LessonContent({ content }: LessonContentProps) {
         </Button>
       </div>
       
-      <Card className="p-6 bg-gradient-to-b from-white/90 to-white/50 backdrop-blur border-2 border-korean-100">
-        <div className="space-y-8 max-w-3xl mx-auto">
+      <Card className="p-6 bg-gradient-to-b from-white/90 to-white/50 backdrop-blur">
+        <div className="space-y-8">
           {dialogueParts.map((part, index) => (
             part && (
               <DialogueMessage

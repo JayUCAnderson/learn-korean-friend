@@ -32,13 +32,15 @@ export function DialogueMessage({
   return (
     <div 
       className={cn(
-        "flex gap-4 group",
-        isTeacher ? "flex-row" : "flex-row-reverse",
-        "animate-fade-in transition-all duration-300 ease-in-out",
+        "flex gap-4 group max-w-[85%]",
+        isTeacher ? "mr-auto" : "ml-auto flex-row-reverse",
         className
       )}
     >
-      <Avatar className="h-12 w-12 shrink-0 transition-transform duration-300 group-hover:scale-110">
+      <Avatar className={cn(
+        "h-12 w-12 shrink-0",
+        "transition-transform duration-300 group-hover:scale-110"
+      )}>
         <AvatarImage 
           src={isTeacher ? "/teacher-avatar.png" : "/student-avatar.png"} 
           alt={isTeacher ? "Teacher" : "Student"}
@@ -46,22 +48,21 @@ export function DialogueMessage({
         <AvatarFallback>{isTeacher ? "선생" : "학생"}</AvatarFallback>
       </Avatar>
       
-      <div className="space-y-2 max-w-[80%] relative group">
+      <div className="space-y-2 relative group">
         <Card 
           className={cn(
-            "p-4 shadow-md transition-all duration-300",
-            isTeacher ? "bg-white hover:bg-white/90" : "bg-korean-50 hover:bg-korean-100/80",
-            "border-2",
-            isTeacher ? "border-korean-100" : "border-korean-200",
+            "p-4 relative",
+            isTeacher 
+              ? "bg-white hover:bg-white/90 border-korean-100" 
+              : "bg-korean-50 hover:bg-korean-100/80 border-korean-200",
+            "border-2 shadow-md transition-all duration-300",
+            "animate-fade-in"
           )}
           onMouseEnter={() => setIsHovering(true)}
           onMouseLeave={() => setIsHovering(false)}
         >
           {koreanText && (
-            <p className={cn(
-              "text-gray-900 leading-relaxed mb-2 text-lg font-medium",
-              "transition-all duration-300"
-            )}>
+            <p className="text-gray-900 leading-relaxed mb-2 text-lg font-medium">
               {koreanText}
             </p>
           )}
@@ -85,7 +86,8 @@ export function DialogueMessage({
                 variant="ghost"
                 size="sm"
                 className={cn(
-                  "absolute -right-12 top-2",
+                  "absolute top-2",
+                  isTeacher ? "-right-12" : "-left-12",
                   "opacity-0 group-hover:opacity-100",
                   "transition-all duration-300"
                 )}
@@ -103,4 +105,3 @@ export function DialogueMessage({
     </div>
   );
 }
-
