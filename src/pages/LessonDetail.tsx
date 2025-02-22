@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { supabase } from "@/integrations/supabase/client";
@@ -6,7 +7,7 @@ import { Card } from "@/components/ui/card";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { useToast } from "@/components/ui/use-toast";
 import { Volume2, ArrowLeft, Play, Pause } from "lucide-react";
-import { ReactMarkdown } from 'react-markdown';
+import ReactMarkdown from 'react-markdown';
 
 interface AudioContent {
   url?: string;
@@ -17,16 +18,7 @@ interface Lesson {
   id: string;
   title: string;
   description: string | null;
-  content: {
-    content: {
-      content: string;
-      metadata: {
-        level: string;
-        interest: string;
-        contentType: string;
-      };
-    };
-  };
+  content: string;
   status: 'not_started' | 'in_progress' | 'completed';
   vocabulary?: any[];
   audio_content?: AudioContent | null;
@@ -68,8 +60,18 @@ export default function LessonDetail() {
             : lessonData.audio_content) as AudioContent
         : null;
 
+      // Extract the actual content string from the nested structure
+      const content = typeof lessonData.content === 'string' 
+        ? lessonData.content 
+        : lessonData.content?.content?.content || '';
+
       const typedLesson: Lesson = {
-        ...lessonData,
+        id: lessonData.id,
+        title: lessonData.title,
+        description: lessonData.description,
+        content: content,
+        status: lessonData.status || 'not_started',
+        vocabulary: lessonData.vocabulary,
         audio_content: parsedAudioContent
       };
 
@@ -261,11 +263,7 @@ export default function LessonDetail() {
             <h2 className="text-lg font-semibold">Lesson Content</h2>
             <Card className="p-6 bg-white/50 backdrop-blur">
               <div className="prose max-w-none">
-                {lesson.content?.content?.content && (
-                  <div className="whitespace-pre-wrap">
-                    {lesson.content.content.content}
-                  </div>
-                )}
+                <ReactMarkdown>{lesson.content}</ReactMarkdown>
               </div>
             </Card>
           </div>
