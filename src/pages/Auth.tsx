@@ -20,7 +20,7 @@ const Auth = () => {
     setIsLoading(true);
 
     try {
-      const { error } = isSignUp
+      const { data, error } = isSignUp
         ? await supabase.auth.signUp({
             email,
             password,
@@ -33,10 +33,20 @@ const Auth = () => {
       if (error) throw error;
 
       if (isSignUp) {
-        toast({
-          title: "Account created successfully!",
-          description: "Please check your email to verify your account.",
-        });
+        // Check if the user is created and immediately signed in
+        if (data.user && data.session) {
+          toast({
+            title: "Account created successfully!",
+            description: "Welcome to KoreanPal! You are now signed in.",
+          });
+          navigate("/");
+        } else {
+          // If email confirmation is required, the session will be null
+          toast({
+            title: "Account created successfully!",
+            description: "Please check your email to verify your account.",
+          });
+        }
       } else {
         toast({
           title: "Welcome back!",
@@ -109,3 +119,4 @@ const Auth = () => {
 };
 
 export default Auth;
+
