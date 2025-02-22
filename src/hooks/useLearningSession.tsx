@@ -6,6 +6,11 @@ import type { Database } from '@/integrations/supabase/types';
 
 type ContentType = Database['public']['Enums']['content_type'];
 type KoreanLevel = Database['public']['Enums']['korean_level'];
+type LearningContent = {
+  title: string;
+  description: string;
+  content: any;
+};
 
 export const useLearningSession = () => {
   const [isLoading, setIsLoading] = useState(false);
@@ -16,7 +21,6 @@ export const useLearningSession = () => {
     try {
       console.log("Starting session with:", { interest, level, contentType });
       
-      // Check for existing content first
       const { data: existingContent } = await supabase
         .from('learning_content')
         .select('*')
@@ -34,11 +38,7 @@ export const useLearningSession = () => {
           .update({ usage_count: existingContent.usage_count + 1 })
           .eq('id', existingContent.id);
           
-        return {
-          ...existingContent.content,
-          title: existingContent.content.title,
-          description: existingContent.content.description
-        };
+        return existingContent.content as LearningContent;
       }
 
       // Generate new content via edge function
@@ -48,7 +48,7 @@ export const useLearningSession = () => {
 
       if (response.error) throw new Error('Failed to generate content');
       
-      const generatedContent = response.data;
+      const generatedContent = response.data as LearningContent;
       console.log("Generated new content:", generatedContent);
       
       // Store the generated content
