@@ -138,11 +138,11 @@ export default function LessonDetail() {
       <div className="max-w-4xl mx-auto space-y-6">
         <Button 
           variant="ghost" 
-          onClick={() => navigate(-1)}
+          onClick={() => navigate('/')}
           className="mb-4"
         >
           <ArrowLeft className="h-4 w-4 mr-2" />
-          Back
+          Back to Dashboard
         </Button>
 
         <Card className="p-6">
