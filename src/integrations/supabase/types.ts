@@ -127,6 +127,7 @@ export type Database = {
       }
       lessons: {
         Row: {
+          audio_content: Json | null
           completed_at: string | null
           content: Json
           created_at: string | null
@@ -139,6 +140,7 @@ export type Database = {
           vocabulary: Json[] | null
         }
         Insert: {
+          audio_content?: Json | null
           completed_at?: string | null
           content: Json
           created_at?: string | null
@@ -151,6 +153,7 @@ export type Database = {
           vocabulary?: Json[] | null
         }
         Update: {
+          audio_content?: Json | null
           completed_at?: string | null
           content?: Json
           created_at?: string | null
@@ -204,6 +207,7 @@ export type Database = {
       }
       vocabulary_progress: {
         Row: {
+          audio_content: Json | null
           created_at: string | null
           id: string
           last_reviewed: string | null
@@ -214,6 +218,7 @@ export type Database = {
           vocabulary_item: Json
         }
         Insert: {
+          audio_content?: Json | null
           created_at?: string | null
           id?: string
           last_reviewed?: string | null
@@ -224,6 +229,7 @@ export type Database = {
           vocabulary_item: Json
         }
         Update: {
+          audio_content?: Json | null
           created_at?: string | null
           id?: string
           last_reviewed?: string | null

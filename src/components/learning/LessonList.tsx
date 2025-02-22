@@ -1,4 +1,3 @@
-
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Loader2, BookOpen, Star } from "lucide-react";
@@ -20,6 +19,7 @@ interface LessonListProps {
   };
   onGenerateLesson: () => void;
   isGenerating: boolean;
+  onLessonClick: (lessonId: string) => void;
 }
 
 const loadingMessages = [
@@ -34,7 +34,8 @@ export const LessonList = ({
   isLoadingLessons, 
   themeColors, 
   onGenerateLesson,
-  isGenerating 
+  isGenerating,
+  onLessonClick
 }: LessonListProps) => {
   if (isLoadingLessons) {
     return (
@@ -90,11 +91,12 @@ export const LessonList = ({
   return (
     <div className="grid gap-4">
       {lessons.map((lesson) => (
-        <LessonCard 
-          key={lesson.id}
-          lesson={lesson}
-          themeColors={themeColors}
-        />
+        <div key={lesson.id} onClick={() => onLessonClick(lesson.id)}>
+          <LessonCard 
+            lesson={lesson}
+            themeColors={themeColors}
+          />
+        </div>
       ))}
       
       <Button 

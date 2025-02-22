@@ -1,10 +1,10 @@
-
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/components/ui/use-toast";
 import { useLearningSession } from "@/hooks/useLearningSession";
 import { LessonList } from "./LessonList";
 import type { Database } from '@/integrations/supabase/types';
+import { useNavigate } from "react-router-dom";
 
 interface Lesson {
   id: string;
@@ -32,6 +32,7 @@ export const LearningPathContainer = ({ userData, themeColors }: LearningPathCon
   const [isLoadingLessons, setIsLoadingLessons] = useState(true);
   const { toast } = useToast();
   const { startSession, isLoading } = useLearningSession();
+  const navigate = useNavigate();
 
   useEffect(() => {
     fetchLessons();
@@ -98,6 +99,10 @@ export const LearningPathContainer = ({ userData, themeColors }: LearningPathCon
     }
   };
 
+  const handleLessonClick = (lessonId: string) => {
+    navigate(`/lesson/${lessonId}`);
+  };
+
   return (
     <div className="space-y-6">
       <h2 className="text-2xl font-bold text-gray-900">Your Learning Path</h2>
@@ -107,6 +112,7 @@ export const LearningPathContainer = ({ userData, themeColors }: LearningPathCon
         themeColors={themeColors}
         onGenerateLesson={handleStartLearning}
         isGenerating={isLoading}
+        onLessonClick={handleLessonClick}
       />
     </div>
   );
