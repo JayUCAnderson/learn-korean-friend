@@ -66,29 +66,30 @@ const LearningInterface = ({ userData }: { userData: any }) => {
   };
 
   return (
-    <div className={`min-h-screen bg-gradient-to-br from-[#FFDEE2] via-[#9b87f5] to-[#6E59A5] p-4`}>
-      <div className="max-w-6xl mx-auto space-y-8">
+    <div className="min-h-screen bg-white">
+      <div className="max-w-6xl mx-auto p-4 space-y-8">
         <UserGreeting level={userData.level} />
-        <LearningProgress themeColors={theme} />
         
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-8">
           {/* Hangul Learning Path Card */}
           <Card 
-            className="group relative overflow-hidden p-6 cursor-pointer hover:shadow-lg transition-all duration-300 bg-white/90 backdrop-blur-lg border-2 border-[#9b87f5]"
+            className={`group relative overflow-hidden p-6 cursor-pointer transition-all duration-300
+              hover:shadow-lg border-none bg-white ring-1 ring-black/5
+              ${!hangulCompleted && 'animate-pulse'}`}
             onClick={navigateToHangul}
           >
-            <div className="absolute inset-0 bg-gradient-to-br from-[#9b87f5]/10 to-[#D946EF]/10 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
-            <div className="flex items-start gap-4">
-              <div className="p-3 rounded-lg bg-[#9b87f5] bg-opacity-10">
-                <Scroll className="h-8 w-8 text-[#7E69AB]" />
+            <div className="absolute inset-0 bg-gradient-to-br from-purple-50 to-pink-50 opacity-50" />
+            <div className="relative flex items-start gap-4">
+              <div className="p-3 rounded-xl bg-purple-100">
+                <Scroll className="h-6 w-6 text-purple-600" />
               </div>
               <div className="flex-1">
                 <h3 className="text-xl font-bold text-gray-900 mb-2">한글 Hangul</h3>
-                <p className="text-gray-600 mb-4">
+                <p className="text-gray-600 mb-4 line-clamp-2">
                   Master the Korean alphabet through an immersive learning experience inspired by traditional Korean culture.
                 </p>
-                <div className="inline-flex items-center text-sm font-medium text-[#7E69AB]">
-                  Start Learning →
+                <div className="inline-flex items-center text-sm font-medium text-purple-600">
+                  {hangulCompleted ? 'Continue Learning →' : 'Start Learning →'}
                 </div>
               </div>
             </div>
@@ -96,35 +97,45 @@ const LearningInterface = ({ userData }: { userData: any }) => {
 
           {/* Regular Lessons Card */}
           <Card 
-            className={`group relative overflow-hidden p-6 cursor-pointer transition-all duration-300 
-              ${hangulCompleted ? 'hover:shadow-lg bg-white/90' : 'bg-gray-100'} 
-              backdrop-blur-lg border-2 ${hangulCompleted ? 'border-[#ea384c]' : 'border-gray-200'}`}
+            className={`group relative overflow-hidden p-6 cursor-pointer transition-all duration-300
+              ${hangulCompleted ? 'hover:shadow-lg border-none bg-white ring-1 ring-black/5' : 'bg-gray-50 cursor-not-allowed'}`}
             onClick={handleLessonsClick}
           >
-            <div className={`absolute inset-0 bg-gradient-to-br from-[#ea384c]/10 to-[#D946EF]/10 opacity-0 
-              ${hangulCompleted ? 'group-hover:opacity-100' : ''} transition-opacity duration-300`} 
+            <div className={`absolute inset-0 bg-gradient-to-br from-rose-50 to-orange-50 opacity-50 
+              ${!hangulCompleted && 'grayscale'}`} 
             />
-            <div className="flex items-start gap-4">
-              <div className={`p-3 rounded-lg ${hangulCompleted ? 'bg-[#ea384c] bg-opacity-10' : 'bg-gray-200'}`}>
-                <Book className={`h-8 w-8 ${hangulCompleted ? 'text-[#ea384c]' : 'text-gray-400'}`} />
+            <div className="relative flex items-start gap-4">
+              <div className={`p-3 rounded-xl ${hangulCompleted ? 'bg-rose-100' : 'bg-gray-200'}`}>
+                <Book className={`h-6 w-6 ${hangulCompleted ? 'text-rose-600' : 'text-gray-400'}`} />
               </div>
               <div className="flex-1">
-                <h3 className={`text-xl font-bold mb-2 ${hangulCompleted ? 'text-gray-900' : 'text-gray-500'}`}>
-                  Korean Lessons
-                </h3>
-                <p className={`mb-4 ${hangulCompleted ? 'text-gray-600' : 'text-gray-400'}`}>
+                <div className="flex items-center gap-2">
+                  <h3 className={`text-xl font-bold mb-2 ${hangulCompleted ? 'text-gray-900' : 'text-gray-500'}`}>
+                    Korean Lessons
+                  </h3>
+                  {!hangulCompleted && (
+                    <span className="text-xs px-2 py-1 rounded-full bg-gray-200 text-gray-600">
+                      Locked
+                    </span>
+                  )}
+                </div>
+                <p className={`mb-4 line-clamp-2 ${hangulCompleted ? 'text-gray-600' : 'text-gray-400'}`}>
                   {hangulCompleted 
                     ? "Begin your journey through comprehensive Korean language lessons."
                     : "Complete Hangul lessons first to unlock this learning path."}
                 </p>
                 <div className={`inline-flex items-center text-sm font-medium ${
-                  hangulCompleted ? 'text-[#ea384c]' : 'text-gray-400'
+                  hangulCompleted ? 'text-rose-600' : 'text-gray-400'
                 }`}>
-                  {hangulCompleted ? 'Start Learning →' : 'Locked'}
+                  {hangulCompleted ? 'Start Learning →' : 'Complete Hangul First'}
                 </div>
               </div>
             </div>
           </Card>
+        </div>
+
+        <div className="relative">
+          <LearningProgress themeColors={theme} />
         </div>
 
         {hangulCompleted && (
