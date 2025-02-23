@@ -10,8 +10,11 @@ export function useAudioController() {
   const JENNIE_VOICE_ID = 'z6Kj0hecH20CdetSElRT';
 
   const processAudio = async (character: string) => {
+    if (!character) return null;
+    
     try {
       setIsLoadingAudio(true);
+      console.log("Processing audio for character:", character);
 
       // Check for existing pronunciation
       const { data: existingPronunciation, error: fetchError } = await supabase
@@ -27,6 +30,7 @@ export function useAudioController() {
 
       // If we have existing audio content, use it
       if (existingPronunciation?.audio_content) {
+        console.log("Using existing audio for character:", character);
         const audioBlob = new Blob(
           [Uint8Array.from(atob(existingPronunciation.audio_content), c => c.charCodeAt(0))],
           { type: 'audio/mpeg' }
