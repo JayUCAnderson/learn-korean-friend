@@ -12,7 +12,7 @@ import { ReviewModal } from "./ReviewModal";
 import { Button } from "@/components/ui/button";
 import { BookOpen, ArrowLeft } from "lucide-react";
 import { HangulLandingPage } from "./HangulLandingPage";
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import type { LessonSection } from "@/hooks/useHangulLessons";
 
 interface HangulLearningContainerProps {
@@ -20,8 +20,19 @@ interface HangulLearningContainerProps {
   section?: LessonSection;
 }
 
-export function HangulLearningContainer({ onComplete, section }: HangulLearningContainerProps) {
+export function HangulLearningContainer({ onComplete, section: propSection }: HangulLearningContainerProps) {
   const navigate = useNavigate();
+  const location = useLocation();
+  
+  // Determine section from route if not provided via props
+  const getRouteSection = (): LessonSection | undefined => {
+    if (location.pathname === '/hangul/vowels') return 'vowels';
+    if (location.pathname === '/hangul/basic-consonants') return 'basic_consonants';
+    if (location.pathname === '/hangul/advanced-consonants') return 'advanced_consonants';
+    return undefined;
+  };
+
+  const section = propSection || getRouteSection();
   const showLanding = !section;
 
   const { 
