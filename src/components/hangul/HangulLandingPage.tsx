@@ -2,7 +2,7 @@
 import { useNavigate } from 'react-router-dom';
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { ArrowRight } from "lucide-react";
+import { ArrowRight, ArrowLeft } from "lucide-react";
 import { Progress } from "@/components/ui/progress";
 import { useHangulLessons } from "@/hooks/useHangulLessons";
 
@@ -46,9 +46,38 @@ export function HangulLandingPage() {
     return calculateSectionProgress('basic_consonants') === 100;
   };
 
+  const findFirstIncompleteLessonIndex = (section: keyof typeof sectionInfo) => {
+    const sectionLessons = lessons.filter(lesson => getLessonSection(lesson) === section);
+    return lessons.findIndex(lesson => 
+      getLessonSection(lesson) === section && 
+      lessons.indexOf(lesson) > currentLessonIndex
+    );
+  };
+
+  const handleContinueLearning = (section: keyof typeof sectionInfo) => {
+    const incompleteIndex = findFirstIncompleteLessonIndex(section);
+    const sectionLessons = lessons.filter(lesson => getLessonSection(lesson) === section);
+    const startIndex = incompleteIndex === -1 ? 
+      lessons.findIndex(lesson => getLessonSection(lesson) === section) : 
+      incompleteIndex;
+    
+    navigate(`/hangul?section=${section}&lesson=${startIndex}`);
+  };
+
   return (
     <div className="min-h-screen bg-gradient-to-b from-white to-gray-50 py-12">
       <div className="max-w-4xl mx-auto px-4">
+        <div className="flex justify-between items-center mb-8">
+          <Button
+            variant="ghost"
+            onClick={() => navigate('/')}
+            className="flex items-center gap-2"
+          >
+            <ArrowLeft className="h-4 w-4" />
+            Back to Dashboard
+          </Button>
+        </div>
+
         <div className="text-center mb-12">
           <h1 className="text-4xl font-bold mb-4">Learn Hangul (한글)</h1>
           <p className="text-gray-600">Master the Korean alphabet step by step</p>
@@ -87,7 +116,7 @@ export function HangulLandingPage() {
                   <Button
                     className="w-full"
                     disabled={!available}
-                    onClick={() => navigate(`/hangul?section=${key}`)}
+                    onClick={() => handleContinueLearning(key)}
                   >
                     {progress === 100 ? "Review Section" : available ? "Continue Learning" : "Complete Previous Section"}
                     <ArrowRight className="w-4 h-4 ml-2" />

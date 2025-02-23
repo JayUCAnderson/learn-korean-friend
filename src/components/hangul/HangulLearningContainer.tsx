@@ -1,5 +1,5 @@
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { HangulLesson } from "./HangulLesson";
 import { HangulProgress } from "./HangulProgress";
@@ -10,9 +10,9 @@ import { cn } from "@/lib/utils";
 import { QuizModal } from "./QuizModal";
 import { ReviewModal } from "./ReviewModal";
 import { Button } from "@/components/ui/button";
-import { BookOpen } from "lucide-react";
+import { BookOpen, ArrowLeft } from "lucide-react";
 import { HangulLandingPage } from "./HangulLandingPage";
-import { useSearchParams, useLocation } from 'react-router-dom';
+import { useSearchParams, useLocation, useNavigate } from 'react-router-dom';
 
 interface HangulLearningContainerProps {
   onComplete?: () => void;
@@ -21,6 +21,7 @@ interface HangulLearningContainerProps {
 export function HangulLearningContainer({ onComplete }: HangulLearningContainerProps) {
   const [searchParams] = useSearchParams();
   const location = useLocation();
+  const navigate = useNavigate();
   const sectionParam = searchParams.get('section');
   const lessonParam = searchParams.get('lesson');
   const showLanding = location.pathname === '/hangul';
@@ -61,7 +62,7 @@ export function HangulLearningContainer({ onComplete }: HangulLearningContainerP
         title: "Congratulations! 축하해요!",
         description: "You've completed all lessons in this section!",
       });
-      onComplete?.();
+      navigate('/hangul');
     }
   };
 
@@ -109,18 +110,26 @@ export function HangulLearningContainer({ onComplete }: HangulLearningContainerP
         <div className="bg-white/90 backdrop-blur-sm rounded-2xl p-6 shadow-xl">
           <div className="mb-8">
             <div className="flex justify-between items-center mb-4">
-              <HangulProgress theme={themeSection} />
+              <Button
+                variant="ghost"
+                onClick={() => navigate('/hangul')}
+                className="flex items-center gap-2"
+              >
+                <ArrowLeft className="h-4 w-4" />
+                Back to Overview
+              </Button>
               <Button
                 variant="outline"
                 size="sm"
                 onClick={() => setShowReview(true)}
                 className="ml-4"
               >
-                <BookOpen className="w-4 h-4 mr-2" />
+                <BookOpen className="h-4 w-4 mr-2" />
                 Review Section
               </Button>
             </div>
-            <p className="text-center mt-2 text-gray-600 italic">
+            <HangulProgress theme={themeSection} />
+            <p className="text-center mt-4 text-gray-600 italic">
               {sectionDescriptions[currentSection]}
             </p>
           </div>
@@ -149,7 +158,10 @@ export function HangulLearningContainer({ onComplete }: HangulLearningContainerP
 
       <ReviewModal
         isOpen={showReview}
-        onClose={() => setShowReview(false)}
+        onClose={() => {
+          setShowReview(false);
+          navigate('/hangul');
+        }}
         sectionLessons={getCurrentSectionLessons()}
         sectionName={sectionName}
       />
