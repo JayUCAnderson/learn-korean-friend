@@ -5,6 +5,7 @@ import { useToast } from "@/components/ui/use-toast";
 
 // Create and export the cache so it can be imported by other components
 export const imageCache = new Map<string, string>();
+export let isPreloadComplete = false;
 
 export function useHangulImagePreloader(lessons: any[]) {
   const [isPreloading, setIsPreloading] = useState(true);
@@ -12,13 +13,18 @@ export function useHangulImagePreloader(lessons: any[]) {
 
   useEffect(() => {
     const preloadImages = async () => {
-      if (!lessons.length) return;
+      if (!lessons.length) {
+        setIsPreloading(false);
+        isPreloadComplete = true;
+        return;
+      }
 
       try {
         console.log("Starting to preload Hangul images...");
         const preloadPromises = lessons.map(async (lesson) => {
           // Skip if already cached
           if (imageCache.has(lesson.character)) {
+            console.log("Using cached image for:", lesson.character);
             return;
           }
 
@@ -39,6 +45,7 @@ export function useHangulImagePreloader(lessons: any[]) {
                 img.onload = resolve;
                 img.onerror = reject;
               });
+              console.log("Successfully cached image for:", lesson.character);
               imageCache.set(lesson.character, imageData.image_url);
             } else {
               // If no existing image, generate new one
@@ -63,6 +70,7 @@ export function useHangulImagePreloader(lessons: any[]) {
                   img.onload = resolve;
                   img.onerror = reject;
                 });
+                console.log("Successfully generated and cached image for:", lesson.character);
                 imageCache.set(lesson.character, generatedData.imageUrl);
                 
                 // Update the lesson with the new image ID
@@ -79,6 +87,7 @@ export function useHangulImagePreloader(lessons: any[]) {
 
         await Promise.all(preloadPromises);
         console.log("All Hangul images preloaded successfully!");
+        isPreloadComplete = true;
         setIsPreloading(false);
       } catch (error: any) {
         console.error("Error preloading images:", error);
@@ -87,6 +96,7 @@ export function useHangulImagePreloader(lessons: any[]) {
           description: "Some images may take longer to load",
           variant: "destructive",
         });
+        isPreloadComplete = true;
         setIsPreloading(false);
       }
     };
@@ -94,5 +104,5 @@ export function useHangulImagePreloader(lessons: any[]) {
     preloadImages();
   }, [lessons]);
 
-  return { isPreloading, imageCache };
+  return { isPreloading };
 }

@@ -3,7 +3,7 @@ import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/components/ui/use-toast";
 import type { Database } from "@/integrations/supabase/types";
-import { imageCache } from "@/hooks/useHangulImagePreloader";
+import { imageCache, isPreloadComplete } from "@/hooks/useHangulImagePreloader";
 
 type LessonType = Database['public']['Tables']['hangul_lessons']['Row'];
 
@@ -13,11 +13,36 @@ export function useMnemonicImage(lesson: LessonType) {
   const [isRegeneratingImage, setIsRegeneratingImage] = useState(false);
   const { toast } = useToast();
 
-  // Reset state when lesson changes
   useEffect(() => {
     setMnemonicImage(null);
     setIsLoadingImage(true);
-  }, [lesson.id]);
+
+    const checkCache = () => {
+      if (imageCache.has(lesson.character)) {
+        console.log("Using cached image for:", lesson.character);
+        setMnemonicImage(imageCache.get(lesson.character)!);
+        setIsLoadingImage(false);
+        return true;
+      }
+      return false;
+    };
+
+    // Check immediately if preloading is complete
+    if (isPreloadComplete) {
+      checkCache();
+    }
+
+    // Set up an interval to check the cache until the image is found or preloading is complete
+    const intervalId = setInterval(() => {
+      if (checkCache() || isPreloadComplete) {
+        clearInterval(intervalId);
+        setIsLoadingImage(false);
+      }
+    }, 100);
+
+    // Cleanup interval on unmount or lesson change
+    return () => clearInterval(intervalId);
+  }, [lesson.id, lesson.character]);
 
   const regenerateMnemonicImage = async () => {
     if (process.env.NODE_ENV !== 'development') {
@@ -79,40 +104,6 @@ export function useMnemonicImage(lesson: LessonType) {
       setIsRegeneratingImage(false);
     }
   };
-
-  const fetchOrGenerateMnemonicImage = async () => {
-    if (!lesson.id) return;
-
-    setIsLoadingImage(true);
-
-    try {
-      // Check cache first
-      if (imageCache.has(lesson.character)) {
-        console.log("Using cached image for:", lesson.character);
-        setMnemonicImage(imageCache.get(lesson.character)!);
-        setIsLoadingImage(false);
-        return;
-      }
-
-      // All other image fetching/generation logic is now handled by the preloader
-      setMnemonicImage(null);
-      setIsLoadingImage(false);
-    } catch (error: any) {
-      console.error("Error with mnemonic image:", error);
-      toast({
-        title: "Error",
-        description: `Failed to load mnemonic image: ${error.message}`,
-        variant: "destructive",
-      });
-    } finally {
-      setIsLoadingImage(false);
-    }
-  };
-
-  // Call fetchOrGenerateMnemonicImage when lesson changes
-  useEffect(() => {
-    fetchOrGenerateMnemonicImage();
-  }, [lesson.id]);
 
   return {
     mnemonicImage,
