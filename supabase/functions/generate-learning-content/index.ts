@@ -10,29 +10,23 @@ const corsHeaders = {
 };
 
 const TOPIK_LEVEL_GUIDELINES = {
-  'topik1': {
+  'beginner': {
     maxNewVocab: 8,
     sentenceLength: "~8-10 words",
     grammar: "Basic sentence structures; simple tenses without complex connectors",
     vocabulary: "Approximately 800 words focused on everyday and concrete topics"
   },
-  'topik2': {
-    maxNewVocab: 10,
-    sentenceLength: "~10-12 words",
-    grammar: "Simple sentences with basic connectors; clear distinction between formal and informal expressions",
-    vocabulary: "Approximately 1,500-2,000 words covering common daily situations"
-  },
-  'topik3': {
+  'intermediate': {
     maxNewVocab: 12,
     sentenceLength: "~12-15 words",
-    grammar: "Combination of simple and compound sentences; beginning use of connectors and basic reported speech",
-    vocabulary: "Approximately 3,000 words including some abstract and situational vocabulary"
+    grammar: "Combination of simple and compound sentences; beginning use of connectors",
+    vocabulary: "Approximately 3,000 words including some abstract vocabulary"
   },
-  'topik4': {
+  'advanced': {
     maxNewVocab: 15,
     sentenceLength: "~15-20 words",
-    grammar: "Use of complex connectors (e.g., -는데, -니까), reported speech, and moderate honorifics in compound sentences",
-    vocabulary: "Approximately 4,000 words including abstract concepts and formal language"
+    grammar: "Complex connectors, reported speech, and advanced honorifics",
+    vocabulary: "Approximately 5,000+ words including formal and specialized terms"
   }
 };
 
@@ -43,16 +37,22 @@ serve(async (req) => {
   }
 
   try {
+    if (!openAIApiKey) {
+      console.error("OpenAI API key is not set");
+      throw new Error("OpenAI API key is not configured");
+    }
+
     const { interest, level, contentType } = await req.json();
-    console.log("Generating content for:", { interest, level, contentType });
+    console.log("Received request with:", { interest, level, contentType });
 
-    // Map user level to TOPIK level
-    const topikLevel = level === 'beginner' ? 'topik1' : 
-                      level === 'intermediate' ? 'topik2' : 'topik3';
+    const difficulty = TOPIK_LEVEL_GUIDELINES[level];
+    if (!difficulty) {
+      console.error("Invalid level provided:", level);
+      throw new Error("Invalid difficulty level");
+    }
+
+    console.log("Using difficulty parameters:", difficulty);
     
-    const difficultyParams = TOPIK_LEVEL_GUIDELINES[topikLevel];
-    console.log("Using TOPIK level parameters:", difficultyParams);
-
     const response = await fetch('https://api.openai.com/v1/chat/completions', {
       method: 'POST',
       headers: {
@@ -64,88 +64,65 @@ serve(async (req) => {
         messages: [
           {
             role: 'system',
-            content: `You are a Korean language education expert creating scientifically-based, engaging content. Follow these principles:
+            content: `You are a Korean language education expert creating content at the ${level} level. Follow these guidelines:
+- Maximum new vocabulary: ${difficulty.maxNewVocab} words
+- Sentence length: ${difficulty.sentenceLength}
+- Grammar focus: ${difficulty.grammar}
+- Vocabulary scope: ${difficulty.vocabulary}
 
-1. Progressive Complexity: Start extremely simple and gradually build up
-2. Contextual Learning: Present vocabulary and grammar in realistic, relatable situations
-3. Cultural Integration: Weave in cultural context naturally
-4. Clear Structure: Organize content logically with explicit connections
-5. Scaffolding: Support new concepts with familiar elements
-
-For ${level} level content about ${interest}, follow these specific TOPIK guidelines:
-- Maximum new vocabulary: ${difficultyParams.maxNewVocab} words
-- Sentence length: ${difficultyParams.sentenceLength}
-- Grammar focus: ${difficultyParams.grammar}
-- Vocabulary scope: ${difficultyParams.vocabulary}
-
-Generate a lesson in JSON format with this structure:
+Generate a response in this exact JSON format:
 {
-  "title": "unique, specific title that captures the key learning point",
-  "description": "clear, specific description of what will be learned and how it connects to real-life usage",
-  "dialogue": [
-    {
-      "speaker": "string (specify name)",
-      "koreanText": "Korean dialogue",
-      "englishText": "English translation",
-      "notes": "pronunciation/cultural notes"
-    }
-  ],
-  "vocabulary": [
-    {
-      "korean": "Korean word",
-      "english": "English meaning",
-      "pronunciation": "romanization",
-      "contextualUsage": "example usage"
-    }
-  ],
-  "exercises": [
-    {
-      "type": "multiple-choice | fill-in-blank | matching",
-      "question": "question text",
-      "options": ["array of options"],
-      "correctAnswer": "correct answer"
-    }
-  ],
-  "cultural_notes": ["cultural context points"],
-  "review_suggestions": ["practical review activities"],
-  "imagePrompt": "Generate a short, focused description based on the title's unique aspects for visual representation. This should capture the essence of the lesson's topic and learning goal."
+  "title": "string (specific, unique title capturing the key learning point)",
+  "description": "string (clear explanation of lesson objectives)",
+  "content": {
+    "content": "string (the main lesson content)",
+    "vocabulary": [
+      {
+        "korean": "string",
+        "english": "string",
+        "pronunciation": "string",
+        "partOfSpeech": "string"
+      }
+    ]
+  }
 }`
           },
           {
             role: 'user',
-            content: `Create an engaging ${level} level Korean lesson about ${interest}. Focus on practical, everyday usage while maintaining appropriate difficulty for the level. Make the title and description specific and unique to this particular lesson's content.`
+            content: `Create an engaging Korean lesson about ${interest}. Focus on practical usage while maintaining ${level} level difficulty.`
           }
         ],
         temperature: 0.7,
       }),
     });
 
+    console.log("OpenAI response status:", response.status);
+    
+    if (!response.ok) {
+      const errorData = await response.text();
+      console.error("OpenAI API error:", errorData);
+      throw new Error(`OpenAI API error: ${response.status}`);
+    }
+
     const data = await response.json();
-    console.log("OpenAI response:", data);
+    console.log("Received data from OpenAI");
 
     if (!data.choices?.[0]?.message?.content) {
-      throw new Error('Invalid response from OpenAI');
+      console.error("Invalid response structure from OpenAI:", data);
+      throw new Error("Invalid response from OpenAI");
     }
 
-    const generatedContent = JSON.parse(data.choices[0].message.content);
-    console.log("Successfully parsed generated content:", generatedContent);
+    const content = JSON.parse(data.choices[0].message.content);
+    console.log("Successfully parsed content");
 
-    // Store only the original image prompt from OpenAI
-    const imagePrompt = generatedContent.imagePrompt || '';
-    delete generatedContent.imagePrompt; // Remove it from the content to be stored
+    // Generate image prompt based on the title and description
+    const imagePrompt = `Create an engaging educational illustration for a Korean language lesson titled "${content.title}" that captures the essence of learning about ${interest} at a ${level} level.`;
 
-    if (!generatedContent.title || !generatedContent.description) {
-      throw new Error('Generated content missing required fields');
-    }
-
-    // Return both the content and the original image prompt separately
     return new Response(
-      JSON.stringify({ 
-        content: generatedContent,
-        imagePrompt: imagePrompt 
-      }),
+      JSON.stringify({ content, imagePrompt }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
+
   } catch (error) {
     console.error("Error in generate-learning-content:", error);
     return new Response(
