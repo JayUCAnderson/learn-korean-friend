@@ -9,6 +9,19 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
+// Available voices for matching with dialogues
+const FEMALE_VOICES = [
+  { name: 'Jennie', id: 'z6Kj0hecH20CdetSElRT' },
+  { name: 'JiYoung', id: 'AW5wrnG1jVizOYY7R1Oo' },
+  { name: 'Anna', id: 'uyVNoMrnUku1dZyVEXwD' }
+];
+
+const MALE_VOICES = [
+  { name: 'Min-Joon', id: 'nbrxrAz3eYm9NgojrmFK' },
+  { name: 'Yohan', id: '4JJwo477JUAx3HV0T7n7' },
+  { name: 'June', id: '3MTvEr8xCMCC2mL9ujrI' }
+];
+
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
@@ -36,7 +49,8 @@ serve(async (req) => {
               "setting": "string describing the conversation context",
               "dialogue": [
                 {
-                  "speaker": "string (character name)",
+                  "speaker": "string (specify name from list: ${[...FEMALE_VOICES, ...MALE_VOICES].map(v => v.name).join(', ')})",
+                  "gender": "string (must be 'male' or 'female')",
                   "koreanText": "string (Korean dialogue)",
                   "englishText": "string (English translation)"
                 }
@@ -59,7 +73,11 @@ serve(async (req) => {
                   "explanation": "string"
                 }
               ]
-            }`
+            }
+            
+            Important: For each dialogue entry, assign one of these specific names as the speaker: ${[...FEMALE_VOICES, ...MALE_VOICES].map(v => v.name).join(', ')}. 
+            Make sure to set the gender field to match the speaker's gender ('male' for male speakers, 'female' for female speakers).
+            Try to alternate between male and female speakers for natural conversation flow.`
           },
           {
             role: 'user',
@@ -72,6 +90,16 @@ serve(async (req) => {
 
     const data = await response.json();
     const generatedContent = JSON.parse(data.choices[0].message.content);
+    
+    // Match voice IDs to speakers
+    generatedContent.dialogue = generatedContent.dialogue.map((entry: any) => {
+      const voiceList = entry.gender === 'female' ? FEMALE_VOICES : MALE_VOICES;
+      const voice = voiceList.find(v => v.name === entry.speaker) || voiceList[0];
+      return {
+        ...entry,
+        voiceId: voice.id
+      };
+    });
 
     console.log("Successfully generated content with title:", generatedContent.title);
 

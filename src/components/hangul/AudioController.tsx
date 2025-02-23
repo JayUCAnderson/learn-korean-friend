@@ -10,14 +10,20 @@ interface AudioControllerProps {
   onLoadingChange: (isLoading: boolean) => void;
 }
 
+// Hangul vowels (모음)
+const VOWELS = ['ㅏ', 'ㅑ', 'ㅓ', 'ㅕ', 'ㅗ', 'ㅛ', 'ㅜ', 'ㅠ', 'ㅡ', 'ㅣ', 
+                'ㅐ', 'ㅒ', 'ㅔ', 'ㅖ', 'ㅘ', 'ㅙ', 'ㅚ', 'ㅝ', 'ㅞ', 'ㅟ', 'ㅢ'];
+
 export function useAudioController({ character, onAudioReady, onLoadingChange }: AudioControllerProps) {
   const [isLoadingAudio, setIsLoadingAudio] = useState(false);
   const { toast } = useToast();
   
-  // Randomly select a voice for each character while maintaining gender consistency
-  const selectRandomVoice = () => {
-    // You can adjust this to always use female or male voices if preferred
-    const voices = VOICE_OPTIONS;
+  // Select voice based on character type (vowel = female, consonant = male)
+  const selectVoice = () => {
+    const isVowel = VOWELS.includes(character);
+    const voices = VOICE_OPTIONS.filter(voice => 
+      isVowel ? voice.gender === 'female' : voice.gender === 'male'
+    );
     return voices[Math.floor(Math.random() * voices.length)];
   };
 
@@ -30,7 +36,7 @@ export function useAudioController({ character, onAudioReady, onLoadingChange }:
       setIsLoadingAudio(true);
       onLoadingChange(true);
       
-      const selectedVoice = selectRandomVoice();
+      const selectedVoice = selectVoice();
       
       const { data, error } = await supabase.functions.invoke(
         'generate-pronunciation',
