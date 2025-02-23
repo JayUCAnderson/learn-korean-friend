@@ -9,27 +9,6 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
-const TOPIK_LEVEL_GUIDELINES = {
-  'beginner': {
-    maxNewVocab: 8,
-    sentenceLength: "~8-10 words",
-    grammar: "Basic sentence structures; simple tenses without complex connectors",
-    vocabulary: "Approximately 800 words focused on everyday and concrete topics"
-  },
-  'intermediate': {
-    maxNewVocab: 12,
-    sentenceLength: "~12-15 words",
-    grammar: "Combination of simple and compound sentences; beginning use of connectors",
-    vocabulary: "Approximately 3,000 words including some abstract vocabulary"
-  },
-  'advanced': {
-    maxNewVocab: 15,
-    sentenceLength: "~15-20 words",
-    grammar: "Complex connectors, reported speech, and advanced honorifics",
-    vocabulary: "Approximately 5,000+ words including formal and specialized terms"
-  }
-};
-
 serve(async (req) => {
   // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
@@ -37,22 +16,14 @@ serve(async (req) => {
   }
 
   try {
+    const { interest, level, contentType } = await req.json();
+    console.log("Received request with:", { interest, level, contentType });
+
     if (!openAIApiKey) {
       console.error("OpenAI API key is not set");
       throw new Error("OpenAI API key is not configured");
     }
 
-    const { interest, level, contentType } = await req.json();
-    console.log("Received request with:", { interest, level, contentType });
-
-    const difficulty = TOPIK_LEVEL_GUIDELINES[level];
-    if (!difficulty) {
-      console.error("Invalid level provided:", level);
-      throw new Error("Invalid difficulty level");
-    }
-
-    console.log("Using difficulty parameters:", difficulty);
-    
     const response = await fetch('https://api.openai.com/v1/chat/completions', {
       method: 'POST',
       headers: {
@@ -64,18 +35,19 @@ serve(async (req) => {
         messages: [
           {
             role: 'system',
-            content: `You are a Korean language education expert creating content at the ${level} level. Follow these guidelines:
-- Maximum new vocabulary: ${difficulty.maxNewVocab} words
-- Sentence length: ${difficulty.sentenceLength}
-- Grammar focus: ${difficulty.grammar}
-- Vocabulary scope: ${difficulty.vocabulary}
+            content: `You are a Korean language education expert creating content at the ${level} level. Generate content that includes:
+- A specific, unique title capturing the key learning point
+- A clear explanation of lesson objectives
+- Main lesson content focused on practical usage
+- A curated list of vocabulary words with translations and pronunciations
+- An image prompt that will help create visual aids for learning
 
-Generate a response in this exact JSON format:
+Respond with a JSON object containing:
 {
-  "title": "string (specific, unique title capturing the key learning point)",
-  "description": "string (clear explanation of lesson objectives)",
+  "title": "string",
+  "description": "string",
   "content": {
-    "content": "string (the main lesson content)",
+    "content": "string",
     "vocabulary": [
       {
         "korean": "string",
@@ -84,12 +56,13 @@ Generate a response in this exact JSON format:
         "partOfSpeech": "string"
       }
     ]
-  }
+  },
+  "imagePrompt": "string"
 }`
           },
           {
             role: 'user',
-            content: `Create an engaging Korean lesson about ${interest}. Focus on practical usage while maintaining ${level} level difficulty.`
+            content: `Create an engaging Korean lesson about ${interest} suitable for ${level} level students.`
           }
         ],
         temperature: 0.7,
@@ -112,14 +85,20 @@ Generate a response in this exact JSON format:
       throw new Error("Invalid response from OpenAI");
     }
 
-    const content = JSON.parse(data.choices[0].message.content);
+    const generatedContent = JSON.parse(data.choices[0].message.content);
     console.log("Successfully parsed content");
 
-    // Generate image prompt based on the title and description
-    const imagePrompt = `Create an engaging educational illustration for a Korean language lesson titled "${content.title}" that captures the essence of learning about ${interest} at a ${level} level.`;
+    // Enhance the image prompt with Korean cultural elements if it exists
+    if (generatedContent.imagePrompt) {
+      generatedContent.imagePrompt = `Create a scene that showcases ${generatedContent.imagePrompt} while incorporating traditional Korean cultural elements. Use a vibrant color palette inspired by hanbok and temple architecture, balanced with modern aesthetics.`;
+    }
+
+    if (!generatedContent.title || !generatedContent.description) {
+      throw new Error('Generated content missing required fields');
+    }
 
     return new Response(
-      JSON.stringify({ content, imagePrompt }),
+      JSON.stringify(generatedContent),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
 
