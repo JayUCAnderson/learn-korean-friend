@@ -35,7 +35,10 @@ export function useHangulImagePreloader(lessons: any[]) {
               .eq('id', lesson.mnemonic_image_id)
               .maybeSingle();
 
-            if (fetchError) throw fetchError;
+            if (fetchError) {
+              console.error("Error fetching image for character:", lesson.character, fetchError);
+              return;
+            }
 
             if (imageData?.image_url) {
               // Create an image element to preload
@@ -49,6 +52,7 @@ export function useHangulImagePreloader(lessons: any[]) {
               imageCache.set(lesson.character, imageData.image_url);
             } else {
               // If no existing image, generate new one
+              console.log("No existing image found for:", lesson.character, "generating new one...");
               const { data: generatedData, error: generateError } = await supabase.functions.invoke<{
                 imageUrl: string;
                 imageId: string;
@@ -60,10 +64,12 @@ export function useHangulImagePreloader(lessons: any[]) {
                 }
               });
 
-              if (generateError) throw generateError;
-              if (!generatedData) throw new Error("No data received from edge function");
+              if (generateError) {
+                console.error("Error generating image for character:", lesson.character, generateError);
+                return;
+              }
 
-              if (generatedData.imageUrl) {
+              if (generatedData?.imageUrl) {
                 const img = new Image();
                 img.src = generatedData.imageUrl;
                 await new Promise((resolve, reject) => {
@@ -106,3 +112,4 @@ export function useHangulImagePreloader(lessons: any[]) {
 
   return { isPreloading };
 }
+

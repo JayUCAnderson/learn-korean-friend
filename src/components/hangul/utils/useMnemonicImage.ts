@@ -30,26 +30,31 @@ export function useMnemonicImage(lesson: LessonType) {
           return;
         }
 
-        // If not in cache, fetch from database
-        const { data: imageData, error: imageError } = await supabase
-          .from('mnemonic_images')
-          .select('image_url')
-          .eq('id', lesson.mnemonic_image_id)
-          .maybeSingle();
+        // If not in cache and we have a valid mnemonic_image_id, fetch from database
+        if (lesson.mnemonic_image_id) {
+          console.log("Fetching image from database for:", lesson.character);
+          const { data: imageData, error: imageError } = await supabase
+            .from('mnemonic_images')
+            .select('image_url')
+            .eq('id', lesson.mnemonic_image_id)
+            .maybeSingle();
 
-        if (imageError) throw imageError;
+          if (imageError) throw imageError;
 
-        if (imageData?.image_url) {
-          console.log("Found image in database for:", lesson.character);
-          if (isMounted) {
-            setMnemonicImage(imageData.image_url);
-            imageCache.set(lesson.character, imageData.image_url);
+          if (imageData?.image_url) {
+            console.log("Found image in database for:", lesson.character);
+            if (isMounted) {
+              setMnemonicImage(imageData.image_url);
+              imageCache.set(lesson.character, imageData.image_url);
+            }
+            setIsLoadingImage(false);
+            return;
           }
-        } else {
-          // If no image found, generate one
-          console.log("No image found, generating for:", lesson.character);
-          await regenerateMnemonicImage();
         }
+
+        // If no valid image found or no mnemonic_image_id, generate one
+        console.log("No valid image found, generating for:", lesson.character);
+        await regenerateMnemonicImage();
       } catch (error) {
         console.error("Error fetching mnemonic image:", error);
       } finally {
@@ -134,3 +139,4 @@ export function useMnemonicImage(lesson: LessonType) {
     regenerateMnemonicImage
   };
 }
+
