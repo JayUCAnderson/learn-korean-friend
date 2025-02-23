@@ -55,22 +55,6 @@ interface State {
 
 const toastTimeouts = new Map<string, ReturnType<typeof setTimeout>>()
 
-const addToRemoveQueue = (toastId: string) => {
-  if (toastTimeouts.has(toastId)) {
-    return
-  }
-
-  const timeout = setTimeout(() => {
-    toastTimeouts.delete(toastId)
-    dispatch({
-      type: "REMOVE_TOAST",
-      toastId: toastId,
-    })
-  }, TOAST_REMOVE_DELAY)
-
-  toastTimeouts.set(toastId, timeout)
-}
-
 const reducer = (state: State, action: Action): State => {
   switch (action.type) {
     case "ADD_TOAST":
@@ -89,6 +73,20 @@ const reducer = (state: State, action: Action): State => {
 
     case "DISMISS_TOAST": {
       const { toastId } = action
+
+      // Create addToRemoveQueue function inside the reducer scope
+      const addToRemoveQueue = (toastId: string) => {
+        if (toastTimeouts.has(toastId)) {
+          return
+        }
+
+        const timeout = setTimeout(() => {
+          toastTimeouts.delete(toastId)
+          dispatch({ type: "REMOVE_TOAST", toastId: toastId })
+        }, TOAST_REMOVE_DELAY)
+
+        toastTimeouts.set(toastId, timeout)
+      }
 
       if (toastId) {
         addToRemoveQueue(toastId)
@@ -134,7 +132,7 @@ const ToastContext = React.createContext<{
 })
 
 // Create a provider component
-export function ToastStateProvider({ children }: { children: React.ReactNode }) {
+function ToastStateProvider({ children }: { children: React.ReactNode }) {
   const [state, dispatch] = React.useReducer(reducer, { toasts: [] })
   
   return (
@@ -194,3 +192,4 @@ function useToast() {
 }
 
 export { useToast, toast, ToastStateProvider }
+
