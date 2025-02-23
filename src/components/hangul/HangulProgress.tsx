@@ -30,12 +30,18 @@ export function HangulProgress({ currentLesson, totalLessons, theme }: HangulPro
     palace: "👑",
   };
 
+  const sectionMap = {
+    vowels: "Vowels",
+    basic_consonants: "Basic Consonants",
+    advanced_consonants: "Advanced Consonants"
+  };
+
   return (
     <div className="space-y-4">
       <div className="flex justify-between items-center text-sm text-gray-600">
         <span className="flex items-center gap-2">
           <span className="text-lg">{themeIcons[theme]}</span>
-          Lesson {currentLesson} of {totalLessons}
+          <span>{sectionMap[currentSection]} - Lesson {currentLesson} of {totalLessons}</span>
         </span>
         <span>{Math.round(progressPercentage)}%</span>
       </div>

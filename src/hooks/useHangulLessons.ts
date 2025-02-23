@@ -80,17 +80,26 @@ export function useHangulLessons() {
   }, [lessons.length]);
 
   const calculateSectionProgress = useCallback((section: LessonSection): number => {
+    if (lessons.length === 0) return 0;
+
     const totalLessons = lessons.length;
     const sectionSize = Math.ceil(totalLessons / 3);
     
+    // Calculate section boundaries
     const startIndex = section === 'vowels' ? 0 :
                       section === 'basic_consonants' ? sectionSize :
                       sectionSize * 2;
+    
     const endIndex = section === 'vowels' ? sectionSize :
                     section === 'basic_consonants' ? sectionSize * 2 :
-                    lessons.length;
+                    totalLessons;
 
-    return ((currentLessonIndex + 1 - startIndex) / (endIndex - startIndex)) * 100;
+    // Calculate lessons completed in this section
+    const lessonsCompleted = Math.max(0, Math.min(currentLessonIndex + 1 - startIndex, endIndex - startIndex));
+    const sectionTotal = endIndex - startIndex;
+
+    // Ensure we don't divide by zero and clamp the result between 0 and 100
+    return Math.min(100, Math.max(0, (lessonsCompleted / Math.max(1, sectionTotal)) * 100));
   }, [currentLessonIndex, lessons.length]);
 
   return {
