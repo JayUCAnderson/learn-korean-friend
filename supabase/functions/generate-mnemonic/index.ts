@@ -9,6 +9,7 @@ const corsHeaders = {
 }
 
 serve(async (req: Request) => {
+  // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders })
   }
@@ -18,6 +19,14 @@ serve(async (req: Request) => {
 
     if (!character) {
       throw new Error('No character provided')
+    }
+
+    console.log('Generating mnemonic image for character:', character)
+    console.log('Base prompt:', basePrompt)
+
+    const falApiKey = Deno.env.get('FAL_AI_API_KEY')
+    if (!falApiKey) {
+      throw new Error('FAL_AI_API_KEY is not configured')
     }
 
     // Create Supabase client
@@ -30,15 +39,21 @@ serve(async (req: Request) => {
     
     const supabase = createClient(supabaseUrl, supabaseKey)
 
-    // Check if we already have a mnemonic image for this character
-    const { data: existingImage } = await supabase
+    // First check for existing image
+    console.log('Checking for existing mnemonic image...')
+    const { data: existingImage, error: existingError } = await supabase
       .from('mnemonic_images')
       .select('id, image_url')
       .eq('character', character)
-      .single()
+      .maybeSingle()
+
+    if (existingError) {
+      console.error('Error checking existing image:', existingError)
+      throw existingError
+    }
 
     if (existingImage?.image_url) {
-      console.log('Using existing mnemonic image for character:', character)
+      console.log('Found existing image:', existingImage.image_url)
       return new Response(
         JSON.stringify({ 
           imageUrl: existingImage.image_url,
@@ -51,45 +66,30 @@ serve(async (req: Request) => {
       )
     }
 
-    // Generate a concise, image-focused prompt
-    const defaultStyleSuffix = "Render in a minimalist Korean design style with clean lines and soft colors"
-    const finalPrompt = basePrompt 
-      ? `${basePrompt}. ${defaultStyleSuffix}`
-      : `Create a simple, iconic illustration that helps remember the Korean ${characterType} "${character}". ${defaultStyleSuffix}`
-
-    console.log('Generating new mnemonic image with prompt:', finalPrompt)
-
-    const falApiKey = Deno.env.get('FAL_AI_API_KEY')
-    if (!falApiKey) {
-      throw new Error('FAL_AI_API_KEY is not configured')
-    }
-
+    // Generate new image
+    console.log('No existing image found, generating new one...')
     const response = await fetch('https://fal.run/fal-ai/flux/schnell', {
       method: 'POST',
       headers: {
-        'Authorization': `Bearer ${falApiKey}`,
+        'Authorization': `Key ${falApiKey}`,
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        prompt: finalPrompt,
-        go_fast: true,
+        prompt: basePrompt,
         height: 512,
         width: 512,
-        num_outputs: 1,
         num_inference_steps: 20,
         guidance_scale: 7.5,
-        output_format: "webp",
         negative_prompt: "text, words, letters, blurry, complex, confusing",
+        output_format: "webp",
         output_quality: 80,
-        aspect_ratio: "1:1",
-        megapixels: "1"
       }),
     })
 
     if (!response.ok) {
       const errorText = await response.text()
-      console.error('Fal AI Error:', errorText)
-      throw new Error(`Failed to generate image: ${errorText}`)
+      console.error('Fal AI Error Response:', errorText)
+      throw new Error(`Fal AI request failed: ${response.status} ${errorText}`)
     }
 
     const imageData = await response.json()
@@ -99,13 +99,15 @@ serve(async (req: Request) => {
       throw new Error('No image URL received from Fal AI')
     }
 
-    // Store the generated image URL in the database
+    console.log('Successfully generated image:', imageUrl)
+
+    // Store the generated image
     const { data: insertedImage, error: insertError } = await supabase
       .from('mnemonic_images')
       .insert({
-        character: character,
+        character,
         image_url: imageUrl,
-        prompt: finalPrompt
+        prompt: basePrompt
       })
       .select('id, image_url')
       .single()
@@ -129,7 +131,10 @@ serve(async (req: Request) => {
   } catch (error) {
     console.error('Function error:', error)
     return new Response(
-      JSON.stringify({ error: error.message }),
+      JSON.stringify({ 
+        error: error.message,
+        details: error.stack
+      }),
       {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
         status: 500,

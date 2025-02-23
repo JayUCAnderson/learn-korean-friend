@@ -12,6 +12,12 @@ export function useMnemonicImage(lesson: LessonType) {
   const [isRegeneratingImage, setIsRegeneratingImage] = useState(false);
   const { toast } = useToast();
 
+  // Reset state when lesson changes
+  useEffect(() => {
+    setMnemonicImage(null);
+    setIsLoadingImage(true);
+  }, [lesson.id]);
+
   const regenerateMnemonicImage = async () => {
     if (process.env.NODE_ENV !== 'development') {
       toast({
@@ -38,11 +44,16 @@ export function useMnemonicImage(lesson: LessonType) {
         }
       });
 
-      if (error) throw error;
+      if (error) {
+        console.error("Edge function error:", error);
+        throw error;
+      }
 
       if (!generatedData) {
         throw new Error("No data received from edge function");
       }
+
+      console.log("Generated data received:", generatedData);
 
       if (generatedData.imageUrl) {
         console.log("New mnemonic image received:", generatedData.imageUrl);
@@ -52,7 +63,7 @@ export function useMnemonicImage(lesson: LessonType) {
           const { error: updateError } = await supabase
             .from('hangul_lessons')
             .update({ 
-              mnemonic_image_id: generatedData.imageId as string // Explicitly cast to string to match the expected type
+              mnemonic_image_id: generatedData.imageId
             })
             .eq('id', lesson.id);
 
@@ -68,7 +79,7 @@ export function useMnemonicImage(lesson: LessonType) {
       console.error("Error regenerating mnemonic image:", error);
       toast({
         title: "Error",
-        description: "Failed to regenerate mnemonic image. Please try again.",
+        description: `Failed to regenerate mnemonic image: ${error.message}`,
         variant: "destructive",
       });
     } finally {
@@ -79,17 +90,22 @@ export function useMnemonicImage(lesson: LessonType) {
   const fetchOrGenerateMnemonicImage = async () => {
     if (!lesson.id) return;
 
+    setIsLoadingImage(true);
+    setMnemonicImage(null);
+
     try {
+      // First try to fetch existing image
       if (lesson.mnemonic_image_id) {
+        console.log("Attempting to fetch existing image for:", lesson.character);
         const { data: imageData, error: fetchError } = await supabase
           .from('mnemonic_images')
           .select('image_url')
           .eq('id', lesson.mnemonic_image_id)
-          .single();
+          .maybeSingle();
 
         if (fetchError) throw fetchError;
 
-        if (imageData) {
+        if (imageData?.image_url) {
           console.log("Fetched existing mnemonic image:", imageData.image_url);
           setMnemonicImage(imageData.image_url);
           setIsLoadingImage(false);
@@ -97,6 +113,7 @@ export function useMnemonicImage(lesson: LessonType) {
         }
       }
 
+      // If no existing image, generate new one
       console.log("No existing image found, generating new mnemonic image for:", lesson.character);
       const { data: generatedData, error: generateError } = await supabase.functions.invoke<{
         imageUrl: string;
@@ -109,11 +126,16 @@ export function useMnemonicImage(lesson: LessonType) {
         }
       });
 
-      if (generateError) throw generateError;
+      if (generateError) {
+        console.error("Edge function error:", generateError);
+        throw generateError;
+      }
 
       if (!generatedData) {
         throw new Error("No data received from edge function");
       }
+
+      console.log("Generated data received:", generatedData);
 
       if (generatedData.imageUrl) {
         console.log("Generated new mnemonic image:", generatedData.imageUrl);
@@ -123,7 +145,7 @@ export function useMnemonicImage(lesson: LessonType) {
           const { error: updateError } = await supabase
             .from('hangul_lessons')
             .update({ 
-              mnemonic_image_id: generatedData.imageId as string // Explicitly cast to string to match the expected type
+              mnemonic_image_id: generatedData.imageId
             })
             .eq('id', lesson.id);
 
@@ -134,7 +156,7 @@ export function useMnemonicImage(lesson: LessonType) {
       console.error("Error with mnemonic image:", error);
       toast({
         title: "Error",
-        description: "Failed to load mnemonic image. Please try again.",
+        description: `Failed to load mnemonic image: ${error.message}`,
         variant: "destructive",
       });
     } finally {
@@ -142,6 +164,7 @@ export function useMnemonicImage(lesson: LessonType) {
     }
   };
 
+  // Call fetchOrGenerateMnemonicImage when lesson changes
   useEffect(() => {
     fetchOrGenerateMnemonicImage();
   }, [lesson.id]);
