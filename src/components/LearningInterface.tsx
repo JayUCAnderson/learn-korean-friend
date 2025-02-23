@@ -54,15 +54,8 @@ const LearningInterface = ({ userData }: { userData: any }) => {
   };
 
   const handleLessonsClick = () => {
-    if (!hangulCompleted) {
-      toast({
-        title: "Complete Hangul First",
-        description: "Please complete the Hangul lessons before moving on to other content.",
-        variant: "destructive",
-      });
-      return;
-    }
-    // Show lessons content
+    // Show lessons content - removed Hangul completion check
+    navigate("/lessons");
   };
 
   return (
@@ -94,39 +87,26 @@ const LearningInterface = ({ userData }: { userData: any }) => {
             </div>
           </Card>
 
-          {/* Regular Lessons Card */}
+          {/* Regular Lessons Card - Removed disabled state */}
           <Card 
-            className={`group relative overflow-hidden p-6 cursor-pointer transition-all duration-300
-              ${hangulCompleted ? 'hover:shadow-lg border-none bg-white ring-1 ring-black/5' : 'bg-gray-50 cursor-not-allowed'}`}
+            className="group relative overflow-hidden p-6 cursor-pointer transition-all duration-300
+              hover:shadow-lg border-none bg-white ring-1 ring-black/5"
             onClick={handleLessonsClick}
           >
-            <div className={`absolute inset-0 bg-gradient-to-br from-rose-50 to-orange-50 opacity-50 
-              ${!hangulCompleted && 'grayscale'}`} 
-            />
+            <div className="absolute inset-0 bg-gradient-to-br from-rose-50 to-orange-50 opacity-50" />
             <div className="relative flex items-start gap-4">
-              <div className={`p-3 rounded-xl ${hangulCompleted ? 'bg-rose-100' : 'bg-gray-200'}`}>
-                <Book className={`h-6 w-6 ${hangulCompleted ? 'text-rose-600' : 'text-gray-400'}`} />
+              <div className="p-3 rounded-xl bg-rose-100">
+                <Book className="h-6 w-6 text-rose-600" />
               </div>
               <div className="flex-1">
-                <div className="flex items-center gap-2">
-                  <h3 className={`text-xl font-bold mb-2 ${hangulCompleted ? 'text-gray-900' : 'text-gray-500'}`}>
-                    Korean Lessons
-                  </h3>
-                  {!hangulCompleted && (
-                    <span className="text-xs px-2 py-1 rounded-full bg-gray-200 text-gray-600">
-                      Locked
-                    </span>
-                  )}
-                </div>
-                <p className={`mb-4 line-clamp-2 ${hangulCompleted ? 'text-gray-600' : 'text-gray-400'}`}>
-                  {hangulCompleted 
-                    ? "Begin your journey through comprehensive Korean language lessons."
-                    : "Complete Hangul lessons first to unlock this learning path."}
+                <h3 className="text-xl font-bold text-gray-900 mb-2">
+                  Korean Lessons
+                </h3>
+                <p className="text-gray-600 mb-4 line-clamp-2">
+                  Begin your journey through comprehensive Korean language lessons.
                 </p>
-                <div className={`inline-flex items-center text-sm font-medium ${
-                  hangulCompleted ? 'text-rose-600' : 'text-gray-400'
-                }`}>
-                  {hangulCompleted ? 'Start Learning →' : 'Complete Hangul First'}
+                <div className="inline-flex items-center text-sm font-medium text-rose-600">
+                  Start Learning →
                 </div>
               </div>
             </div>
@@ -137,14 +117,13 @@ const LearningInterface = ({ userData }: { userData: any }) => {
           <LearningProgress themeColors={theme} />
         </div>
 
-        {hangulCompleted && (
-          <div className="mt-8">
-            <LearningPathContainer userData={userData} themeColors={theme} />
-          </div>
-        )}
+        <div className="mt-8">
+          <LearningPathContainer userData={userData} themeColors={theme} />
+        </div>
       </div>
     </div>
   );
 };
 
 export default LearningInterface;
+
