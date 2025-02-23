@@ -78,4 +78,3 @@ export function HangulLesson({ lesson, onComplete, onNext, onPrevious }: HangulL
     </Card>
   );
 }
-

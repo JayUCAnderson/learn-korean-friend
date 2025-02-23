@@ -51,7 +51,9 @@ export function useMnemonicImage(lesson: LessonType) {
         if (generatedData.imageId) {
           const { error: updateError } = await supabase
             .from('hangul_lessons')
-            .update({ mnemonic_image_id: generatedData.imageId })
+            .update({ 
+              mnemonic_image_id: generatedData.imageId as string // Explicitly cast to string to match the expected type
+            })
             .eq('id', lesson.id);
 
           if (updateError) throw updateError;
@@ -120,7 +122,9 @@ export function useMnemonicImage(lesson: LessonType) {
         if (generatedData.imageId) {
           const { error: updateError } = await supabase
             .from('hangul_lessons')
-            .update({ mnemonic_image_id: generatedData.imageId })
+            .update({ 
+              mnemonic_image_id: generatedData.imageId as string // Explicitly cast to string to match the expected type
+            })
             .eq('id', lesson.id);
 
           if (updateError) throw updateError;
@@ -149,4 +153,3 @@ export function useMnemonicImage(lesson: LessonType) {
     regenerateMnemonicImage
   };
 }
-
