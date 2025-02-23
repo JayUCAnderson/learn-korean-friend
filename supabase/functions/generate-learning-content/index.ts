@@ -11,32 +11,33 @@ const corsHeaders = {
 
 const TOPIK_LEVEL_GUIDELINES = {
   'topik1': {
-    maxNewVocab: 5,
-    sentenceLength: '~5 words max',
-    grammar: 'Basic particles (은/는, 이/가, 을/를), simple present tense (-아/어요), basic questions (-이에요/예요), numbers (1-100)',
-    vocabulary: '800 basic words focused on daily life',
+    maxNewVocab: 8,
+    sentenceLength: "~8-10 words",
+    grammar: "Basic sentence structures; simple tenses without complex connectors",
+    vocabulary: "Approximately 800 words focused on everyday and concrete topics"
   },
   'topik2': {
-    maxNewVocab: 8,
-    sentenceLength: '~8 words',
-    grammar: 'Past tense (-았/었어요), future tense (-을 거예요), basic connectors (-고, -지만), giving reasons (-아/어서)',
-    vocabulary: '1,500-2,000 words including daily life, hobbies, and basic emotions',
+    maxNewVocab: 10,
+    sentenceLength: "~10-12 words",
+    grammar: "Simple sentences with basic connectors; clear distinction between formal and informal expressions",
+    vocabulary: "Approximately 1,500-2,000 words covering common daily situations"
   },
   'topik3': {
-    maxNewVocab: 10,
-    sentenceLength: '~12 words',
-    grammar: 'Complex connectors (-는데, -니까), reported speech, honorifics, desires (-고 싶다)',
-    vocabulary: '2,000-3,000 words including abstract concepts and formal situations',
+    maxNewVocab: 12,
+    sentenceLength: "~12-15 words",
+    grammar: "Combination of simple and compound sentences; beginning use of connectors and basic reported speech",
+    vocabulary: "Approximately 3,000 words including some abstract and situational vocabulary"
   },
   'topik4': {
-    maxNewVocab: 12,
-    sentenceLength: 'natural length',
-    grammar: 'Advanced grammatical patterns, passive/causative, formal writing styles',
-    vocabulary: '3,000-4,000 words including academic and professional contexts',
+    maxNewVocab: 15,
+    sentenceLength: "~15-20 words",
+    grammar: "Use of complex connectors (e.g., -는데, -니까), reported speech, and moderate honorifics in compound sentences",
+    vocabulary: "Approximately 4,000 words including abstract concepts and formal language"
   }
 };
 
 serve(async (req) => {
+  // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
   }
@@ -84,7 +85,6 @@ Generate a lesson in JSON format with this structure:
   "dialogue": [
     {
       "speaker": "string (specify name)",
-      "gender": "male or female",
       "koreanText": "Korean dialogue",
       "englishText": "English translation",
       "notes": "pronunciation/cultural notes"
@@ -130,17 +130,20 @@ Generate a lesson in JSON format with this structure:
     const generatedContent = JSON.parse(data.choices[0].message.content);
     console.log("Successfully parsed generated content:", generatedContent);
 
-    // Transform the image prompt to be surrounded by the hardcoded context
-    if (generatedContent.imagePrompt) {
-      generatedContent.imagePrompt = `Create a scene that showcases ${generatedContent.imagePrompt} while incorporating traditional Korean cultural elements. Use a vibrant color palette inspired by hanbok and temple architecture, balanced with modern aesthetics.`;
-    }
+    // Store only the original image prompt from OpenAI
+    const imagePrompt = generatedContent.imagePrompt || '';
+    delete generatedContent.imagePrompt; // Remove it from the content to be stored
 
     if (!generatedContent.title || !generatedContent.description) {
       throw new Error('Generated content missing required fields');
     }
 
+    // Return both the content and the original image prompt separately
     return new Response(
-      JSON.stringify(generatedContent),
+      JSON.stringify({ 
+        content: generatedContent,
+        imagePrompt: imagePrompt 
+      }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
   } catch (error) {

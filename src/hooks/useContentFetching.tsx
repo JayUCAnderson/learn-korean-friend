@@ -2,7 +2,6 @@
 import { useState } from 'react';
 import { useToast } from "@/components/ui/use-toast";
 import { supabase } from "@/integrations/supabase/client";
-import { parseMarkdownContent } from '@/utils/contentParser';
 import type { ContentType, KoreanLevel, LearningContent } from '@/types/learning';
 import type { Database } from '@/integrations/supabase/types';
 
@@ -27,15 +26,16 @@ export const useContentFetching = () => {
         throw new Error('Failed to generate content');
       }
       
-      const generatedContent = response.data as LearningContent;
+      const { content: generatedContent, imagePrompt } = response.data;
       console.log("Generated new content:", generatedContent);
+      console.log("Original image prompt:", imagePrompt);
 
       if (!generatedContent.title) {
         console.error("Missing title in generated content:", generatedContent);
         throw new Error("Generated content is missing required title");
       }
 
-      // Store the generated content
+      // Store the generated content and image prompt
       const { error } = await supabase
         .from('learning_content')
         .insert({
@@ -44,7 +44,8 @@ export const useContentFetching = () => {
           topic: interest,
           interest_category: [interest],
           level,
-          usage_count: 1
+          usage_count: 1,
+          image_prompt: imagePrompt // Store the original image prompt separately
         });
 
       if (error) {
@@ -71,4 +72,3 @@ export const useContentFetching = () => {
     isLoading,
   };
 };
-
