@@ -9,13 +9,27 @@ export function useAudioController() {
   
   const JENNIE_VOICE_ID = 'z6Kj0hecH20CdetSElRT';
 
-  const processAudio = async (character: string) => {
+  const processAudio = async (character: string, existingPronunciationUrl: string | null = null) => {
     if (!character) return null;
     
     try {
       setIsLoadingAudio(true);
 
-      // Check for existing pronunciation
+      // If we have a valid existing URL from the database, use it
+      if (existingPronunciationUrl) {
+        // Verify the URL is valid
+        try {
+          const response = await fetch(existingPronunciationUrl);
+          if (response.ok) {
+            return existingPronunciationUrl;
+          }
+        } catch (error) {
+          console.error("Error verifying existing URL:", error);
+          // Continue to try other methods if URL verification fails
+        }
+      }
+
+      // Check for existing pronunciation content
       const { data: existingPronunciation, error: fetchError } = await supabase
         .from('character_pronunciations')
         .select('audio_content')
@@ -24,18 +38,16 @@ export function useAudioController() {
 
       if (fetchError) throw fetchError;
 
-      // If we have existing audio content, use it
+      // If we have existing audio content, try to use it
       if (existingPronunciation?.audio_content) {
         try {
-          const audioBlob = new Blob(
-            [Uint8Array.from(atob(existingPronunciation.audio_content), c => c.charCodeAt(0))],
-            { type: 'audio/mpeg' }
-          );
-          const url = URL.createObjectURL(audioBlob);
+          const audioBuffer = Uint8Array.from(atob(existingPronunciation.audio_content), c => c.charCodeAt(0));
+          const blob = new Blob([audioBuffer], { type: 'audio/mpeg' });
+          const url = URL.createObjectURL(blob);
           
           // Verify the audio is playable
-          const audio = new Audio();
           await new Promise((resolve, reject) => {
+            const audio = new Audio();
             audio.oncanplaythrough = resolve;
             audio.onerror = reject;
             audio.src = url;
@@ -43,12 +55,12 @@ export function useAudioController() {
           
           return url;
         } catch (error) {
-          console.error("Error with existing audio:", error);
+          console.error("Error with existing audio content:", error);
           // If existing audio fails, continue to generate new audio
         }
       }
 
-      // Generate new audio if none exists or if existing audio failed
+      // Generate new audio
       const { data, error } = await supabase.functions.invoke(
         'generate-pronunciation',
         {
@@ -64,10 +76,10 @@ export function useAudioController() {
         throw new Error('No audio content received from generation');
       }
 
-      const audioBlob = new Blob(
-        [Uint8Array.from(atob(data.audioContent), c => c.charCodeAt(0))],
-        { type: 'audio/mpeg' }
-      );
+      // Create audio from new content
+      const audioBuffer = Uint8Array.from(atob(data.audioContent), c => c.charCodeAt(0));
+      const blob = new Blob([audioBuffer], { type: 'audio/mpeg' });
+      const url = URL.createObjectURL(blob);
 
       // Store the audio in the database
       const { error: storeError } = await supabase
@@ -81,7 +93,7 @@ export function useAudioController() {
         console.error('Error storing audio:', storeError);
       }
 
-      return URL.createObjectURL(audioBlob);
+      return url;
     } catch (error: any) {
       console.error("Error with audio:", error);
       toast({
@@ -97,3 +109,4 @@ export function useAudioController() {
 
   return { isLoadingAudio, processAudio };
 }
+

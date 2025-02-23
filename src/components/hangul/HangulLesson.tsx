@@ -27,8 +27,7 @@ export const HangulLesson = memo(function HangulLesson({
   const [audioUrl, setAudioUrl] = useState<string | null>(null);
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const { isLoadingAudio, processAudio } = useAudioController();
-  const hasAttemptedLoad = useRef(false);
-
+  
   const {
     mnemonicImage,
     isLoadingImage,
@@ -36,24 +35,10 @@ export const HangulLesson = memo(function HangulLesson({
     regenerateMnemonicImage
   } = useMnemonicImage(lesson);
 
-  // Log lesson data when it changes
-  useEffect(() => {
-    console.log("Current Hangul Lesson Data:", {
-      id: lesson?.id,
-      character: lesson?.character,
-      romanization: lesson?.romanization,
-      sound_description: lesson?.sound_description,
-      examples: lesson?.examples,
-      mnemonic_base: lesson?.mnemonic_base,
-      mnemonic_image_url: lesson?.mnemonic_image_url,
-      pronunciation_url: lesson?.pronunciation_url
-    });
-  }, [lesson]);
-
   useEffect(() => {
     if (!lesson?.id) return;
     
-    // Clear previous audio URL when lesson changes
+    // Cleanup previous audio URL when lesson changes
     if (audioUrl) {
       URL.revokeObjectURL(audioUrl);
       setAudioUrl(null);
@@ -63,14 +48,7 @@ export const HangulLesson = memo(function HangulLesson({
 
     const loadAudio = async () => {
       try {
-        // Use the pronunciation_url from the database if available
-        if (lesson.pronunciation_url) {
-          setAudioUrl(lesson.pronunciation_url);
-          return;
-        }
-
-        // Only generate new audio if no URL exists
-        const url = await processAudio(lesson.character);
+        const url = await processAudio(lesson.character, lesson.pronunciation_url);
         if (isMounted && url) {
           setAudioUrl(url);
         }
@@ -87,7 +65,7 @@ export const HangulLesson = memo(function HangulLesson({
         URL.revokeObjectURL(audioUrl);
       }
     };
-  }, [lesson?.id, lesson?.pronunciation_url]); 
+  }, [lesson?.id, lesson?.pronunciation_url, lesson?.character]); 
 
   const playPronunciation = () => {
     if (audioRef.current && audioUrl) {
@@ -135,3 +113,4 @@ export const HangulLesson = memo(function HangulLesson({
     </Card>
   );
 });
+

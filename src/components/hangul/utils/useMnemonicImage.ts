@@ -1,5 +1,5 @@
 
-import { useState, useCallback, useEffect } from "react";
+import { useState, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import type { Database } from "@/integrations/supabase/types";
 
@@ -7,6 +7,9 @@ type LessonType = Database['public']['Views']['hangul_lessons_complete']['Row'];
 
 export function useMnemonicImage(lesson: LessonType) {
   const [isRegeneratingImage, setIsRegeneratingImage] = useState(false);
+
+  // Use the mnemonic_image_url directly from the lesson
+  const mnemonicImage = lesson?.mnemonic_image_url || null;
 
   const regenerateMnemonicImage = useCallback(async () => {
     if (process.env.NODE_ENV !== 'development' || !lesson?.id) return;
@@ -43,9 +46,10 @@ export function useMnemonicImage(lesson: LessonType) {
   }, [lesson?.id, lesson?.character, lesson?.mnemonic_base, lesson?.character_type]);
 
   return {
-    mnemonicImage: lesson?.mnemonic_image_url,
+    mnemonicImage,
     isLoadingImage: false,
     isRegeneratingImage,
     regenerateMnemonicImage
   };
 }
+
