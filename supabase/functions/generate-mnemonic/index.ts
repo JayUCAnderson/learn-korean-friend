@@ -29,10 +29,6 @@ serve(async (req: Request) => {
       throw new Error('FAL_AI_API_KEY is not configured')
     }
 
-    // Temporary debug log - REMOVE AFTER DEBUGGING
-    console.log('FAL API Key value (first 4 chars):', falApiKey.substring(0, 4))
-    console.log('FAL API Key length:', falApiKey.length)
-
     // Create Supabase client
     const supabaseUrl = Deno.env.get('SUPABASE_URL')
     const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')
@@ -82,7 +78,7 @@ serve(async (req: Request) => {
         prompt: basePrompt,
         height: 512,
         width: 512,
-        num_inference_steps: 20,
+        num_inference_steps: 12, // Updated to maximum allowed value
         guidance_scale: 7.5,
         negative_prompt: "text, words, letters, blurry, complex, confusing",
         output_format: "webp",
@@ -132,7 +128,7 @@ serve(async (req: Request) => {
       }
     )
 
-  } catch (error) {
+  } catch (error: any) {
     console.error('Function error:', error)
     return new Response(
       JSON.stringify({ 
@@ -146,3 +142,4 @@ serve(async (req: Request) => {
     )
   }
 })
+
