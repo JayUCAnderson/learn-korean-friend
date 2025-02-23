@@ -66,20 +66,27 @@ export function HangulLesson({ lesson, onComplete, onNext, onPrevious }: HangulL
     
     try {
       console.log("Initiating mnemonic image regeneration for character:", lesson.character);
-      const { data: generatedData, error } = await supabase.functions.invoke(
-        'generate-mnemonic',
-        {
-          body: {
-            character: lesson.character,
-            basePrompt: `Create a simple, clear, memorable mnemonic image that helps remember the Korean ${lesson.character_type[0]} "${lesson.character}" by emphasizing its visual similarity to ${lesson.mnemonic_base}. Make the image focus on the key visual elements that make it look like the character.`,
-            characterType: lesson.character_type[0]
-          }
+      const { data: generatedData, error } = await supabase.functions.invoke<{
+        imageUrl: string;
+        imageId: string;
+      }>('generate-mnemonic', {
+        body: {
+          character: lesson.character,
+          basePrompt: `Create a simple, clear, memorable mnemonic image that helps remember the Korean ${lesson.character_type[0]} "${lesson.character}" by emphasizing its visual similarity to ${lesson.mnemonic_base}. Make the image focus on the key visual elements that make it look like the character.`,
+          characterType: lesson.character_type[0]
         }
-      );
+      });
 
-      if (error) throw error;
+      if (error) {
+        console.error("Edge function error:", error);
+        throw error;
+      }
 
-      if (generatedData?.imageUrl) {
+      if (!generatedData) {
+        throw new Error("No data received from edge function");
+      }
+
+      if (generatedData.imageUrl) {
         console.log("New mnemonic image received:", generatedData.imageUrl);
         setMnemonicImage(generatedData.imageUrl);
         
@@ -124,6 +131,11 @@ export function HangulLesson({ lesson, onComplete, onNext, onPrevious }: HangulL
           .eq('id', lesson.mnemonic_image_id)
           .single();
 
+        if (fetchError) {
+          console.error("Error fetching mnemonic image:", fetchError);
+          throw fetchError;
+        }
+
         if (imageData) {
           console.log("Fetched existing mnemonic image:", imageData.image_url);
           setMnemonicImage(imageData.image_url);
@@ -133,20 +145,27 @@ export function HangulLesson({ lesson, onComplete, onNext, onPrevious }: HangulL
       }
 
       console.log("No existing image found, generating new mnemonic image for:", lesson.character);
-      const { data: generatedData, error: generateError } = await supabase.functions.invoke(
-        'generate-mnemonic',
-        {
-          body: {
-            character: lesson.character,
-            basePrompt: `Create a simple, clear, memorable mnemonic image that helps remember the Korean ${lesson.character_type[0]} "${lesson.character}" by emphasizing its visual similarity to ${lesson.mnemonic_base}. Make the image focus on the key visual elements that make it look like the character.`,
-            characterType: lesson.character_type[0]
-          }
+      const { data: generatedData, error: generateError } = await supabase.functions.invoke<{
+        imageUrl: string;
+        imageId: string;
+      }>('generate-mnemonic', {
+        body: {
+          character: lesson.character,
+          basePrompt: `Create a simple, clear, memorable mnemonic image that helps remember the Korean ${lesson.character_type[0]} "${lesson.character}" by emphasizing its visual similarity to ${lesson.mnemonic_base}. Make the image focus on the key visual elements that make it look like the character.`,
+          characterType: lesson.character_type[0]
         }
-      );
+      });
 
-      if (generateError) throw generateError;
+      if (generateError) {
+        console.error("Edge function error:", generateError);
+        throw generateError;
+      }
 
-      if (generatedData?.imageUrl) {
+      if (!generatedData) {
+        throw new Error("No data received from edge function");
+      }
+
+      if (generatedData.imageUrl) {
         console.log("Generated new mnemonic image:", generatedData.imageUrl);
         setMnemonicImage(generatedData.imageUrl);
         
@@ -158,6 +177,7 @@ export function HangulLesson({ lesson, onComplete, onNext, onPrevious }: HangulL
 
           if (updateError) {
             console.error("Error updating lesson with new mnemonic image:", updateError);
+            throw updateError;
           }
         }
       }
@@ -209,4 +229,3 @@ export function HangulLesson({ lesson, onComplete, onNext, onPrevious }: HangulL
     </Card>
   );
 }
-
