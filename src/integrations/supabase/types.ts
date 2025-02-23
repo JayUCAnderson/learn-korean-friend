@@ -12,18 +12,21 @@ export type Database = {
       character_pronunciations: {
         Row: {
           audio_content: string
+          audio_url: string | null
           character: string
           created_at: string
           id: string
         }
         Insert: {
           audio_content: string
+          audio_url?: string | null
           character: string
           created_at?: string
           id?: string
         }
         Update: {
           audio_content?: string
+          audio_url?: string | null
           character?: string
           created_at?: string
           id?: string
@@ -170,6 +173,13 @@ export type Database = {
             columns: ["character_id"]
             isOneToOne: false
             referencedRelation: "hangul_lessons"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "hangul_progress_character_id_fkey"
+            columns: ["character_id"]
+            isOneToOne: false
+            referencedRelation: "hangul_lessons_complete"
             referencedColumns: ["id"]
           },
           {
@@ -415,7 +425,34 @@ export type Database = {
       }
     }
     Views: {
-      [_ in never]: never
+      hangul_lessons_complete: {
+        Row: {
+          base_sound: string | null
+          character: string | null
+          character_type: Database["public"]["Enums"]["character_type"][] | null
+          created_at: string | null
+          examples: Json | null
+          id: string | null
+          lesson_order: number | null
+          mnemonic_base: string | null
+          mnemonic_image_id: string | null
+          mnemonic_image_url: string | null
+          pronunciation_url: string | null
+          romanization: string | null
+          similar_sounds: string[] | null
+          sound_description: string | null
+          stroke_order: Json | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "hangul_lessons_mnemonic_image_id_fkey"
+            columns: ["mnemonic_image_id"]
+            isOneToOne: false
+            referencedRelation: "mnemonic_images"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Functions: {
       calculate_hangul_mastery: {

@@ -15,47 +15,50 @@ export function useMnemonicImage(lesson: LessonType) {
 
   useEffect(() => {
     let isMounted = true;
-    let intervalId: NodeJS.Timeout | null = null;
 
-    const checkCache = () => {
-      if (!isMounted) return;
-
-      if (imageCache.has(lesson.character)) {
-        console.log("Using cached image for:", lesson.character);
-        setMnemonicImage(imageCache.get(lesson.character)!);
-        setIsLoadingImage(false);
-        if (intervalId) {
-          clearInterval(intervalId);
+    const fetchImage = async () => {
+      try {
+        // Try to get from cache first
+        if (imageCache.has(lesson.character)) {
+          console.log("Using cached image for:", lesson.character);
+          if (isMounted) {
+            setMnemonicImage(imageCache.get(lesson.character)!);
+            setIsLoadingImage(false);
+          }
+          return;
         }
-        return true;
-      }
-      return false;
-    };
 
-    // Initial check
-    if (isPreloadComplete) {
-      checkCache();
-    }
+        // If not in cache and preloading is not complete, fetch directly
+        if (!isPreloadComplete) {
+          console.log("Fetching image directly for:", lesson.character);
+          const { data, error } = await supabase
+            .from('hangul_lessons_complete')
+            .select('mnemonic_image_url')
+            .eq('character', lesson.character)
+            .single();
 
-    // Set up polling interval
-    intervalId = setInterval(() => {
-      if (checkCache() || isPreloadComplete) {
-        if (intervalId) {
-          clearInterval(intervalId);
+          if (error) throw error;
+          
+          if (data?.mnemonic_image_url && isMounted) {
+            setMnemonicImage(data.mnemonic_image_url);
+            imageCache.set(lesson.character, data.mnemonic_image_url);
+            setIsLoadingImage(false);
+          }
         }
+      } catch (error) {
+        console.error("Error fetching mnemonic image:", error);
         if (isMounted) {
           setIsLoadingImage(false);
         }
       }
-    }, 100);
+    };
+
+    fetchImage();
 
     return () => {
       isMounted = false;
-      if (intervalId) {
-        clearInterval(intervalId);
-      }
     };
-  }, [lesson.id, lesson.character]);
+  }, [lesson.character]);
 
   const regenerateMnemonicImage = async () => {
     if (process.env.NODE_ENV !== 'development') {
