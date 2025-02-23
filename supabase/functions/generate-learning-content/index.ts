@@ -9,25 +9,30 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
-const TOPIK_GUIDELINES = {
-  beginner: {
+// Define TOPIK level guidelines
+const TOPIK_LEVEL_GUIDELINES = {
+  topik1: {
+    maxNewVocab: 8,
     sentenceLength: "~8-10 words",
     grammar: "Basic sentence structures; simple tenses without complex connectors",
     vocabulary: "Approximately 800 words focused on everyday and concrete topics"
   },
-  intermediate: {
-    sentenceLength: "~12-15 words",
-    grammar: "Combination of simple and compound sentences; beginning use of connectors and basic reported speech",
-    vocabulary: "Approximately 3,000 words including some abstract and situational vocabulary"
+  topik2: {
+    maxNewVocab: 10,
+    sentenceLength: "~10-12 words",
+    grammar: "Simple sentences with basic connectors; clear distinction between formal and informal expressions",
+    vocabulary: "Approximately 1,500-2,000 words covering common daily situations"
   },
-  advanced: {
-    sentenceLength: "~20-25 words",
-    grammar: "Advanced grammatical structures with nuanced connectors, subordinate clauses, and refined honorific usage",
-    vocabulary: "Approximately 6,000 words covering technical, academic, and professional topics"
+  topik4: {
+    maxNewVocab: 15,
+    sentenceLength: "~15-20 words",
+    grammar: "Use of complex connectors (e.g., -는데, -니까), reported speech, and moderate honorifics in compound sentences",
+    vocabulary: "Approximately 4,000 words including abstract concepts and formal language"
   }
 };
 
 serve(async (req) => {
+  // Handle CORS preflight
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
   }
@@ -35,9 +40,84 @@ serve(async (req) => {
   try {
     const { interest, level, contentType } = await req.json();
     console.log("Generating content for:", { interest, level, contentType });
-
-    const guidelines = TOPIK_GUIDELINES[level as keyof typeof TOPIK_GUIDELINES] || TOPIK_GUIDELINES.beginner;
     
+    // Map user level to TOPIK level
+    let topikLevel: keyof typeof TOPIK_LEVEL_GUIDELINES;
+    if (level === 'beginner') {
+      topikLevel = 'topik1';
+    } else if (level === 'intermediate') {
+      topikLevel = 'topik2';
+    } else if (level === 'advanced') {
+      topikLevel = 'topik4';
+    } else {
+      // default to beginner if unrecognized
+      topikLevel = 'topik1';
+    }
+
+    const guidelines = TOPIK_LEVEL_GUIDELINES[topikLevel];
+    console.log("Using TOPIK guidelines:", guidelines);
+
+    // Comprehensive system prompt that integrates teaching principles and TOPIK guidelines.
+    const systemPrompt = `You are a Korean language education expert creating scientifically-based, engaging, and practical lessons tailored to the user's interest in "${interest}". 
+Follow these principles:
+- Progressive Complexity: Begin with extremely simple language and gradually build complexity.
+- Contextual Learning: Present vocabulary and grammar within realistic, everyday situations.
+- Cultural Integration: Seamlessly incorporate relevant cultural context.
+- Clear Structure: Organize the lesson with a logical flow and explicit connections.
+- Engaging and Unique: Ensure the title and description are unique and directly related to the user's interest.
+
+For this lesson, adhere to the following TOPIK guidelines for ${topikLevel.toUpperCase()}:
+- Maximum new vocabulary: ${guidelines.maxNewVocab} words
+- Sentence length: ${guidelines.sentenceLength}
+- Grammar focus: ${guidelines.grammar}
+- Vocabulary scope: ${guidelines.vocabulary}
+
+Generate a lesson in JSON format with this structure:
+{
+  "title": "Unique, specific title capturing the lesson's focus",
+  "description": "Clear, engaging description outlining the lesson's objectives and its real-life relevance",
+  "dialogue": [
+    {
+      "speaker": "Name",
+      "gender": "male|female",
+      "koreanText": "Korean dialogue",
+      "englishText": "English translation",
+      "notes": "Pronunciation or cultural notes"
+    }
+  ],
+  "vocabulary": [
+    {
+      "korean": "Korean word",
+      "english": "English meaning",
+      "pronunciation": "Romanization",
+      "contextualUsage": "Example sentence or usage context"
+    }
+  ],
+  "exercises": [
+    {
+      "type": "multiple-choice | fill-in-blank | matching",
+      "question": "Question text",
+      "options": ["Option1", "Option2"],
+      "correctAnswer": "Correct answer"
+    }
+  ],
+  "cultural_notes": ["Cultural context points"],
+  "review_suggestions": ["Practical review activities"],
+  "imagePrompt": "Short, focused description for visual representation"
+}`;
+    
+    // Build the chat messages
+    const messages = [
+      {
+        role: 'system',
+        content: systemPrompt
+      },
+      {
+        role: 'user',
+        content: `Create an engaging ${level} level Korean lesson about "${interest}". Ensure the lesson is practical, reflects everyday usage, and includes a unique title and description that capture the essence of the topic.`
+      }
+    ];
+
     const response = await fetch('https://api.openai.com/v1/chat/completions', {
       method: 'POST',
       headers: {
@@ -46,53 +126,7 @@ serve(async (req) => {
       },
       body: JSON.stringify({
         model: 'gpt-4o-mini',
-        messages: [
-          {
-            role: 'system',
-            content: `You are a Korean language education expert crafting engaging dialogue-based lessons. 
-            
-Level Guidelines:
-- Sentence Length: ${guidelines.sentenceLength}
-- Grammar Complexity: ${guidelines.grammar}
-- Vocabulary Range: ${guidelines.vocabulary}
-
-Create a unique lesson that:
-1. Has a specific, memorable title related to ${interest}
-2. Includes a clear, focused description of what will be learned
-3. Features a natural dialogue between two speakers
-4. Introduces 5-8 relevant vocabulary words
-5. Generates one image prompt to illustrate a key scene
-
-Format the response as a JSON object with:
-{
-  "title": "Unique, specific title",
-  "description": "Clear learning objectives and context",
-  "content": {
-    "setting": "Brief scene description",
-    "dialogue": [
-      {
-        "speaker": "Name",
-        "koreanText": "Korean dialogue",
-        "englishText": "English translation"
-      }
-    ],
-    "vocabulary": [
-      {
-        "korean": "word",
-        "english": "translation",
-        "pronunciation": "romanization",
-        "partOfSpeech": "grammar category"
-      }
-    ]
-  },
-  "imagePrompt": "Detailed scene description for image generation"
-}`
-          },
-          {
-            role: 'user',
-            content: `Create a Korean lesson about ${interest} for ${level} level students. Make the title and description unique and specific to this particular lesson, not generic.`
-          }
-        ],
+        messages,
         temperature: 0.7,
       }),
     });
