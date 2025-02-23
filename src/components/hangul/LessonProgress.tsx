@@ -13,35 +13,9 @@ interface LessonProgressProps {
 export function LessonProgress({ lessonId, onComplete }: LessonProgressProps) {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showMasteryCheck, setShowMasteryCheck] = useState(false);
-  const [masteryChecks, setMasteryChecks] = useState({
-    recognition: false,
-    pronunciation: false,
-    writing: false
-  });
   const { toast } = useToast();
 
-  const handleMasteryCheck = (type: keyof typeof masteryChecks) => {
-    setMasteryChecks(prev => ({
-      ...prev,
-      [type]: true
-    }));
-  };
-
-  const handleLessonComplete = async () => {
-    if (!showMasteryCheck) {
-      setShowMasteryCheck(true);
-      return;
-    }
-
-    if (!Object.values(masteryChecks).every(Boolean)) {
-      toast({
-        title: "Complete all checks",
-        description: "Please complete all mastery checks before continuing.",
-        variant: "destructive",
-      });
-      return;
-    }
-
+  const handleLessonComplete = async (isKnown: boolean) => {
     setIsSubmitting(true);
     try {
       const { data: { user } } = await supabase.auth.getUser();
@@ -51,24 +25,18 @@ export function LessonProgress({ lessonId, onComplete }: LessonProgressProps) {
         user_id: user.id,
         character_id: lessonId,
         total_practice_sessions: 1,
-        recognition_accuracy: 100,
-        sound_association_accuracy: 100,
+        recognition_accuracy: isKnown ? 100 : 50,
+        sound_association_accuracy: isKnown ? 100 : 50,
         last_reviewed: new Date().toISOString(),
       });
 
       if (error) throw error;
 
       toast({
-        title: "Progress Saved",
-        description: "Keep up the great work! 잘 했어요! (jal haesseoyo!)",
-      });
-      
-      // Reset state before moving to next lesson
-      setShowMasteryCheck(false);
-      setMasteryChecks({
-        recognition: false,
-        pronunciation: false,
-        writing: false
+        title: isKnown ? "Character Marked as Known" : "Keep Practicing!",
+        description: isKnown 
+          ? "Great job! Keep up the momentum!"
+          : "Don't worry, you'll master it with practice!",
       });
       
       onComplete();
@@ -81,25 +49,25 @@ export function LessonProgress({ lessonId, onComplete }: LessonProgressProps) {
       });
     } finally {
       setIsSubmitting(false);
+      setShowMasteryCheck(false);
     }
   };
 
   return (
     <div className="space-y-4">
-      {showMasteryCheck && (
+      {showMasteryCheck ? (
         <MasteryChecks
-          checks={masteryChecks}
-          onCheck={handleMasteryCheck}
+          onComplete={handleLessonComplete}
         />
+      ) : (
+        <Button
+          className="w-full"
+          onClick={() => setShowMasteryCheck(true)}
+          disabled={isSubmitting}
+        >
+          Check Understanding
+        </Button>
       )}
-
-      <Button
-        className="w-full"
-        onClick={handleLessonComplete}
-        disabled={isSubmitting}
-      >
-        {isSubmitting ? "Saving Progress..." : showMasteryCheck ? "Complete & Continue" : "Check Understanding"}
-      </Button>
     </div>
   );
 }

@@ -1,44 +1,31 @@
 
 import { Button } from "@/components/ui/button";
-import { CheckCircle } from "lucide-react";
+import { Check, BookOpen } from "lucide-react";
 
 interface MasteryChecksProps {
-  checks: {
-    recognition: boolean;
-    pronunciation: boolean;
-    writing: boolean;
-  };
-  onCheck: (type: 'recognition' | 'pronunciation' | 'writing') => void;
+  onComplete: (isKnown: boolean) => void;
 }
 
-export function MasteryChecks({ checks, onCheck }: MasteryChecksProps) {
+export function MasteryChecks({ onComplete }: MasteryChecksProps) {
   return (
     <div className="space-y-4">
-      <h3 className="font-semibold text-lg text-center">Mastery Checks</h3>
-      <div className="grid gap-4">
+      <h3 className="font-semibold text-lg text-center">How well do you know this character?</h3>
+      <div className="grid grid-cols-2 gap-4">
         <Button
-          variant={checks.recognition ? "default" : "outline"}
-          onClick={() => onCheck('recognition')}
-          className="flex justify-between"
+          variant="default"
+          onClick={() => onComplete(true)}
+          className="flex items-center justify-center gap-2"
         >
-          <span>I can recognize this character</span>
-          {checks.recognition && <CheckCircle className="h-4 w-4 ml-2" />}
+          <Check className="h-4 w-4" />
+          Known
         </Button>
         <Button
-          variant={checks.pronunciation ? "default" : "outline"}
-          onClick={() => onCheck('pronunciation')}
-          className="flex justify-between"
+          variant="outline"
+          onClick={() => onComplete(false)}
+          className="flex items-center justify-center gap-2"
         >
-          <span>I can pronounce this character</span>
-          {checks.pronunciation && <CheckCircle className="h-4 w-4 ml-2" />}
-        </Button>
-        <Button
-          variant={checks.writing ? "default" : "outline"}
-          onClick={() => onCheck('writing')}
-          className="flex justify-between"
-        >
-          <span>I can write this character</span>
-          {checks.writing && <CheckCircle className="h-4 w-4 ml-2" />}
+          <BookOpen className="h-4 w-4" />
+          Still Under Review
         </Button>
       </div>
     </div>
