@@ -124,7 +124,7 @@ export function HangulLesson({ lesson, onComplete, onNext, onPrevious }: HangulL
           .eq('id', lesson.mnemonic_image_id)
           .single();
 
-        if (imageData) { // Changed this check to be less specific
+        if (imageData) {
           console.log("Fetched existing mnemonic image:", imageData.image_url);
           setMnemonicImage(imageData.image_url);
           setIsLoadingImage(false);
