@@ -1,14 +1,14 @@
+
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { useToast } from "@/components/ui/use-toast";
 import { ArrowLeft } from "lucide-react";
-import { AudioPlayer } from '@/components/lesson/AudioPlayer';
 import { VocabularyCard } from '@/components/lesson/VocabularyCard';
 import { LessonContent } from '@/components/lesson/LessonContent';
+import { LessonHeader } from '@/components/lesson/LessonHeader';
 
 interface AudioContent {
   url?: string;
@@ -24,12 +24,6 @@ interface Lesson {
   vocabulary?: any[];
   audio_content?: AudioContent | null;
   mnemonic_images?: Record<string, string> | null;
-}
-
-interface LessonContent {
-  content?: {
-    content?: string;
-  };
 }
 
 export default function LessonDetail() {
@@ -69,15 +63,11 @@ export default function LessonDetail() {
 
       let contentStr = JSON.stringify(lessonData.content);
 
-      // Parse mnemonic_images and ensure it's correctly typed
       let parsedMnemonicImages: Record<string, string> | null = null;
       if (lessonData.mnemonic_images) {
-        // If it's a string, parse it
         if (typeof lessonData.mnemonic_images === 'string') {
           parsedMnemonicImages = JSON.parse(lessonData.mnemonic_images);
-        }
-        // If it's already an object, use it directly
-        else if (typeof lessonData.mnemonic_images === 'object') {
+        } else if (typeof lessonData.mnemonic_images === 'object') {
           parsedMnemonicImages = lessonData.mnemonic_images as Record<string, string>;
         }
       }
@@ -154,25 +144,13 @@ export default function LessonDetail() {
         </Button>
 
         <Card className="p-6">
-          <div className="flex items-center justify-between mb-6">
-            <div className="flex items-center space-x-4">
-              <Avatar className="h-16 w-16">
-                <AvatarImage src="/placeholder.svg" alt="Teacher" />
-                <AvatarFallback>선생님</AvatarFallback>
-              </Avatar>
-              <div>
-                <h1 className="text-2xl font-bold">{lesson.title}</h1>
-                <p className="text-gray-600">{lesson.description}</p>
-              </div>
-            </div>
-            <AudioPlayer
-              lessonId={lesson.id}
-              title={lesson.title}
-              description={lesson.description}
-              audioUrl={audioUrl}
-              onAudioUrlUpdate={setAudioUrl}
-            />
-          </div>
+          <LessonHeader 
+            title={lesson.title}
+            description={lesson.description}
+            lessonId={lesson.id}
+            audioUrl={audioUrl}
+            onAudioUrlUpdate={setAudioUrl}
+          />
 
           {lesson.vocabulary && lesson.vocabulary.length > 0 && (
             <VocabularyCard
