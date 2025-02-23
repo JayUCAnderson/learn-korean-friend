@@ -6,6 +6,8 @@ import type { Database } from "@/integrations/supabase/types";
 
 type HangulLessonType = Database['public']['Views']['hangul_lessons_complete']['Row'];
 
+export type LessonSection = 'vowels' | 'basic_consonants' | 'advanced_consonants';
+
 export function useHangulLessons() {
   const [lessons, setLessons] = useState<HangulLessonType[]>([]);
   const [currentLessonIndex, setCurrentLessonIndex] = useState(0);
@@ -68,11 +70,25 @@ export function useHangulLessons() {
     }
   }, [currentLessonIndex]);
 
+  const getLessonSection = useCallback((index: number): LessonSection => {
+    // Assuming lessons are ordered: vowels first, then basic consonants, then advanced consonants
+    const totalLessons = lessons.length;
+    const sectionSize = Math.ceil(totalLessons / 3);
+    
+    if (index < sectionSize) return 'vowels';
+    if (index < sectionSize * 2) return 'basic_consonants';
+    return 'advanced_consonants';
+  }, [lessons.length]);
+
+  const currentSection = getLessonSection(currentLessonIndex);
+
   return {
     lessons,
     currentLessonIndex,
     isLoading,
     handleNext,
     handlePrevious,
+    currentSection,
+    getLessonSection,
   };
 }

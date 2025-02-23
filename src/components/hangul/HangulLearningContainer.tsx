@@ -12,7 +12,7 @@ interface HangulLearningContainerProps {
 }
 
 export function HangulLearningContainer({ onComplete }: HangulLearningContainerProps) {
-  const { lessons, currentLessonIndex, isLoading, handleNext, handlePrevious } = useHangulLessons();
+  const { lessons, currentLessonIndex, isLoading, handleNext, handlePrevious, currentSection } = useHangulLessons();
   const { toast } = useToast();
 
   const handleLessonComplete = () => {
@@ -35,34 +35,19 @@ export function HangulLearningContainer({ onComplete }: HangulLearningContainerP
     return <EmptyState />;
   }
 
-  // Calculate which theme section we're in based on lesson index
-  const getThemeSection = (index: number, total: number) => {
-    const progress = (index / total) * 100;
-    if (progress < 20) return "temple";
-    if (progress < 40) return "hanbok";
-    if (progress < 60) return "seasonal";
-    if (progress < 80) return "garden";
-    return "palace";
-  };
-
-  const themeSection = getThemeSection(currentLessonIndex, lessons.length);
+  const themeSection = currentSection === 'vowels' ? 'temple' :
+                      currentSection === 'basic_consonants' ? 'hanbok' : 'palace';
   
-  // Define background gradients for each theme
   const themeGradients = {
-    temple: "from-[#D46A6A] to-[#F4B183]", // Warm temple colors
-    hanbok: "from-[#9b87f5] to-[#D6BCFA]", // Traditional hanbok purple
-    seasonal: "from-[#F2FCE2] to-[#FEF7CD]", // Spring to Summer
-    garden: "from-[#95D1CC] to-[#E3F4F4]", // Garden fresh
-    palace: "from-[#8B5CF6] to-[#D946EF]", // Royal colors
+    temple: "from-[#FFDEE2] to-[#FEF7CD]", // Vowels theme
+    hanbok: "from-[#9b87f5] to-[#7E69AB]", // Basic consonants theme
+    palace: "from-[#8B5CF6] to-[#D946EF]", // Advanced consonants theme
   };
 
-  // Define theme descriptions
-  const themeDescriptions = {
-    temple: "Beginning your journey at the temple entrance",
-    hanbok: "Learning through traditional Korean colors",
-    seasonal: "Progress through Korea's beautiful seasons",
-    garden: "Walking through a peaceful Korean garden",
-    palace: "Reaching the majestic Gyeongbokgung Palace",
+  const sectionDescriptions = {
+    vowels: "Master the building blocks of Hangul with vowels",
+    basic_consonants: "Learn the essential consonants of the Korean alphabet",
+    advanced_consonants: "Challenge yourself with complex consonant combinations",
   };
 
   return (
@@ -79,7 +64,7 @@ export function HangulLearningContainer({ onComplete }: HangulLearningContainerP
               theme={themeSection}
             />
             <p className="text-center mt-2 text-gray-600 italic">
-              {themeDescriptions[themeSection]}
+              {sectionDescriptions[currentSection]}
             </p>
           </div>
           

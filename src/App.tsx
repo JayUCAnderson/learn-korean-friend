@@ -8,6 +8,7 @@ import Index from "./pages/Index";
 import Auth from "./pages/Auth";
 import NotFound from "./pages/NotFound";
 import LessonDetail from "./pages/LessonDetail";
+import HangulLearning from "./pages/HangulLearning";
 
 const queryClient = new QueryClient();
 
@@ -20,8 +21,8 @@ const App = () => (
         <Routes>
           <Route path="/" element={<Index />} />
           <Route path="/auth" element={<Auth />} />
+          <Route path="/hangul" element={<HangulLearning />} />
           <Route path="/lesson/:id" element={<LessonDetail />} />
-          {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
         </Routes>
       </BrowserRouter>

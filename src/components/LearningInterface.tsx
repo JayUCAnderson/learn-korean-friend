@@ -10,12 +10,14 @@ import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/components/ui/use-toast";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Lock } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 
 const LearningInterface = ({ userData }: { userData: any }) => {
   const [activeTab, setActiveTab] = useState("hangul");
   const [hangulCompleted, setHangulCompleted] = useState(false);
   const [isCheckingProgress, setIsCheckingProgress] = useState(true);
   const { toast } = useToast();
+  const navigate = useNavigate();
   const theme = getThemeColors(
     Array.isArray(userData.interests) && userData.interests.length > 0 
       ? userData.interests[0].toLowerCase()
@@ -28,14 +30,12 @@ const LearningInterface = ({ userData }: { userData: any }) => {
 
   const checkHangulProgress = async () => {
     try {
-      // Get total number of Hangul lessons
       const { data: hangulLessons, error: lessonError } = await supabase
         .from('hangul_lessons')
         .select('id');
 
       if (lessonError) throw lessonError;
 
-      // Get user's completed lessons
       const { data: progress, error: progressError } = await supabase
         .from('hangul_progress')
         .select('*')
@@ -43,7 +43,6 @@ const LearningInterface = ({ userData }: { userData: any }) => {
 
       if (progressError) throw progressError;
 
-      // Check if user has completed all lessons
       const isComplete = progress && progress.length >= hangulLessons.length;
       setHangulCompleted(isComplete);
     } catch (error) {
@@ -54,6 +53,11 @@ const LearningInterface = ({ userData }: { userData: any }) => {
   };
 
   const handleTabChange = (value: string) => {
+    if (value === "hangul") {
+      navigate("/hangul");
+      return;
+    }
+    
     if (value === "lessons" && !hangulCompleted) {
       toast({
         title: "Complete Hangul First",
@@ -81,17 +85,6 @@ const LearningInterface = ({ userData }: { userData: any }) => {
               )}
             </TabsTrigger>
           </TabsList>
-          
-          <TabsContent value="hangul" className="mt-6">
-            {!hangulCompleted && (
-              <Alert className="mb-6">
-                <AlertDescription>
-                  Complete the Hangul lessons to unlock additional content. Master the Korean alphabet first!
-                </AlertDescription>
-              </Alert>
-            )}
-            <HangulLearningContainer onComplete={checkHangulProgress} />
-          </TabsContent>
           
           <TabsContent value="lessons" className="mt-6">
             {hangulCompleted ? (
