@@ -139,8 +139,8 @@ Return ONLY a JSON object without any markdown formatting or code block indicato
 
     // Clean the response to ensure it's valid JSON
     let content = data.choices[0].message.content.trim();
-    // Remove any markdown code block indicators if present
-    content = content.replace(/^```json\s*/, '').replace(/\s*```$/, '');
+    // Remove all markdown code block indicators (```), newlines, etc.
+    content = content.replace(/```/g, '').trim();
     
     try {
       const parsedContent = JSON.parse(content);
@@ -171,3 +171,4 @@ Return ONLY a JSON object without any markdown formatting or code block indicato
     );
   }
 });
+
