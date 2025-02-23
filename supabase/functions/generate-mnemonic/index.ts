@@ -50,7 +50,7 @@ serve(async (req: Request) => {
       )
     }
 
-    // Generate mnemonic image using Fal AI
+    // Generate mnemonic image using Fal AI flux/schnell model
     const falApiKey = Deno.env.get('FAL_AI_API_KEY')
     if (!falApiKey) {
       throw new Error('FAL_AI_API_KEY is not configured')
@@ -61,7 +61,7 @@ serve(async (req: Request) => {
 
     console.log('Generating new mnemonic image with prompt:', finalPrompt)
 
-    const response = await fetch('https://fal.run/fal-ai/fast-sdxl', {
+    const response = await fetch('https://fal.run/fal-ai/flux/schnell', {
       method: 'POST',
       headers: {
         'Authorization': `Key ${falApiKey}`,
@@ -69,9 +69,13 @@ serve(async (req: Request) => {
       },
       body: JSON.stringify({
         prompt: finalPrompt,
-        image_size: "512x512",
-        seed: 42, // For consistent results
-        num_inference_steps: 20,
+        go_fast: true,
+        megapixels: "1",
+        num_outputs: 1,
+        aspect_ratio: "1:1",
+        output_format: "webp",
+        output_quality: 80,
+        num_inference_steps: 4
       }),
     })
 
