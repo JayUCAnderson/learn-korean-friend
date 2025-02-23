@@ -9,7 +9,10 @@ type KoreanLevel = Database['public']['Enums']['korean_level'];
 type LearningContent = {
   title: string;
   description: string;
-  content: any;
+  content: string | {
+    content: string;
+    vocabulary?: VocabularyItem[];
+  };
   difficulty_level: number;
   target_skills: string[];
   key_points: string[];
@@ -82,9 +85,14 @@ export const useLearningSession = () => {
         console.log("Found existing content:", existingContent);
         
         // Parse the nested content structure
-        const parsedContent = typeof existingContent.content.content === 'string' 
-          ? parseMarkdownContent(existingContent.content.content)
-          : existingContent.content;
+        let parsedContent: ParsedContent;
+        if (typeof existingContent.content === 'object' && existingContent.content !== null) {
+          parsedContent = typeof existingContent.content.content === 'string'
+            ? parseMarkdownContent(existingContent.content.content)
+            : { vocabulary: [] };
+        } else {
+          parsedContent = { vocabulary: [] };
+        }
 
         // Increment usage count
         await supabase
@@ -93,7 +101,12 @@ export const useLearningSession = () => {
           .eq('id', existingContent.id);
           
         return {
-          ...existingContent.content,
+          title: existingContent.content.title,
+          description: existingContent.content.description,
+          content: existingContent.content.content,
+          difficulty_level: existingContent.content.difficulty_level,
+          target_skills: existingContent.content.target_skills,
+          key_points: existingContent.content.key_points,
           vocabulary: parsedContent.vocabulary || []
         };
       }
@@ -156,9 +169,9 @@ export const useLearningSession = () => {
       // Parse the content to get vocabulary if needed
       let vocabularyItems: VocabularyItem[] = [];
       if (content?.content) {
-        const parsedContent = typeof content.content.content === 'string'
-          ? parseMarkdownContent(content.content.content)
-          : content.content;
+        const parsedContent = typeof content.content === 'object' && content.content !== null && 'content' in content.content
+          ? parseMarkdownContent(content.content.content as string)
+          : { vocabulary: [] };
         vocabularyItems = parsedContent.vocabulary || [];
       }
 
@@ -181,15 +194,15 @@ export const useLearningSession = () => {
         for (const vocab of vocabularyItems) {
           const { error: vocabError } = await supabase
             .from('vocabulary_progress')
-            .upsert({
+            .insert({
               user_id: user.id,
-              vocabulary_item: vocab,
+              vocabulary_item: vocab as unknown as Database['public']['Tables']['vocabulary_progress']['Insert']['vocabulary_item'],
               times_encountered: 1,
               times_correct: performance >= 0.7 ? 1 : 0,
               last_reviewed: new Date().toISOString()
-            }, {
-              onConflict: 'user_id,vocabulary_item'
-            });
+            })
+            .select()
+            .single();
 
           if (vocabError) console.error("Error updating vocabulary progress:", vocabError);
         }
