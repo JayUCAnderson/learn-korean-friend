@@ -2,22 +2,24 @@
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { RefreshCw } from "lucide-react";
+import { useMnemonicImage } from "./utils/useMnemonicImage";
+import { useMnemonicRegenerator } from "./utils/useMnemonicRegenerator";
+import type { Database } from "@/integrations/supabase/types";
+
+type LessonType = Database['public']['Views']['hangul_lessons_complete']['Row'];
 
 interface MnemonicImageProps {
-  mnemonicImage: string | null;
+  lesson: LessonType;
   mnemonicBase: string;
-  isLoadingImage: boolean;
-  isRegeneratingImage: boolean;
-  onRegenerateImage: () => void;
 }
 
 export function MnemonicImage({
-  mnemonicImage,
+  lesson,
   mnemonicBase,
-  isLoadingImage,
-  isRegeneratingImage,
-  onRegenerateImage,
 }: MnemonicImageProps) {
+  const { mnemonicImage, isLoadingImage } = useMnemonicImage(lesson);
+  const { isRegeneratingImage, regenerateMnemonicImage } = useMnemonicRegenerator(lesson);
+
   if (isLoadingImage || !mnemonicImage) {
     return (
       <div className="flex flex-col items-center space-y-2">
@@ -41,7 +43,7 @@ export function MnemonicImage({
             variant="outline"
             size="icon"
             className="absolute top-2 right-2"
-            onClick={onRegenerateImage}
+            onClick={regenerateMnemonicImage}
             disabled={isRegeneratingImage}
           >
             <RefreshCw className={`h-4 w-4 ${isRegeneratingImage ? 'animate-spin' : ''}`} />

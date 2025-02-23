@@ -1,4 +1,3 @@
-
 import { useState, useEffect, useRef, memo } from "react";
 import { Card } from "@/components/ui/card";
 import type { Database } from "@/integrations/supabase/types";
@@ -27,13 +26,6 @@ export const HangulLesson = memo(function HangulLesson({
   const [audioUrl, setAudioUrl] = useState<string | null>(null);
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const { isLoadingAudio, processAudio } = useAudioController();
-  
-  const {
-    mnemonicImage,
-    isLoadingImage,
-    isRegeneratingImage,
-    regenerateMnemonicImage
-  } = useMnemonicImage(lesson);
 
   useEffect(() => {
     if (!lesson?.id) return;
@@ -96,11 +88,8 @@ export const HangulLesson = memo(function HangulLesson({
 
       <div className="space-y-4">
         <MnemonicImage
-          mnemonicImage={mnemonicImage}
+          lesson={lesson}
           mnemonicBase={lesson.mnemonic_base}
-          isLoadingImage={isLoadingImage}
-          isRegeneratingImage={isRegeneratingImage}
-          onRegenerateImage={regenerateMnemonicImage}
         />
 
         <ExamplesSection examples={lesson.examples as Record<string, string>} />
@@ -113,4 +102,3 @@ export const HangulLesson = memo(function HangulLesson({
     </Card>
   );
 });
-
