@@ -35,9 +35,15 @@ export function HangulLandingPage() {
     if (!lessons.length) return 0;
     
     const sectionLessons = lessons.filter(lesson => getLessonSection(lesson) === section);
-    const completedLessons = sectionLessons.filter((_, index) => index <= currentLessonIndex).length;
+    if (sectionLessons.length === 0) return 0;
     
-    return (completedLessons / sectionLessons.length) * 100;
+    // Find the last completed lesson index in this section
+    const completedCount = sectionLessons.filter((_, index) => {
+      const lessonIndexInFullList = lessons.findIndex(l => l.id === sectionLessons[index].id);
+      return lessonIndexInFullList <= currentLessonIndex;
+    }).length;
+    
+    return (completedCount / sectionLessons.length) * 100;
   };
 
   const isAvailable = (section: keyof typeof sectionInfo) => {
@@ -47,23 +53,30 @@ export function HangulLandingPage() {
   };
 
   const findFirstIncompleteLessonIndex = (section: keyof typeof sectionInfo) => {
+    // Filter lessons for the specific section first
     const sectionLessons = lessons.filter(lesson => getLessonSection(lesson) === section);
-    const sectionStartIndex = lessons.findIndex(lesson => getLessonSection(lesson) === section);
     
-    if (sectionStartIndex === -1) return 0;
+    // Find the index of the first incomplete lesson in this section
+    const firstIncompleteIndex = sectionLessons.findIndex((lesson, index) => {
+      const lessonIndexInFullList = lessons.findIndex(l => l.id === lesson.id);
+      return lessonIndexInFullList > currentLessonIndex;
+    });
     
-    const firstIncompleteInSection = sectionLessons.findIndex((_, index) => 
-      index > (currentLessonIndex - sectionStartIndex)
-    );
+    // If all lessons are complete or no lessons found, return the first lesson of the section
+    if (firstIncompleteIndex === -1) {
+      const sectionStartIndex = lessons.findIndex(lesson => getLessonSection(lesson) === section);
+      return sectionStartIndex !== -1 ? sectionStartIndex : 0;
+    }
     
-    return sectionStartIndex + (firstIncompleteInSection === -1 ? 0 : firstIncompleteInSection);
+    // Get the actual index in the full lessons array
+    return lessons.findIndex(lesson => lesson.id === sectionLessons[firstIncompleteIndex].id);
   };
 
   const handleContinueLearning = (section: keyof typeof sectionInfo) => {
     if (!lessons.length) return;
     
     const lessonIndex = findFirstIncompleteLessonIndex(section);
-    console.log(`Navigating to section: ${section}, lesson: ${lessonIndex}`);
+    console.log(`Navigating to section: ${section}, lesson index: ${lessonIndex}`);
     navigate(`/hangul/learn?section=${section}&lesson=${lessonIndex}`);
   };
 
