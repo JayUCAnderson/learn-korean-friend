@@ -1,7 +1,6 @@
 
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { useToast } from "@/components/ui/use-toast";
 import type { Database } from "@/integrations/supabase/types";
 import { imageCache } from "@/hooks/useHangulImagePreloader";
 
@@ -11,7 +10,6 @@ export function useMnemonicImage(lesson: LessonType) {
   const [mnemonicImage, setMnemonicImage] = useState<string | null>(null);
   const [isLoadingImage, setIsLoadingImage] = useState(true);
   const [isRegeneratingImage, setIsRegeneratingImage] = useState(false);
-  const { toast } = useToast();
 
   useEffect(() => {
     let isMounted = true;
@@ -22,7 +20,6 @@ export function useMnemonicImage(lesson: LessonType) {
 
         // Try to get from cache first
         if (imageCache.has(lesson.character)) {
-          console.log("Using cached image for:", lesson.character);
           if (isMounted) {
             setMnemonicImage(imageCache.get(lesson.character)!);
             setIsLoadingImage(false);
@@ -30,30 +27,30 @@ export function useMnemonicImage(lesson: LessonType) {
           return;
         }
 
-        // If not in cache and we have a valid mnemonic_image_id, fetch from database
-        if (lesson.mnemonic_image_id) {
-          console.log("Fetching image from database for:", lesson.character);
-          const { data: imageData, error: imageError } = await supabase
-            .from('mnemonic_images')
-            .select('image_url')
-            .eq('id', lesson.mnemonic_image_id)
-            .maybeSingle();
+        // Try to find existing mnemonic image
+        const { data: existingImage } = await supabase
+          .from('mnemonic_images')
+          .select('id, image_url')
+          .eq('character', lesson.character)
+          .maybeSingle();
 
-          if (imageError) throw imageError;
-
-          if (imageData?.image_url) {
-            console.log("Found image in database for:", lesson.character);
-            if (isMounted) {
-              setMnemonicImage(imageData.image_url);
-              imageCache.set(lesson.character, imageData.image_url);
-            }
-            setIsLoadingImage(false);
-            return;
+        if (existingImage?.image_url) {
+          if (isMounted) {
+            setMnemonicImage(existingImage.image_url);
+            imageCache.set(lesson.character, existingImage.image_url);
           }
+          
+          // Update lesson with mnemonic_image_id if needed
+          if (lesson.mnemonic_image_id !== existingImage.id) {
+            await supabase
+              .from('hangul_lessons')
+              .update({ mnemonic_image_id: existingImage.id })
+              .eq('id', lesson.id);
+          }
+          return;
         }
 
-        // If no valid image found or no mnemonic_image_id, generate one
-        console.log("No valid image found, generating for:", lesson.character);
+        // Generate new image if none exists
         await regenerateMnemonicImage();
       } catch (error) {
         console.error("Error fetching mnemonic image:", error);
@@ -72,21 +69,13 @@ export function useMnemonicImage(lesson: LessonType) {
   }, [lesson.character]);
 
   const regenerateMnemonicImage = async () => {
-    if (process.env.NODE_ENV !== 'development') {
-      toast({
-        title: "Feature not available",
-        description: "Image regeneration is only available in development mode.",
-        variant: "destructive",
-      });
-      return;
-    }
-
+    if (process.env.NODE_ENV !== 'development') return;
+    
     setIsRegeneratingImage(true);
     setMnemonicImage(null);
     imageCache.delete(lesson.character);
     
     try {
-      console.log("Initiating mnemonic image regeneration for character:", lesson.character);
       const { data: generatedData, error } = await supabase.functions.invoke<{
         imageUrl: string;
         imageId: string;
@@ -99,34 +88,20 @@ export function useMnemonicImage(lesson: LessonType) {
       });
 
       if (error) throw error;
-      if (!generatedData) throw new Error("No data received from edge function");
 
-      if (generatedData.imageUrl) {
-        console.log("New mnemonic image received:", generatedData.imageUrl);
+      if (generatedData?.imageUrl) {
         setMnemonicImage(generatedData.imageUrl);
         imageCache.set(lesson.character, generatedData.imageUrl);
         
         if (generatedData.imageId) {
-          const { error: updateError } = await supabase
+          await supabase
             .from('hangul_lessons')
             .update({ mnemonic_image_id: generatedData.imageId })
             .eq('id', lesson.id);
-
-          if (updateError) throw updateError;
         }
-
-        toast({
-          title: "Success",
-          description: "Mnemonic image regenerated successfully.",
-        });
       }
     } catch (error: any) {
       console.error("Error regenerating mnemonic image:", error);
-      toast({
-        title: "Error",
-        description: `Failed to regenerate mnemonic image: ${error.message}`,
-        variant: "destructive",
-      });
     } finally {
       setIsRegeneratingImage(false);
     }
@@ -139,4 +114,3 @@ export function useMnemonicImage(lesson: LessonType) {
     regenerateMnemonicImage
   };
 }
-
