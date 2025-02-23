@@ -39,7 +39,7 @@ export function useMnemonicImage(lesson: LessonType) {
       }>('generate-mnemonic', {
         body: {
           character: lesson.character,
-          basePrompt: `Create a simple, clear, memorable mnemonic image that helps remember the Korean ${lesson.character_type[0]} "${lesson.character}" by emphasizing its visual similarity to ${lesson.mnemonic_base}. Make the image focus on the key visual elements that make it look like the character.`,
+          basePrompt: lesson.mnemonic_base,
           characterType: lesson.character_type[0]
         }
       });
@@ -121,7 +121,7 @@ export function useMnemonicImage(lesson: LessonType) {
       }>('generate-mnemonic', {
         body: {
           character: lesson.character,
-          basePrompt: `Create a simple, clear, memorable mnemonic image that helps remember the Korean ${lesson.character_type[0]} "${lesson.character}" by emphasizing its visual similarity to ${lesson.mnemonic_base}. Make the image focus on the key visual elements that make it look like the character.`,
+          basePrompt: lesson.mnemonic_base,
           characterType: lesson.character_type[0]
         }
       });
