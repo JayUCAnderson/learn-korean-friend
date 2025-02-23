@@ -69,8 +69,8 @@ serve(async (req: Request) => {
     // Generate new image with explicit parameter validation
     console.log('No existing image found, generating new one...')
     
-    // Construct an enhanced prompt that focuses on visual similarity
-    const enhancedPrompt = `Create a simple, clear illustration that visually represents a "${basePrompt}". The image should be minimal, focusing on the key visual elements that make it look similar to the Korean character "${character}". Use clean lines and shapes, with minimal background or distracting elements. Make it memorable and easy to recognize.`
+    // Construct an enhanced prompt that includes Korean cultural elements
+    const enhancedPrompt = `Design ${basePrompt} that blends traditional Korean cultural elements with modern K-pop aesthetics. Use a vibrant color palette inspired by hanbok (traditional Korean clothing) and temple architecture. The image should clearly resemble the Korean character "${character}" while maintaining cultural authenticity.`
 
     const requestBody = {
       prompt: enhancedPrompt,
