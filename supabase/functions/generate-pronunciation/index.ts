@@ -14,7 +14,7 @@ serve(async (req) => {
   }
 
   try {
-    const { character } = await req.json()
+    const { character, voiceId } = await req.json()
 
     if (!character) {
       throw new Error('Character is required')
@@ -47,8 +47,8 @@ serve(async (req) => {
 
     console.log('Generating new pronunciation for character:', character)
     
-    // Generate new pronunciation using ElevenLabs API
-    const response = await fetch('https://api.elevenlabs.io/v1/text-to-speech/pFZP5JQG7iQjIQuC4Bku', {
+    // Generate new pronunciation using ElevenLabs API with specified parameters
+    const response = await fetch(`https://api.elevenlabs.io/v1/text-to-speech/${voiceId}`, {
       method: 'POST',
       headers: {
         'Accept': 'audio/mpeg',
@@ -59,8 +59,10 @@ serve(async (req) => {
         text: character,
         model_id: "eleven_multilingual_v2",
         voice_settings: {
-          stability: 0.85,
-          similarity_boost: 0.75,
+          stability: 0.75,
+          similarity_boost: 0.53,
+          style: 0.6, // This is the style exaggeration parameter (60%)
+          use_speaker_boost: true
         }
       }),
     })
