@@ -1,11 +1,14 @@
+
 import { useState, useEffect, useRef } from "react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Progress } from "@/components/ui/progress";
 import type { Database } from "@/integrations/supabase/types";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/components/ui/use-toast";
-import { Loader2, Volume2, RefreshCw, ArrowLeft, ArrowRight, CheckCircle } from "lucide-react";
+import { LessonHeader } from "./LessonHeader";
+import { MnemonicImage } from "./MnemonicImage";
+import { ExamplesSection } from "./ExamplesSection";
+import { MasteryChecks } from "./MasteryChecks";
 
 type HangulLessonType = Database['public']['Tables']['hangul_lessons']['Row'];
 
@@ -17,7 +20,6 @@ interface HangulLessonProps {
 }
 
 export function HangulLesson({ lesson, onComplete, onNext, onPrevious }: HangulLessonProps) {
-  const [showExamples, setShowExamples] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [mnemonicImage, setMnemonicImage] = useState<string | null>(null);
   const [isLoadingImage, setIsLoadingImage] = useState(true);
@@ -227,130 +229,38 @@ export function HangulLesson({ lesson, onComplete, onNext, onPrevious }: HangulL
 
   return (
     <Card className="p-6 space-y-6">
-      <div className="flex justify-between items-center">
-        <Button
-          variant="ghost"
-          size="icon"
-          onClick={onPrevious}
-          disabled={!onPrevious}
-        >
-          <ArrowLeft className="h-4 w-4" />
-        </Button>
-        <div className="text-center flex-1">
-          <h2 className="text-3xl font-bold mb-2">{lesson.character}</h2>
-          <div className="flex items-center justify-center gap-4">
-            <p className="text-lg text-gray-600">
-              Romanization: {lesson.romanization}
-            </p>
-            <Button
-              variant="outline"
-              size="icon"
-              onClick={playPronunciation}
-              disabled={isLoadingAudio || !audioUrl}
-            >
-              {isLoadingAudio ? (
-                <Loader2 className="h-4 w-4 animate-spin" />
-              ) : (
-                <Volume2 className="h-4 w-4" />
-              )}
-            </Button>
-          </div>
-        </div>
-        <Button
-          variant="ghost"
-          size="icon"
-          onClick={onNext}
-          disabled={!onNext}
-        >
-          <ArrowRight className="h-4 w-4" />
-        </Button>
-      </div>
+      <LessonHeader
+        character={lesson.character}
+        romanization={lesson.romanization}
+        soundDescription={lesson.sound_description}
+        onPlayPronunciation={playPronunciation}
+        onPrevious={onPrevious}
+        onNext={onNext}
+        isLoadingAudio={isLoadingAudio}
+        audioUrl={audioUrl}
+      />
 
       <p className="text-gray-700 text-center">{lesson.sound_description}</p>
 
       <audio ref={audioRef} src={audioUrl || ''} />
 
       <div className="space-y-4">
-        {isLoadingImage ? (
-          <div className="flex justify-center items-center h-48">
-            <Loader2 className="h-8 w-8 animate-spin text-gray-500" />
-          </div>
-        ) : mnemonicImage && (
-          <div className="flex flex-col items-center space-y-2">
-            <div className="relative">
-              <img
-                src={mnemonicImage}
-                alt={`Mnemonic for ${lesson.character}`}
-                className="max-w-sm rounded-lg shadow-lg"
-              />
-              {process.env.NODE_ENV === 'development' && (
-                <Button
-                  variant="outline"
-                  size="icon"
-                  className="absolute top-2 right-2"
-                  onClick={regenerateMnemonicImage}
-                  disabled={isRegeneratingImage}
-                >
-                  <RefreshCw className={`h-4 w-4 ${isRegeneratingImage ? 'animate-spin' : ''}`} />
-                </Button>
-              )}
-            </div>
-            <p className="text-sm text-gray-600 italic">
-              Mnemonic hint: {lesson.mnemonic_base}
-            </p>
-          </div>
+        <MnemonicImage
+          mnemonicImage={mnemonicImage}
+          mnemonicBase={lesson.mnemonic_base}
+          isLoadingImage={isLoadingImage}
+          isRegeneratingImage={isRegeneratingImage}
+          onRegenerateImage={regenerateMnemonicImage}
+        />
+
+        <ExamplesSection examples={lesson.examples as Record<string, string>} />
+
+        {showMasteryCheck && (
+          <MasteryChecks
+            checks={masteryChecks}
+            onCheck={handleMasteryCheck}
+          />
         )}
-
-        <Button
-          className="w-full"
-          variant="outline"
-          onClick={() => setShowExamples(!showExamples)}
-        >
-          {showExamples ? "Hide" : "Show"} Examples
-        </Button>
-
-        {showExamples && (
-          <div className="p-4 bg-gray-50 rounded-lg">
-            {Object.entries(lesson.examples as Record<string, string>).map(([korean, english]) => (
-              <div key={korean} className="mb-2">
-                <p className="font-semibold">{korean}</p>
-                <p className="text-gray-600">{english}</p>
-              </div>
-            ))}
-          </div>
-        )}
-
-        {showMasteryCheck ? (
-          <div className="space-y-4">
-            <h3 className="font-semibold text-lg text-center">Mastery Checks</h3>
-            <div className="grid gap-4">
-              <Button
-                variant={masteryChecks.recognition ? "default" : "outline"}
-                onClick={() => handleMasteryCheck('recognition')}
-                className="flex justify-between"
-              >
-                <span>I can recognize this character</span>
-                {masteryChecks.recognition && <CheckCircle className="h-4 w-4 ml-2" />}
-              </Button>
-              <Button
-                variant={masteryChecks.pronunciation ? "default" : "outline"}
-                onClick={() => handleMasteryCheck('pronunciation')}
-                className="flex justify-between"
-              >
-                <span>I can pronounce this character</span>
-                {masteryChecks.pronunciation && <CheckCircle className="h-4 w-4 ml-2" />}
-              </Button>
-              <Button
-                variant={masteryChecks.writing ? "default" : "outline"}
-                onClick={() => handleMasteryCheck('writing')}
-                className="flex justify-between"
-              >
-                <span>I can write this character</span>
-                {masteryChecks.writing && <CheckCircle className="h-4 w-4 ml-2" />}
-              </Button>
-            </div>
-          </div>
-        ) : null}
 
         <Button
           className="w-full"
