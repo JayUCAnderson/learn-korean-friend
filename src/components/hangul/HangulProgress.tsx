@@ -9,7 +9,8 @@ interface HangulProgressProps {
 
 export function HangulProgress({ theme }: HangulProgressProps) {
   const { currentLessonInSection, sectionLessons, currentSection } = useHangulLessons();
-  const progressPercentage = (currentLessonInSection / sectionLessons) * 100;
+
+  const progressPercentage = Math.min(Math.max((currentLessonInSection / sectionLessons) * 100, 0), 100);
 
   const themeColors = {
     temple: "bg-[#D46A6A]",

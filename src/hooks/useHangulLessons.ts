@@ -16,6 +16,13 @@ export function useHangulLessons() {
   const { toast } = useToast();
   const [searchParams] = useSearchParams();
 
+  const getLessonSection = useCallback((lesson: HangulLessonType): LessonSection => {
+    if (!lesson) return 'vowels';
+    if (lesson.character_type?.includes('vowel')) return 'vowels';
+    if (lesson.character_type?.includes('final_consonant')) return 'advanced_consonants';
+    return 'basic_consonants';
+  }, []);
+
   const fetchLessons = useCallback(async () => {
     try {
       const { data: lessonsData, error: lessonsError } = await supabase
@@ -72,25 +79,18 @@ export function useHangulLessons() {
     }
   }, [currentLessonIndex]);
 
-  const getLessonSection = useCallback((lesson: HangulLessonType): LessonSection => {
-    if (lesson.character_type?.includes('vowel')) return 'vowels';
-    if (lesson.character_type?.includes('final_consonant')) return 'advanced_consonants';
-    return 'basic_consonants';
-  }, []);
-
-  // Calculate current section and progress
-  const currentLesson = lessons[currentLessonIndex];
-  const currentSection = currentLesson ? getLessonSection(currentLesson) : 'vowels';
+  // Initialize current lesson and section
+  const currentLesson = lessons[currentLessonIndex] || null;
+  const currentSection = getLessonSection(currentLesson as HangulLessonType);
   
-  // Filter lessons by current section
+  // Calculate section-specific values
   const sectionLessons = lessons.filter(lesson => 
     getLessonSection(lesson) === currentSection
-  ).length;
+  ).length || 1;
 
-  // Calculate current lesson number within section
   const currentLessonInSection = lessons.filter((lesson, index) => 
     index <= currentLessonIndex && getLessonSection(lesson) === currentSection
-  ).length;
+  ).length || 1;
 
   return {
     lessons,
