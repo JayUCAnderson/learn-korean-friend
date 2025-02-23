@@ -197,6 +197,7 @@ export type Database = {
           content_type: Database["public"]["Enums"]["content_type"]
           created_at: string
           id: string
+          image_prompt: string | null
           interest_category: string[]
           level: Database["public"]["Enums"]["korean_level"]
           topic: string
@@ -207,6 +208,7 @@ export type Database = {
           content_type: Database["public"]["Enums"]["content_type"]
           created_at?: string
           id?: string
+          image_prompt?: string | null
           interest_category: string[]
           level: Database["public"]["Enums"]["korean_level"]
           topic: string
@@ -217,6 +219,7 @@ export type Database = {
           content_type?: Database["public"]["Enums"]["content_type"]
           created_at?: string
           id?: string
+          image_prompt?: string | null
           interest_category?: string[]
           level?: Database["public"]["Enums"]["korean_level"]
           topic?: string
