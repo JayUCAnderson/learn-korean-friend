@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/components/ui/use-toast";
@@ -5,6 +6,7 @@ import { useLearningSession } from "@/hooks/useLearningSession";
 import { LessonList } from "./LessonList";
 import type { Database } from '@/integrations/supabase/types';
 import { useNavigate } from "react-router-dom";
+import type { VocabularyItem } from "@/types/learning";
 
 interface Lesson {
   id: string;
@@ -70,13 +72,19 @@ export const LearningPathContainer = ({ userData, themeColors }: LearningPathCon
       
       if (content) {
         const lessonNumber = lessons.length + 1;
+        
+        // Transform the content into proper JSON structure
+        const lessonContent = typeof content.content === 'string' 
+          ? { content: content.content }
+          : content.content;
+
         const { error } = await supabase
           .from('lessons')
           .insert({
             user_id: userData.id,
             title: content.title,
             description: content.description,
-            content: content.content,
+            content: lessonContent as Database['public']['Tables']['lessons']['Insert']['content'],
             lesson_number: lessonNumber,
             status: 'not_started'
           });
@@ -91,6 +99,7 @@ export const LearningPathContainer = ({ userData, themeColors }: LearningPathCon
         fetchLessons();
       }
     } catch (error: any) {
+      console.error("Error generating lesson:", error);
       toast({
         title: "Error",
         description: "Failed to generate lesson content. Please try again.",
