@@ -3,11 +3,9 @@ import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/components/ui/use-toast";
 import type { Database } from "@/integrations/supabase/types";
+import { imageCache } from "@/hooks/useHangulImagePreloader";
 
 type LessonType = Database['public']['Tables']['hangul_lessons']['Row'];
-
-// Use the same cache instance from useHangulImagePreloader
-declare const imageCache: Map<string, string>;
 
 export function useMnemonicImage(lesson: LessonType) {
   const [mnemonicImage, setMnemonicImage] = useState<string | null>(null);

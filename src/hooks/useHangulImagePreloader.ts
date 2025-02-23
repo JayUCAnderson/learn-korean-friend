@@ -3,8 +3,8 @@ import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/components/ui/use-toast";
 
-// Cache for mnemonic images
-const imageCache = new Map<string, string>();
+// Create and export the cache so it can be imported by other components
+export const imageCache = new Map<string, string>();
 
 export function useHangulImagePreloader(lessons: any[]) {
   const [isPreloading, setIsPreloading] = useState(true);
@@ -96,4 +96,3 @@ export function useHangulImagePreloader(lessons: any[]) {
 
   return { isPreloading, imageCache };
 }
-
