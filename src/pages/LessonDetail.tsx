@@ -24,6 +24,9 @@ interface Lesson {
   status: 'not_started' | 'in_progress' | 'completed';
   vocabulary?: any[];
   audio_content?: AudioContent | null;
+  mnemonic_images?: {
+    [key: string]: string;
+  } | null;
 }
 
 interface LessonContent {
@@ -82,7 +85,8 @@ export default function LessonDetail() {
         content: contentStr,
         status: lessonData.status || 'not_started',
         vocabulary: lessonData.vocabulary,
-        audio_content: parsedAudioContent
+        audio_content: parsedAudioContent,
+        mnemonic_images: lessonData.mnemonic_images
       };
 
       setLesson(typedLesson);
@@ -172,10 +176,14 @@ export default function LessonDetail() {
               currentIndex={currentVocabIndex}
               onNext={handleNextVocab}
               onPrev={handlePrevVocab}
+              mnemonicImage={lesson.mnemonic_images?.[lesson.vocabulary[currentVocabIndex]?.korean]}
             />
           )}
 
-          <LessonContent content={lesson.content} />
+          <LessonContent 
+            content={lesson.content} 
+            mnemonicImages={lesson.mnemonic_images}
+          />
         </Card>
       </div>
     </div>

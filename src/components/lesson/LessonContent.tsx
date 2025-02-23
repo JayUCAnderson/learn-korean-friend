@@ -10,6 +10,9 @@ import { PracticeExercises } from "./PracticeExercises";
 
 interface LessonContentProps {
   content: string;
+  mnemonicImages?: {
+    [key: string]: string;
+  } | null;
 }
 
 type DialoguePart = {
@@ -18,7 +21,7 @@ type DialoguePart = {
   englishText: string;
 };
 
-export function LessonContent({ content }: LessonContentProps) {
+export function LessonContent({ content, mnemonicImages }: LessonContentProps) {
   const [showAllTranslations, setShowAllTranslations] = useState(false);
   
   // Try to parse content as JSON, if it fails assume it's a markdown string
@@ -64,7 +67,8 @@ export function LessonContent({ content }: LessonContentProps) {
             korean: korean || '',
             english: english || '',
             mastery: 0,
-            timesReviewed: 0
+            timesReviewed: 0,
+            mnemonicImage: mnemonicImages?.[korean]
           };
         });
       } else if (header.includes('setting')) {
@@ -142,7 +146,7 @@ export function LessonContent({ content }: LessonContentProps) {
         <TabsContent value="vocabulary">
           <Card className="p-6 bg-gradient-to-b from-white/90 to-white/50 backdrop-blur">
             <h2 className="text-lg font-semibold mb-4">Vocabulary</h2>
-            <VocabularyList vocabulary={parsedContent.vocabulary} />
+            <VocabularyList vocabulary={parsedContent.vocabulary} mnemonicImages={mnemonicImages} />
           </Card>
         </TabsContent>
 

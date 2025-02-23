@@ -12,9 +12,10 @@ interface VocabularyCardProps {
   currentIndex: number;
   onNext: () => void;
   onPrev: () => void;
+  mnemonicImage?: string;
 }
 
-export function VocabularyCard({ vocabulary, currentIndex, onNext, onPrev }: VocabularyCardProps) {
+export function VocabularyCard({ vocabulary, currentIndex, onNext, onPrev, mnemonicImage }: VocabularyCardProps) {
   return (
     <div className="mb-6">
       <h2 className="text-lg font-semibold mb-4">Practice Vocabulary</h2>
@@ -29,7 +30,16 @@ export function VocabularyCard({ vocabulary, currentIndex, onNext, onPrev }: Voc
           </Button>
           <div className="text-center flex-1">
             <p className="text-2xl font-bold mb-2">{vocabulary[currentIndex]?.korean}</p>
-            <p className="text-lg text-gray-600">{vocabulary[currentIndex]?.english}</p>
+            <p className="text-lg text-gray-600 mb-4">{vocabulary[currentIndex]?.english}</p>
+            {mnemonicImage && (
+              <div className="max-w-sm mx-auto">
+                <img 
+                  src={mnemonicImage} 
+                  alt={`Mnemonic for ${vocabulary[currentIndex]?.korean}`}
+                  className="rounded-lg shadow-lg"
+                />
+              </div>
+            )}
           </div>
           <Button
             variant="ghost"

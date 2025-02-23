@@ -134,6 +134,7 @@ export type Database = {
           description: string | null
           id: string
           lesson_number: number
+          mnemonic_images: Json | null
           status: Database["public"]["Enums"]["lesson_status"] | null
           title: string
           user_id: string
@@ -147,6 +148,7 @@ export type Database = {
           description?: string | null
           id?: string
           lesson_number: number
+          mnemonic_images?: Json | null
           status?: Database["public"]["Enums"]["lesson_status"] | null
           title: string
           user_id: string
@@ -160,6 +162,7 @@ export type Database = {
           description?: string | null
           id?: string
           lesson_number?: number
+          mnemonic_images?: Json | null
           status?: Database["public"]["Enums"]["lesson_status"] | null
           title?: string
           user_id?: string
