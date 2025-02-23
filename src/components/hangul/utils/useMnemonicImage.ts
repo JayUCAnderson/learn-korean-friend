@@ -2,7 +2,6 @@
 import { useState, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import type { Database } from "@/integrations/supabase/types";
-import { imageCache } from "@/hooks/useHangulImagePreloader";
 
 type LessonType = Database['public']['Views']['hangul_lessons_complete']['Row'];
 
@@ -44,7 +43,7 @@ export function useMnemonicImage(lesson: LessonType) {
   }, [lesson?.id, lesson?.character, lesson?.mnemonic_base, lesson?.character_type]);
 
   return {
-    mnemonicImage: lesson?.mnemonic_image_url || imageCache.get(lesson?.character || ''),
+    mnemonicImage: lesson?.mnemonic_image_url,
     isLoadingImage: false,
     isRegeneratingImage,
     regenerateMnemonicImage

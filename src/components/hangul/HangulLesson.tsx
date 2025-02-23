@@ -51,25 +51,28 @@ export const HangulLesson = memo(function HangulLesson({
   }, [lesson]);
 
   useEffect(() => {
-    if (!lesson?.id || hasAttemptedLoad.current) return;
+    if (!lesson?.id) return;
     
-    hasAttemptedLoad.current = true;
+    // Clear previous audio URL when lesson changes
+    if (audioUrl) {
+      URL.revokeObjectURL(audioUrl);
+      setAudioUrl(null);
+    }
+    
     let isMounted = true;
 
     const loadAudio = async () => {
       try {
-        // First try to use the pronunciation_url from the database
+        // Use the pronunciation_url from the database if available
         if (lesson.pronunciation_url) {
           setAudioUrl(lesson.pronunciation_url);
           return;
         }
 
-        // If no pronunciation_url exists, generate new audio
-        if (!audioUrl) {
-          const url = await processAudio(lesson.character);
-          if (isMounted && url) {
-            setAudioUrl(url);
-          }
+        // Only generate new audio if no URL exists
+        const url = await processAudio(lesson.character);
+        if (isMounted && url) {
+          setAudioUrl(url);
         }
       } catch (error) {
         console.error("Error loading audio:", error);
@@ -80,7 +83,6 @@ export const HangulLesson = memo(function HangulLesson({
     
     return () => {
       isMounted = false;
-      // Clean up old audio URL to prevent memory leaks
       if (audioUrl) {
         URL.revokeObjectURL(audioUrl);
       }
