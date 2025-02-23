@@ -1,5 +1,6 @@
 
 import { useState, useEffect } from "react";
+import { supabase } from "@/integrations/supabase/client";
 import type { Database } from "@/integrations/supabase/types";
 
 type LessonType = Database['public']['Views']['hangul_lessons_complete']['Row'];
@@ -9,11 +10,10 @@ export function useMnemonicImage(lesson: LessonType) {
   const [isRegeneratingImage, setIsRegeneratingImage] = useState(false);
 
   useEffect(() => {
-    // If we have a mnemonic_image_url from the lesson, we can use it directly
     if (lesson.mnemonic_image_url) {
       setIsLoadingImage(false);
     }
-  }, [lesson.character]);
+  }, [lesson.mnemonic_image_url]);
 
   const regenerateMnemonicImage = async () => {
     if (process.env.NODE_ENV !== 'development') return;
@@ -35,7 +35,6 @@ export function useMnemonicImage(lesson: LessonType) {
       if (error) throw error;
 
       if (generatedData?.imageUrl) {
-        // Update the image in the database
         const { error: updateError } = await supabase
           .from('hangul_lessons')
           .update({ mnemonic_image_url: generatedData.imageUrl })

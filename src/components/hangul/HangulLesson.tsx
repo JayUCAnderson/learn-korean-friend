@@ -23,12 +23,23 @@ export function HangulLesson({ lesson, onComplete, onNext, onPrevious }: HangulL
   const [isLoadingAudio, setIsLoadingAudio] = useState(false);
   const audioRef = useRef<HTMLAudioElement | null>(null);
 
-  const { isLoadingAudio: isAudioLoading } = useAudioController({
-    character: lesson.character,
-    audioContent: lesson.audio_content,
-    onAudioReady: setAudioUrl,
-    onLoadingChange: setIsLoadingAudio,
-  });
+  const { isLoadingAudio: isAudioLoading, processAudio } = useAudioController();
+
+  useEffect(() => {
+    const loadAudio = async () => {
+      setIsLoadingAudio(true);
+      try {
+        const url = await processAudio(lesson.character);
+        setAudioUrl(url);
+      } catch (error) {
+        console.error("Error loading audio:", error);
+      } finally {
+        setIsLoadingAudio(false);
+      }
+    };
+
+    loadAudio();
+  }, [lesson.character, processAudio]);
 
   const {
     mnemonicImage,
