@@ -10,22 +10,12 @@ interface HangulProgressProps {
 export function HangulProgress({ theme }: HangulProgressProps) {
   const { currentLessonInSection, sectionLessons, currentSection } = useHangulLessons();
 
-  const progressPercentage = Math.min(Math.max((currentLessonInSection / sectionLessons) * 100, 0), 100);
-
   const themeColors = {
     temple: "bg-[#D46A6A]",
     hanbok: "bg-[#9b87f5]",
     seasonal: "bg-[#95D1CC]",
     garden: "bg-[#68B984]",
     palace: "bg-[#8B5CF6]",
-  };
-
-  const themeIcons = {
-    temple: "🏛️",
-    hanbok: "👘",
-    seasonal: "🌸",
-    garden: "🌿",
-    palace: "👑",
   };
 
   const sectionMap = {
@@ -37,13 +27,10 @@ export function HangulProgress({ theme }: HangulProgressProps) {
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between text-sm text-gray-600">
-        <span className="flex items-center gap-2">
-          <span className="text-lg">{themeIcons[theme]}</span>
-          <span>{sectionMap[currentSection]} - Lesson {currentLessonInSection} of {sectionLessons}</span>
-        </span>
+        <span>{sectionMap[currentSection]} - Lesson {currentLessonInSection} of {sectionLessons}</span>
       </div>
       <Progress 
-        value={progressPercentage} 
+        value={(currentLessonInSection / sectionLessons) * 100} 
         className={cn(
           "h-2 transition-all duration-500",
           themeColors[theme]

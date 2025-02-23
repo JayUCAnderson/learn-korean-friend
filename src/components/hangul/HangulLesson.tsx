@@ -7,7 +7,8 @@ import { MnemonicImage } from "./MnemonicImage";
 import { ExamplesSection } from "./ExamplesSection";
 import { LessonProgress } from "./LessonProgress";
 import { useAudioController } from "./AudioController";
-import { useMnemonicImage } from "./utils/useMnemonicImage";
+import { supabase } from "@/integrations/supabase/client";
+import { useToast } from "@/components/ui/use-toast";
 
 type HangulLessonType = Database['public']['Views']['hangul_lessons_complete']['Row'];
 
@@ -27,11 +28,11 @@ export const HangulLesson = memo(function HangulLesson({
   const [audioUrl, setAudioUrl] = useState<string | null>(null);
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const { isLoadingAudio, processAudio } = useAudioController();
+  const { toast } = useToast();
 
   useEffect(() => {
     if (!lesson?.id) return;
     
-    // Cleanup previous audio URL when lesson changes
     if (audioUrl) {
       URL.revokeObjectURL(audioUrl);
       setAudioUrl(null);
@@ -66,6 +67,35 @@ export const HangulLesson = memo(function HangulLesson({
     }
   };
 
+  const handleNext = async () => {
+    if (!lesson?.id) return;
+
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error("User not authenticated");
+
+      await supabase.from('hangul_progress').upsert({
+        user_id: user.id,
+        character_id: lesson.id,
+        total_practice_sessions: 1,
+        recognition_accuracy: 100,
+        sound_association_accuracy: 100,
+        last_reviewed: new Date().toISOString(),
+      });
+
+      if (onNext) {
+        onNext();
+      }
+    } catch (error) {
+      console.error("Error updating progress:", error);
+      toast({
+        title: "Error",
+        description: "Failed to save progress. Please try again.",
+        variant: "destructive",
+      });
+    }
+  };
+
   if (!lesson?.id) {
     return null;
   }
@@ -78,7 +108,7 @@ export const HangulLesson = memo(function HangulLesson({
         soundDescription={lesson.sound_description}
         onPlayPronunciation={playPronunciation}
         onPrevious={onPrevious}
-        onNext={onNext}
+        onNext={handleNext}
         isLoadingAudio={isLoadingAudio}
         audioUrl={audioUrl}
       />
@@ -89,7 +119,7 @@ export const HangulLesson = memo(function HangulLesson({
 
       <div className="space-y-4">
         <MnemonicImage
-          lesson={lesson}
+          imageUrl={lesson.mnemonic_image_url || ''}
           mnemonicBase={lesson.mnemonic_base}
         />
 
