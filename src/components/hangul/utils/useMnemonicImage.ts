@@ -14,34 +14,47 @@ export function useMnemonicImage(lesson: LessonType) {
   const { toast } = useToast();
 
   useEffect(() => {
-    setMnemonicImage(null);
-    setIsLoadingImage(true);
+    let isMounted = true;
+    let intervalId: NodeJS.Timeout | null = null;
 
     const checkCache = () => {
+      if (!isMounted) return;
+
       if (imageCache.has(lesson.character)) {
         console.log("Using cached image for:", lesson.character);
         setMnemonicImage(imageCache.get(lesson.character)!);
         setIsLoadingImage(false);
+        if (intervalId) {
+          clearInterval(intervalId);
+        }
         return true;
       }
       return false;
     };
 
-    // Check immediately if preloading is complete
+    // Initial check
     if (isPreloadComplete) {
       checkCache();
     }
 
-    // Set up an interval to check the cache until the image is found or preloading is complete
-    const intervalId = setInterval(() => {
+    // Set up polling interval
+    intervalId = setInterval(() => {
       if (checkCache() || isPreloadComplete) {
-        clearInterval(intervalId);
-        setIsLoadingImage(false);
+        if (intervalId) {
+          clearInterval(intervalId);
+        }
+        if (isMounted) {
+          setIsLoadingImage(false);
+        }
       }
     }, 100);
 
-    // Cleanup interval on unmount or lesson change
-    return () => clearInterval(intervalId);
+    return () => {
+      isMounted = false;
+      if (intervalId) {
+        clearInterval(intervalId);
+      }
+    };
   }, [lesson.id, lesson.character]);
 
   const regenerateMnemonicImage = async () => {
