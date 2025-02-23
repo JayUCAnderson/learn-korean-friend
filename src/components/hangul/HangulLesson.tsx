@@ -20,37 +20,8 @@ interface HangulLessonProps {
 
 export function HangulLesson({ lesson, onComplete, onNext, onPrevious }: HangulLessonProps) {
   const [audioUrl, setAudioUrl] = useState<string | null>(null);
-  const [isLoadingAudio, setIsLoadingAudio] = useState(false);
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const { isLoadingAudio: isAudioLoading, processAudio } = useAudioController();
-
-  useEffect(() => {
-    let isMounted = true;
-    
-    const loadAudio = async () => {
-      if (!lesson?.character) return;
-      
-      setIsLoadingAudio(true);
-      try {
-        const url = await processAudio(lesson.character);
-        if (isMounted) {
-          setAudioUrl(url);
-        }
-      } catch (error) {
-        console.error("Error loading audio:", error);
-      } finally {
-        if (isMounted) {
-          setIsLoadingAudio(false);
-        }
-      }
-    };
-
-    loadAudio();
-    
-    return () => {
-      isMounted = false;
-    };
-  }, [lesson?.character, processAudio]);
 
   const {
     mnemonicImage,
@@ -59,13 +30,36 @@ export function HangulLesson({ lesson, onComplete, onNext, onPrevious }: HangulL
     regenerateMnemonicImage
   } = useMnemonicImage(lesson);
 
+  useEffect(() => {
+    let isMounted = true;
+    
+    const loadAudio = async () => {
+      if (!lesson?.id || !lesson?.character) return;
+      
+      try {
+        const url = await processAudio(lesson.character);
+        if (isMounted) {
+          setAudioUrl(url);
+        }
+      } catch (error) {
+        console.error("Error loading audio:", error);
+      }
+    };
+
+    loadAudio();
+    
+    return () => {
+      isMounted = false;
+    };
+  }, [lesson?.id, lesson?.character]); // Only depend on lesson ID and character
+
   const playPronunciation = () => {
     if (audioRef.current && audioUrl) {
       audioRef.current.play();
     }
   };
 
-  if (!lesson) {
+  if (!lesson?.id) {
     return null;
   }
 
@@ -78,7 +72,7 @@ export function HangulLesson({ lesson, onComplete, onNext, onPrevious }: HangulL
         onPlayPronunciation={playPronunciation}
         onPrevious={onPrevious}
         onNext={onNext}
-        isLoadingAudio={isLoadingAudio}
+        isLoadingAudio={isAudioLoading}
         audioUrl={audioUrl}
       />
 
