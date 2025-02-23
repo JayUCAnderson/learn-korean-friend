@@ -9,7 +9,7 @@ export function useAudioController() {
   
   const JENNIE_VOICE_ID = 'z6Kj0hecH20CdetSElRT';
 
-  const processAudio = async (character: string, existingUrl: string | null = null) => {
+  const processAudio = async (character: string) => {
     if (!character) return null;
     
     try {
@@ -26,14 +26,29 @@ export function useAudioController() {
 
       // If we have existing audio content, use it
       if (existingPronunciation?.audio_content) {
-        const audioBlob = new Blob(
-          [Uint8Array.from(atob(existingPronunciation.audio_content), c => c.charCodeAt(0))],
-          { type: 'audio/mpeg' }
-        );
-        return URL.createObjectURL(audioBlob);
+        try {
+          const audioBlob = new Blob(
+            [Uint8Array.from(atob(existingPronunciation.audio_content), c => c.charCodeAt(0))],
+            { type: 'audio/mpeg' }
+          );
+          const url = URL.createObjectURL(audioBlob);
+          
+          // Verify the audio is playable
+          const audio = new Audio();
+          await new Promise((resolve, reject) => {
+            audio.oncanplaythrough = resolve;
+            audio.onerror = reject;
+            audio.src = url;
+          });
+          
+          return url;
+        } catch (error) {
+          console.error("Error with existing audio:", error);
+          // If existing audio fails, continue to generate new audio
+        }
       }
 
-      // Generate new audio if none exists
+      // Generate new audio if none exists or if existing audio failed
       const { data, error } = await supabase.functions.invoke(
         'generate-pronunciation',
         {
