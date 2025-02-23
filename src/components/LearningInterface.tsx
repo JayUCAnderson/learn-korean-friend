@@ -2,18 +2,15 @@
 import { UserGreeting } from "./learning/UserGreeting";
 import { LearningProgress } from "./learning/LearningProgress";
 import { LearningPathContainer } from "./learning/LearningPathContainer";
-import { HangulLearningContainer } from "./hangul/HangulLearningContainer";
 import { getThemeColors } from "./learning/ThemeProvider";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Card } from "@/components/ui/card";
+import { Book, Scroll } from "lucide-react";
+import { useToast } from "@/components/ui/use-toast";
+import { useNavigate } from "react-router-dom";
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { useToast } from "@/components/ui/use-toast";
-import { Alert, AlertDescription } from "@/components/ui/alert";
-import { Lock } from "lucide-react";
-import { useNavigate } from "react-router-dom";
 
 const LearningInterface = ({ userData }: { userData: any }) => {
-  const [activeTab, setActiveTab] = useState("hangul");
   const [hangulCompleted, setHangulCompleted] = useState(false);
   const [isCheckingProgress, setIsCheckingProgress] = useState(true);
   const { toast } = useToast();
@@ -52,13 +49,12 @@ const LearningInterface = ({ userData }: { userData: any }) => {
     }
   };
 
-  const handleTabChange = (value: string) => {
-    if (value === "hangul") {
-      navigate("/hangul");
-      return;
-    }
-    
-    if (value === "lessons" && !hangulCompleted) {
+  const navigateToHangul = () => {
+    navigate("/hangul");
+  };
+
+  const handleLessonsClick = () => {
+    if (!hangulCompleted) {
       toast({
         title: "Complete Hangul First",
         description: "Please complete the Hangul lessons before moving on to other content.",
@@ -66,41 +62,76 @@ const LearningInterface = ({ userData }: { userData: any }) => {
       });
       return;
     }
-    setActiveTab(value);
+    // Show lessons content
   };
 
   return (
-    <div className={`min-h-screen bg-gradient-to-b ${theme.gradient} p-4`}>
+    <div className={`min-h-screen bg-gradient-to-br from-[#FFDEE2] via-[#9b87f5] to-[#6E59A5] p-4`}>
       <div className="max-w-6xl mx-auto space-y-8">
         <UserGreeting level={userData.level} />
         <LearningProgress themeColors={theme} />
         
-        <Tabs value={activeTab} onValueChange={handleTabChange} className="w-full">
-          <TabsList className="w-full">
-            <TabsTrigger value="hangul" className="flex-1">Hangul</TabsTrigger>
-            <TabsTrigger value="lessons" className="flex-1 relative">
-              Lessons
-              {!hangulCompleted && (
-                <Lock className="w-4 h-4 ml-2 inline-block text-gray-400" />
-              )}
-            </TabsTrigger>
-          </TabsList>
-          
-          <TabsContent value="lessons" className="mt-6">
-            {hangulCompleted ? (
-              <LearningPathContainer userData={userData} themeColors={theme} />
-            ) : (
-              <div className="text-center p-8 bg-gray-50 rounded-lg">
-                <Lock className="w-12 h-12 mx-auto mb-4 text-gray-400" />
-                <h3 className="text-lg font-semibold mb-2">Lessons Locked</h3>
-                <p className="text-gray-600">
-                  Complete the Hangul section first to unlock additional lessons.
-                  This ensures you have a strong foundation in Korean writing.
-                </p>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-8">
+          {/* Hangul Learning Path Card */}
+          <Card 
+            className="group relative overflow-hidden p-6 cursor-pointer hover:shadow-lg transition-all duration-300 bg-white/90 backdrop-blur-lg border-2 border-[#9b87f5]"
+            onClick={navigateToHangul}
+          >
+            <div className="absolute inset-0 bg-gradient-to-br from-[#9b87f5]/10 to-[#D946EF]/10 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+            <div className="flex items-start gap-4">
+              <div className="p-3 rounded-lg bg-[#9b87f5] bg-opacity-10">
+                <Scroll className="h-8 w-8 text-[#7E69AB]" />
               </div>
-            )}
-          </TabsContent>
-        </Tabs>
+              <div className="flex-1">
+                <h3 className="text-xl font-bold text-gray-900 mb-2">한글 Hangul</h3>
+                <p className="text-gray-600 mb-4">
+                  Master the Korean alphabet through an immersive learning experience inspired by traditional Korean culture.
+                </p>
+                <div className="inline-flex items-center text-sm font-medium text-[#7E69AB]">
+                  Start Learning →
+                </div>
+              </div>
+            </div>
+          </Card>
+
+          {/* Regular Lessons Card */}
+          <Card 
+            className={`group relative overflow-hidden p-6 cursor-pointer transition-all duration-300 
+              ${hangulCompleted ? 'hover:shadow-lg bg-white/90' : 'bg-gray-100'} 
+              backdrop-blur-lg border-2 ${hangulCompleted ? 'border-[#ea384c]' : 'border-gray-200'}`}
+            onClick={handleLessonsClick}
+          >
+            <div className={`absolute inset-0 bg-gradient-to-br from-[#ea384c]/10 to-[#D946EF]/10 opacity-0 
+              ${hangulCompleted ? 'group-hover:opacity-100' : ''} transition-opacity duration-300`} 
+            />
+            <div className="flex items-start gap-4">
+              <div className={`p-3 rounded-lg ${hangulCompleted ? 'bg-[#ea384c] bg-opacity-10' : 'bg-gray-200'}`}>
+                <Book className={`h-8 w-8 ${hangulCompleted ? 'text-[#ea384c]' : 'text-gray-400'}`} />
+              </div>
+              <div className="flex-1">
+                <h3 className={`text-xl font-bold mb-2 ${hangulCompleted ? 'text-gray-900' : 'text-gray-500'}`}>
+                  Korean Lessons
+                </h3>
+                <p className={`mb-4 ${hangulCompleted ? 'text-gray-600' : 'text-gray-400'}`}>
+                  {hangulCompleted 
+                    ? "Begin your journey through comprehensive Korean language lessons."
+                    : "Complete Hangul lessons first to unlock this learning path."}
+                </p>
+                <div className={`inline-flex items-center text-sm font-medium ${
+                  hangulCompleted ? 'text-[#ea384c]' : 'text-gray-400'
+                }`}>
+                  {hangulCompleted ? 'Start Learning →' : 'Locked'}
+                </div>
+              </div>
+            </div>
+          </Card>
+        </div>
+
+        {hangulCompleted && (
+          <div className="mt-8">
+            <LearningPathContainer userData={userData} themeColors={theme} />
+          </div>
+        )}
       </div>
     </div>
   );
