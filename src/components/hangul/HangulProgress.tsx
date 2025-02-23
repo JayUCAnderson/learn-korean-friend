@@ -8,7 +8,13 @@ interface HangulProgressProps {
 }
 
 export function HangulProgress({ theme }: HangulProgressProps) {
-  const { currentLessonInSection, sectionLessons, currentSection } = useHangulLessons();
+  const { currentLessonIndex, lessons, getLessonSection, currentSection } = useHangulLessons();
+
+  // Filter lessons by current section
+  const sectionLessons = lessons.filter(lesson => getLessonSection(lesson) === currentSection);
+  
+  // Find the current lesson number within the section
+  const currentLessonNumber = currentLessonIndex + 1;
 
   const themeColors = {
     temple: "bg-[#D46A6A]",
@@ -27,17 +33,19 @@ export function HangulProgress({ theme }: HangulProgressProps) {
   console.log('HangulProgress Debug:', {
     currentSection,
     sectionTitle: sectionMap[currentSection],
-    currentLessonNumber: currentLessonInSection,
-    totalLessons: sectionLessons,
+    currentLessonNumber,
+    totalLessons: sectionLessons.length,
+    allLessons: lessons.length,
+    filtered: sectionLessons
   });
 
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between text-sm text-gray-600">
-        <span>{sectionMap[currentSection]} - Lesson {currentLessonInSection} of {sectionLessons}</span>
+        <span>{sectionMap[currentSection]} - Lesson {currentLessonNumber} of {sectionLessons.length}</span>
       </div>
       <Progress 
-        value={(currentLessonInSection / sectionLessons) * 100} 
+        value={(currentLessonNumber / sectionLessons.length) * 100} 
         className={cn(
           "h-2 transition-all duration-500",
           themeColors[theme]

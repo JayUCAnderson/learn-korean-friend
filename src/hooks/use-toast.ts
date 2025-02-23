@@ -1,5 +1,6 @@
 
 import * as React from "react"
+
 import type {
   ToastActionElement,
   ToastProps,
@@ -55,7 +56,23 @@ interface State {
 
 const toastTimeouts = new Map<string, ReturnType<typeof setTimeout>>()
 
-const reducer = (state: State, action: Action, dispatch: React.Dispatch<Action>): State => {
+const addToRemoveQueue = (toastId: string) => {
+  if (toastTimeouts.has(toastId)) {
+    return
+  }
+
+  const timeout = setTimeout(() => {
+    toastTimeouts.delete(toastId)
+    dispatch({
+      type: "REMOVE_TOAST",
+      toastId: toastId,
+    })
+  }, TOAST_REMOVE_DELAY)
+
+  toastTimeouts.set(toastId, timeout)
+}
+
+export const reducer = (state: State, action: Action): State => {
   switch (action.type) {
     case "ADD_TOAST":
       return {
@@ -73,20 +90,6 @@ const reducer = (state: State, action: Action, dispatch: React.Dispatch<Action>)
 
     case "DISMISS_TOAST": {
       const { toastId } = action
-
-      // Create addToRemoveQueue function inside the reducer scope
-      const addToRemoveQueue = (toastId: string) => {
-        if (toastTimeouts.has(toastId)) {
-          return
-        }
-
-        const timeout = setTimeout(() => {
-          toastTimeouts.delete(toastId)
-          dispatch({ type: "REMOVE_TOAST", toastId: toastId })
-        }, TOAST_REMOVE_DELAY)
-
-        toastTimeouts.set(toastId, timeout)
-      }
 
       if (toastId) {
         addToRemoveQueue(toastId)
@@ -122,40 +125,20 @@ const reducer = (state: State, action: Action, dispatch: React.Dispatch<Action>)
   }
 }
 
-// Create a React context for the toast state
-const ToastContext = React.createContext<{
-  state: State
-  dispatch: React.Dispatch<Action>
-}>({
-  state: { toasts: [] },
-  dispatch: () => null,
-})
+const listeners: Array<(state: State) => void> = []
 
-// Create a provider component
-function ToastStateProvider({ children }: { children: React.ReactNode }) {
-  const [state, dispatch] = React.useReducer(
-    (state: State, action: Action) => reducer(state, action, dispatch),
-    { toasts: [] }
-  )
-  
-  return (
-    <ToastContext.Provider value={{ state, dispatch }}>
-      {children}
-    </ToastContext.Provider>
-  )
+let memoryState: State = { toasts: [] }
+
+function dispatch(action: Action) {
+  memoryState = reducer(memoryState, action)
+  listeners.forEach((listener) => {
+    listener(memoryState)
+  })
 }
 
-// Hook to use the toast context
-function useToastContext() {
-  const context = React.useContext(ToastContext)
-  if (!context) {
-    throw new Error("useToast must be used within a ToastStateProvider")
-  }
-  return context
-}
+type Toast = Omit<ToasterToast, "id">
 
-function toast({ ...props }: Omit<ToasterToast, "id">) {
-  const { dispatch } = useToastContext()
+function toast({ ...props }: Toast) {
   const id = genId()
 
   const update = (props: ToasterToast) =>
@@ -178,14 +161,24 @@ function toast({ ...props }: Omit<ToasterToast, "id">) {
   })
 
   return {
-    id,
+    id: id,
     dismiss,
     update,
   }
 }
 
 function useToast() {
-  const { state, dispatch } = useToastContext()
+  const [state, setState] = React.useState<State>(memoryState)
+
+  React.useEffect(() => {
+    listeners.push(setState)
+    return () => {
+      const index = listeners.indexOf(setState)
+      if (index > -1) {
+        listeners.splice(index, 1)
+      }
+    }
+  }, [state])
 
   return {
     ...state,
@@ -194,4 +187,4 @@ function useToast() {
   }
 }
 
-export { useToast, toast, ToastStateProvider }
+export { useToast, toast }

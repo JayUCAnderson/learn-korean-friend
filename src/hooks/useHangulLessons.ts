@@ -24,12 +24,6 @@ export function useHangulLessons() {
     return 'basic_consonants';
   }, []);
 
-  // Filter lessons by section
-  const filteredLessons = useCallback((allLessons: HangulLessonType[], section: LessonSection | null) => {
-    if (!section) return allLessons;
-    return allLessons.filter(lesson => getLessonSection(lesson) === section);
-  }, [getLessonSection]);
-
   const fetchLessons = useCallback(async () => {
     try {
       const { data: lessonsData, error: lessonsError } = await supabase
@@ -39,9 +33,6 @@ export function useHangulLessons() {
 
       if (lessonsError) throw lessonsError;
 
-      // Get the section-specific lessons
-      const sectionLessons = filteredLessons(lessonsData || [], sectionParam);
-
       const { data: { user } } = await supabase.auth.getUser();
       if (user) {
         const { data: progress } = await supabase
@@ -49,14 +40,19 @@ export function useHangulLessons() {
           .select('character_id')
           .eq('user_id', user.id);
 
-        if (progress && sectionLessons.length > 0) {
+        if (progress && lessonsData) {
           const completedLessonIds = progress.map(p => p.character_id);
-          const firstIncompleteIndex = sectionLessons.findIndex(lesson => 
-            !completedLessonIds.includes(lesson.id)
+          const sectionLessons = lessonsData.filter(lesson => 
+            getLessonSection(lesson) === sectionParam
           );
           
-          if (firstIncompleteIndex !== -1) {
-            setCurrentLessonIndex(firstIncompleteIndex);
+          if (sectionLessons.length > 0) {
+            const firstIncompleteIndex = sectionLessons.findIndex(lesson => 
+              !completedLessonIds.includes(lesson.id)
+            );
+            if (firstIncompleteIndex !== -1) {
+              setCurrentLessonIndex(firstIncompleteIndex);
+            }
           }
         }
       }
@@ -72,22 +68,22 @@ export function useHangulLessons() {
     } finally {
       setIsLoading(false);
     }
-  }, [toast, filteredLessons, sectionParam]);
+  }, [toast, getLessonSection, sectionParam]);
 
   useEffect(() => {
     fetchLessons();
   }, [fetchLessons]);
 
-  // Get section-specific lessons
-  const sectionLessons = sectionParam
+  // Filter lessons by section if section parameter is present
+  const filteredLessons = sectionParam
     ? lessons.filter(lesson => getLessonSection(lesson) === sectionParam)
     : lessons;
 
   const handleNext = useCallback(() => {
-    if (currentLessonIndex < sectionLessons.length - 1) {
+    if (currentLessonIndex < filteredLessons.length - 1) {
       setCurrentLessonIndex(prev => prev + 1);
     }
-  }, [currentLessonIndex, sectionLessons.length]);
+  }, [currentLessonIndex, filteredLessons.length]);
 
   const handlePrevious = useCallback(() => {
     if (currentLessonIndex > 0) {
@@ -95,14 +91,14 @@ export function useHangulLessons() {
     }
   }, [currentLessonIndex]);
 
-  // Always use the route section if available, fallback to derived section
+  // Use the section from the route instead of deriving it from the current lesson
   const currentSection = sectionParam || 
-    (sectionLessons[currentLessonIndex] 
-      ? getLessonSection(sectionLessons[currentLessonIndex]) 
+    (filteredLessons[currentLessonIndex] 
+      ? getLessonSection(filteredLessons[currentLessonIndex]) 
       : 'vowels');
 
   return {
-    lessons: sectionLessons,
+    lessons: filteredLessons,
     currentLessonIndex,
     setCurrentLessonIndex,
     isLoading,
@@ -111,6 +107,6 @@ export function useHangulLessons() {
     currentSection,
     getLessonSection,
     currentLessonInSection: currentLessonIndex + 1,
-    sectionLessons: sectionLessons.length,
+    sectionLessons: filteredLessons.length,
   };
 }
