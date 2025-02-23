@@ -68,13 +68,17 @@ serve(async (req: Request) => {
 
     // Generate new image with explicit parameter validation
     console.log('No existing image found, generating new one...')
+    
+    // Construct an enhanced prompt that focuses on visual similarity
+    const enhancedPrompt = `Create a simple, clear illustration that visually represents a "${basePrompt}". The image should be minimal, focusing on the key visual elements that make it look similar to the Korean character "${character}". Use clean lines and shapes, with minimal background or distracting elements. Make it memorable and easy to recognize.`
+
     const requestBody = {
-      prompt: basePrompt,
+      prompt: enhancedPrompt,
       height: 512,
       width: 512,
-      num_inference_steps: 10, // Reduced to be safely under the limit of 12
+      num_inference_steps: 10,
       guidance_scale: 7.5,
-      negative_prompt: "text, words, letters, blurry, complex, confusing",
+      negative_prompt: "text, words, letters, writing, blurry, complex, confusing, photorealistic, detailed, busy, cluttered",
       output_format: "webp",
       output_quality: 80,
     }
@@ -111,7 +115,7 @@ serve(async (req: Request) => {
       .insert({
         character,
         image_url: imageUrl,
-        prompt: basePrompt
+        prompt: enhancedPrompt
       })
       .select('id, image_url')
       .single()
@@ -146,4 +150,3 @@ serve(async (req: Request) => {
     )
   }
 })
-
