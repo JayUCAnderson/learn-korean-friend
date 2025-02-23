@@ -71,37 +71,36 @@ export function useHangulLessons() {
   }, [currentLessonIndex]);
 
   const getLessonSection = useCallback((index: number): LessonSection => {
-    const vowelsCount = lessons.filter(l => l.character_type?.includes('vowel')).length;
-    const basicConsonantsCount = lessons.filter(l => l.character_type?.includes('consonant') && 
-      !l.character_type?.includes('final_consonant')).length;
+    const lesson = lessons[index];
+    if (!lesson) return 'vowels';
     
-    if (index < vowelsCount) return 'vowels';
-    if (index < vowelsCount + basicConsonantsCount) return 'basic_consonants';
-    return 'advanced_consonants';
+    if (lesson.character_type?.includes('vowel')) return 'vowels';
+    if (lesson.character_type?.includes('final_consonant')) return 'advanced_consonants';
+    return 'basic_consonants';
   }, [lessons]);
 
   const getSectionLessons = useCallback((section: LessonSection): number => {
-    switch (section) {
-      case 'vowels':
-        return lessons.filter(l => l.character_type?.includes('vowel')).length;
-      case 'basic_consonants':
-        return lessons.filter(l => l.character_type?.includes('consonant') && 
-          !l.character_type?.includes('final_consonant')).length;
-      case 'advanced_consonants':
-        return lessons.filter(l => l.character_type?.includes('final_consonant')).length;
-      default:
-        return 0;
-    }
+    return lessons.filter(lesson => {
+      switch (section) {
+        case 'vowels':
+          return lesson.character_type?.includes('vowel');
+        case 'basic_consonants':
+          return lesson.character_type?.includes('consonant') && 
+                 !lesson.character_type?.includes('final_consonant');
+        case 'advanced_consonants':
+          return lesson.character_type?.includes('final_consonant');
+        default:
+          return false;
+      }
+    }).length;
   }, [lessons]);
 
   const currentSection = getLessonSection(currentLessonIndex);
   const sectionLessons = getSectionLessons(currentSection);
-  const sectionStartIndex = currentSection === 'vowels' ? 0 :
-    currentSection === 'basic_consonants' ? 
-    getSectionLessons('vowels') :
-    getSectionLessons('vowels') + getSectionLessons('basic_consonants');
-  
-  const currentLessonInSection = currentLessonIndex - sectionStartIndex;
+
+  const currentLessonInSection = lessons.filter((lesson, index) => {
+    return index < currentLessonIndex && getLessonSection(index) === currentSection;
+  }).length;
 
   return {
     lessons,
@@ -115,4 +114,4 @@ export function useHangulLessons() {
     currentLessonInSection,
     sectionLessons,
   };
-};
+}

@@ -2,11 +2,8 @@
 import { Progress } from "@/components/ui/progress";
 import { cn } from "@/lib/utils";
 import { useHangulLessons } from "@/hooks/useHangulLessons";
-import { type LessonSection } from "@/hooks/useHangulLessons";
 
 interface HangulProgressProps {
-  currentLesson: number;
-  totalLessons: number;
   theme: 'temple' | 'hanbok' | 'seasonal' | 'garden' | 'palace';
 }
 
@@ -38,12 +35,11 @@ export function HangulProgress({ theme }: HangulProgressProps) {
 
   return (
     <div className="space-y-4">
-      <div className="flex justify-between items-center text-sm text-gray-600">
+      <div className="flex items-center text-sm text-gray-600">
         <span className="flex items-center gap-2">
           <span className="text-lg">{themeIcons[theme]}</span>
           <span>{sectionMap[currentSection]} - Lesson {currentLessonInSection + 1} of {sectionLessons}</span>
         </span>
-        <span>{Math.round(progressPercentage)}%</span>
       </div>
       <Progress 
         value={progressPercentage} 
