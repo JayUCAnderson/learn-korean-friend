@@ -10,6 +10,9 @@ type LearningContent = {
   title: string;
   description: string;
   content: any;
+  difficulty_level: number;
+  target_skills: string[];
+  key_points: string[];
 };
 
 export const useLearningSession = () => {
@@ -27,6 +30,7 @@ export const useLearningSession = () => {
         .contains('interest_category', [interest])
         .eq('level', level)
         .eq('content_type', contentType)
+        .order('usage_count', { ascending: true })
         .limit(1)
         .maybeSingle();
 
@@ -60,7 +64,10 @@ export const useLearningSession = () => {
           interest_category: [interest],
           level,
           content: generatedContent,
-          usage_count: 1
+          usage_count: 1,
+          difficulty_level: generatedContent.difficulty_level,
+          target_skills: generatedContent.target_skills,
+          key_points: generatedContent.key_points
         })
         .select()
         .single();
@@ -86,7 +93,8 @@ export const useLearningSession = () => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error('User not authenticated');
 
-      await supabase
+      // Record the learning session
+      const { error: sessionError } = await supabase
         .from('learning_sessions')
         .insert({
           user_id: user.id,
@@ -94,8 +102,37 @@ export const useLearningSession = () => {
           session_type: sessionType,
           completed_at: new Date().toISOString(),
           performance_score: performance,
-          feedback,
+          feedback
         });
+
+      if (sessionError) throw sessionError;
+
+      // Update vocabulary progress if available
+      if (performance) {
+        const { data: content } = await supabase
+          .from('learning_content')
+          .select('content')
+          .eq('id', contentId)
+          .single();
+
+        if (content?.content?.vocabulary) {
+          for (const vocab of content.content.vocabulary) {
+            const { error: vocabError } = await supabase
+              .from('vocabulary_progress')
+              .upsert({
+                user_id: user.id,
+                vocabulary_item: vocab.korean,
+                times_encountered: 1,
+                times_correct: performance >= 0.7 ? 1 : 0,
+                last_reviewed: new Date().toISOString()
+              }, {
+                onConflict: 'user_id,vocabulary_item'
+              });
+
+            if (vocabError) console.error("Error updating vocabulary progress:", vocabError);
+          }
+        }
+      }
     } catch (error: any) {
       console.error("Error in recordSession:", error);
       toast({

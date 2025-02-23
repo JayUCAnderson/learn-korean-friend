@@ -42,46 +42,58 @@ serve(async (req) => {
         messages: [
           {
             role: 'system',
-            content: `You are a Korean language tutor creating personalized lessons. Generate a lesson in JSON format with the following structure:
-            {
-              "title": "string (max 50 chars)",
-              "description": "string (max 150 chars)",
-              "setting": "string describing the conversation context",
-              "dialogue": [
-                {
-                  "speaker": "string (specify name from list: ${[...FEMALE_VOICES, ...MALE_VOICES].map(v => v.name).join(', ')})",
-                  "gender": "string (must be 'male' or 'female')",
-                  "koreanText": "string (Korean dialogue)",
-                  "englishText": "string (English translation)"
-                }
-              ],
-              "vocabulary": [
-                {
-                  "korean": "string (Korean word)",
-                  "english": "string (English meaning)",
-                  "pronunciation": "string (romanization)",
-                  "partOfSpeech": "string (noun/verb/etc)",
-                  "difficulty": "number (1-5)"
-                }
-              ],
-              "exercises": [
-                {
-                  "type": "multiple-choice",
-                  "question": "string",
-                  "options": ["string"],
-                  "correctAnswer": "string",
-                  "explanation": "string"
-                }
-              ]
-            }
-            
-            Important: For each dialogue entry, assign one of these specific names as the speaker: ${[...FEMALE_VOICES, ...MALE_VOICES].map(v => v.name).join(', ')}. 
-            Make sure to set the gender field to match the speaker's gender ('male' for male speakers, 'female' for female speakers).
-            Try to alternate between male and female speakers for natural conversation flow.`
+            content: `You are a Korean language tutor creating scientifically-based language learning content. Follow these principles:
+
+1. Progressive Complexity: Introduce concepts from simple to complex
+2. Spaced Repetition: Reintroduce previously learned vocabulary naturally
+3. Contextual Learning: Present vocabulary and grammar in realistic situations
+4. Frequency-Based Selection: Prioritize common, useful expressions
+5. Cultural Integration: Include cultural context when relevant
+
+Generate a lesson in JSON format with this structure:
+{
+  "title": "string (max 50 chars)",
+  "description": "string (max 150 chars)",
+  "setting": "string describing the conversation context",
+  "difficulty_level": "number (1-5)",
+  "target_skills": ["listening", "speaking", "reading", "writing"],
+  "key_points": ["string"],
+  "dialogue": [
+    {
+      "speaker": "string (specify name from list: ${[...FEMALE_VOICES, ...MALE_VOICES].map(v => v.name).join(', ')})",
+      "gender": "string (must be 'male' or 'female')",
+      "koreanText": "string (Korean dialogue)",
+      "englishText": "string (English translation)",
+      "notes": "string (optional pronunciation or cultural notes)"
+    }
+  ],
+  "vocabulary": [
+    {
+      "korean": "string (Korean word)",
+      "english": "string (English meaning)",
+      "pronunciation": "string (romanization)",
+      "partOfSpeech": "string (noun/verb/etc)",
+      "difficulty": "number (1-5)",
+      "contextualUsage": "string (example usage)",
+      "relatedWords": ["string"]
+    }
+  ],
+  "exercises": [
+    {
+      "type": "multiple-choice | fill-in-blank | matching",
+      "question": "string",
+      "options": ["string"],
+      "correctAnswer": "string",
+      "explanation": "string"
+    }
+  ],
+  "cultural_notes": ["string"],
+  "review_suggestions": ["string"]
+}`
           },
           {
             role: 'user',
-            content: `Create an engaging ${level} level Korean lesson about ${interest}. Include natural dialogue, essential vocabulary, and practice exercises.`
+            content: `Create an engaging ${level} level Korean lesson about ${interest}. Include natural dialogue, essential vocabulary, and practice exercises. Focus on practical, everyday usage while maintaining appropriate difficulty for the level.`
           }
         ],
         temperature: 0.7,
