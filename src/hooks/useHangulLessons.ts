@@ -42,11 +42,17 @@ export function useHangulLessons() {
 
         if (progress && lessonsData) {
           const completedLessonIds = progress.map(p => p.character_id);
-          const firstIncompleteIndex = lessonsData.findIndex(lesson => 
-            !completedLessonIds.includes(lesson.id)
+          const sectionLessons = lessonsData.filter(lesson => 
+            getLessonSection(lesson) === sectionParam
           );
-          if (firstIncompleteIndex !== -1) {
-            setCurrentLessonIndex(firstIncompleteIndex);
+          
+          if (sectionLessons.length > 0) {
+            const firstIncompleteIndex = sectionLessons.findIndex(lesson => 
+              !completedLessonIds.includes(lesson.id)
+            );
+            if (firstIncompleteIndex !== -1) {
+              setCurrentLessonIndex(firstIncompleteIndex);
+            }
           }
         }
       }
@@ -62,7 +68,7 @@ export function useHangulLessons() {
     } finally {
       setIsLoading(false);
     }
-  }, [toast]);
+  }, [toast, getLessonSection, sectionParam]);
 
   useEffect(() => {
     fetchLessons();
@@ -85,18 +91,11 @@ export function useHangulLessons() {
     }
   }, [currentLessonIndex]);
 
-  // Initialize current lesson and section
-  const currentLesson = filteredLessons[currentLessonIndex] || null;
-  const currentSection = getLessonSection(currentLesson as HangulLessonType);
-  
-  // Calculate section-specific values
-  const sectionLessons = filteredLessons.filter(lesson => 
-    getLessonSection(lesson) === currentSection
-  ).length || 1;
-
-  const currentLessonInSection = filteredLessons.filter((lesson, index) => 
-    index <= currentLessonIndex && getLessonSection(lesson) === currentSection
-  ).length || 1;
+  // Use the section from the route instead of deriving it from the current lesson
+  const currentSection = sectionParam || 
+    (filteredLessons[currentLessonIndex] 
+      ? getLessonSection(filteredLessons[currentLessonIndex]) 
+      : 'vowels');
 
   return {
     lessons: filteredLessons,
@@ -107,7 +106,7 @@ export function useHangulLessons() {
     handlePrevious,
     currentSection,
     getLessonSection,
-    currentLessonInSection,
-    sectionLessons,
+    currentLessonInSection: currentLessonIndex + 1,
+    sectionLessons: filteredLessons.length,
   };
 }
