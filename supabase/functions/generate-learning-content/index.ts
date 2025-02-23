@@ -9,21 +9,35 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
+const TOPIK_GUIDELINES = {
+  beginner: {
+    sentenceLength: "~8-10 words",
+    grammar: "Basic sentence structures; simple tenses without complex connectors",
+    vocabulary: "Approximately 800 words focused on everyday and concrete topics"
+  },
+  intermediate: {
+    sentenceLength: "~12-15 words",
+    grammar: "Combination of simple and compound sentences; beginning use of connectors and basic reported speech",
+    vocabulary: "Approximately 3,000 words including some abstract and situational vocabulary"
+  },
+  advanced: {
+    sentenceLength: "~20-25 words",
+    grammar: "Advanced grammatical structures with nuanced connectors, subordinate clauses, and refined honorific usage",
+    vocabulary: "Approximately 6,000 words covering technical, academic, and professional topics"
+  }
+};
+
 serve(async (req) => {
-  // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
   }
 
   try {
     const { interest, level, contentType } = await req.json();
-    console.log("Received request with:", { interest, level, contentType });
+    console.log("Generating content for:", { interest, level, contentType });
 
-    if (!openAIApiKey) {
-      console.error("OpenAI API key is not set");
-      throw new Error("OpenAI API key is not configured");
-    }
-
+    const guidelines = TOPIK_GUIDELINES[level as keyof typeof TOPIK_GUIDELINES] || TOPIK_GUIDELINES.beginner;
+    
     const response = await fetch('https://api.openai.com/v1/chat/completions', {
       method: 'POST',
       headers: {
@@ -35,75 +49,77 @@ serve(async (req) => {
         messages: [
           {
             role: 'system',
-            content: `You are a Korean language education expert creating content at the ${level} level. Generate content that includes:
-- A specific, unique title capturing the key learning point
-- A clear explanation of lesson objectives
-- Main lesson content focused on practical usage
-- A curated list of vocabulary words with translations and pronunciations
-- An image prompt that will help create visual aids for learning
+            content: `You are a Korean language education expert crafting engaging dialogue-based lessons. 
+            
+Level Guidelines:
+- Sentence Length: ${guidelines.sentenceLength}
+- Grammar Complexity: ${guidelines.grammar}
+- Vocabulary Range: ${guidelines.vocabulary}
 
-Respond with a JSON object containing:
+Create a unique lesson that:
+1. Has a specific, memorable title related to ${interest}
+2. Includes a clear, focused description of what will be learned
+3. Features a natural dialogue between two speakers
+4. Introduces 5-8 relevant vocabulary words
+5. Generates one image prompt to illustrate a key scene
+
+Format the response as a JSON object with:
 {
-  "title": "string",
-  "description": "string",
+  "title": "Unique, specific title",
+  "description": "Clear learning objectives and context",
   "content": {
-    "content": "string",
+    "setting": "Brief scene description",
+    "dialogue": [
+      {
+        "speaker": "Name",
+        "koreanText": "Korean dialogue",
+        "englishText": "English translation"
+      }
+    ],
     "vocabulary": [
       {
-        "korean": "string",
-        "english": "string",
-        "pronunciation": "string",
-        "partOfSpeech": "string"
+        "korean": "word",
+        "english": "translation",
+        "pronunciation": "romanization",
+        "partOfSpeech": "grammar category"
       }
     ]
   },
-  "imagePrompt": "string"
+  "imagePrompt": "Detailed scene description for image generation"
 }`
           },
           {
             role: 'user',
-            content: `Create an engaging Korean lesson about ${interest} suitable for ${level} level students.`
+            content: `Create a Korean lesson about ${interest} for ${level} level students. Make the title and description unique and specific to this particular lesson, not generic.`
           }
         ],
         temperature: 0.7,
       }),
     });
 
-    console.log("OpenAI response status:", response.status);
-    
     if (!response.ok) {
-      const errorData = await response.text();
-      console.error("OpenAI API error:", errorData);
+      console.error("OpenAI API error:", response.status);
       throw new Error(`OpenAI API error: ${response.status}`);
     }
 
     const data = await response.json();
-    console.log("Received data from OpenAI");
+    console.log("Received response from OpenAI");
 
     if (!data.choices?.[0]?.message?.content) {
       console.error("Invalid response structure from OpenAI:", data);
       throw new Error("Invalid response from OpenAI");
     }
 
-    const generatedContent = JSON.parse(data.choices[0].message.content);
-    console.log("Successfully parsed content");
-
-    // Enhance the image prompt with Korean cultural elements if it exists
-    if (generatedContent.imagePrompt) {
-      generatedContent.imagePrompt = `Create a scene that showcases ${generatedContent.imagePrompt} while incorporating traditional Korean cultural elements. Use a vibrant color palette inspired by hanbok and temple architecture, balanced with modern aesthetics.`;
-    }
-
-    if (!generatedContent.title || !generatedContent.description) {
-      throw new Error('Generated content missing required fields');
-    }
+    const content = JSON.parse(data.choices[0].message.content);
+    console.log("Successfully parsed content:", content);
 
     return new Response(
-      JSON.stringify(generatedContent),
+      JSON.stringify(content),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
 
   } catch (error) {
-    console.error("Error in generate-learning-content:", error);
+    console.error("Error in generate-learning-content function:", error);
     return new Response(
       JSON.stringify({ error: error.message }),
       { 
