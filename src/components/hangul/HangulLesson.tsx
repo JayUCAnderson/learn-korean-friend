@@ -1,14 +1,14 @@
 
 import { useState, useEffect, useRef } from "react";
 import { Card } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
 import type { Database } from "@/integrations/supabase/types";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/components/ui/use-toast";
 import { LessonHeader } from "./LessonHeader";
 import { MnemonicImage } from "./MnemonicImage";
 import { ExamplesSection } from "./ExamplesSection";
-import { MasteryChecks } from "./MasteryChecks";
+import { LessonProgress } from "./LessonProgress";
+import { useAudioController } from "./AudioController";
 
 type HangulLessonType = Database['public']['Tables']['hangul_lessons']['Row'];
 
@@ -20,25 +20,29 @@ interface HangulLessonProps {
 }
 
 export function HangulLesson({ lesson, onComplete, onNext, onPrevious }: HangulLessonProps) {
-  const [isSubmitting, setIsSubmitting] = useState(false);
   const [mnemonicImage, setMnemonicImage] = useState<string | null>(null);
   const [isLoadingImage, setIsLoadingImage] = useState(true);
-  const [isLoadingAudio, setIsLoadingAudio] = useState(false);
   const [isRegeneratingImage, setIsRegeneratingImage] = useState(false);
   const [audioUrl, setAudioUrl] = useState<string | null>(null);
-  const [showMasteryCheck, setShowMasteryCheck] = useState(false);
-  const [masteryChecks, setMasteryChecks] = useState({
-    recognition: false,
-    pronunciation: false,
-    writing: false
-  });
+  const [isLoadingAudio, setIsLoadingAudio] = useState(false);
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const { toast } = useToast();
 
+  const { generatePronunciation } = useAudioController({
+    character: lesson.character,
+    onAudioReady: setAudioUrl,
+    onLoadingChange: setIsLoadingAudio,
+  });
+
   useEffect(() => {
     fetchOrGenerateMnemonicImage();
-    generatePronunciation();
   }, [lesson.id]);
+
+  const playPronunciation = () => {
+    if (audioRef.current && audioUrl) {
+      audioRef.current.play();
+    }
+  };
 
   const regenerateMnemonicImage = async () => {
     if (process.env.NODE_ENV !== 'development') {
@@ -133,100 +137,6 @@ export function HangulLesson({ lesson, onComplete, onNext, onPrevious }: HangulL
     }
   };
 
-  const generatePronunciation = async () => {
-    try {
-      setIsLoadingAudio(true);
-      const { data, error } = await supabase.functions.invoke(
-        'generate-pronunciation',
-        {
-          body: { character: lesson.character }
-        }
-      );
-
-      if (error) throw error;
-
-      if (data?.audioContent) {
-        const audioBlob = new Blob(
-          [Uint8Array.from(atob(data.audioContent), c => c.charCodeAt(0))],
-          { type: 'audio/mpeg' }
-        );
-        const url = URL.createObjectURL(audioBlob);
-        setAudioUrl(url);
-      }
-    } catch (error: any) {
-      console.error("Error generating pronunciation:", error);
-      toast({
-        title: "Error",
-        description: "Failed to load pronunciation. Please try again.",
-        variant: "destructive",
-      });
-    } finally {
-      setIsLoadingAudio(false);
-    }
-  };
-
-  const playPronunciation = () => {
-    if (audioRef.current && audioUrl) {
-      audioRef.current.play();
-    }
-  };
-
-  const handleMasteryCheck = (type: keyof typeof masteryChecks) => {
-    setMasteryChecks(prev => ({
-      ...prev,
-      [type]: true
-    }));
-  };
-
-  const handleLessonComplete = async () => {
-    if (!showMasteryCheck) {
-      setShowMasteryCheck(true);
-      return;
-    }
-
-    if (!Object.values(masteryChecks).every(Boolean)) {
-      toast({
-        title: "Complete all checks",
-        description: "Please complete all mastery checks before continuing.",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    setIsSubmitting(true);
-    try {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) throw new Error("User not authenticated");
-
-      const { error } = await supabase.from('hangul_progress').upsert({
-        user_id: user.id,
-        character_id: lesson.id,
-        total_practice_sessions: 1,
-        recognition_accuracy: 100,
-        sound_association_accuracy: 100,
-        last_reviewed: new Date().toISOString(),
-      });
-
-      if (error) throw error;
-
-      toast({
-        title: "Progress Saved",
-        description: "Keep up the great work! 잘 했어요! (jal haesseoyo!)",
-      });
-      
-      onComplete();
-    } catch (error: any) {
-      console.error("Error saving progress:", error);
-      toast({
-        title: "Error",
-        description: "Failed to save progress. Please try again.",
-        variant: "destructive",
-      });
-    } finally {
-      setIsSubmitting(false);
-    }
-  };
-
   return (
     <Card className="p-6 space-y-6">
       <LessonHeader
@@ -255,20 +165,10 @@ export function HangulLesson({ lesson, onComplete, onNext, onPrevious }: HangulL
 
         <ExamplesSection examples={lesson.examples as Record<string, string>} />
 
-        {showMasteryCheck && (
-          <MasteryChecks
-            checks={masteryChecks}
-            onCheck={handleMasteryCheck}
-          />
-        )}
-
-        <Button
-          className="w-full"
-          onClick={handleLessonComplete}
-          disabled={isSubmitting}
-        >
-          {isSubmitting ? "Saving Progress..." : showMasteryCheck ? "Complete & Continue" : "Check Understanding"}
-        </Button>
+        <LessonProgress
+          lessonId={lesson.id}
+          onComplete={onComplete}
+        />
       </div>
     </Card>
   );
