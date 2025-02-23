@@ -16,6 +16,8 @@ interface DialogueMessageProps {
   showEnglish: boolean;
   onToggleTranslation: () => void;
   isFirst?: boolean;
+  notes?: string;
+  gender?: string;
 }
 
 export function DialogueMessage({ 
@@ -25,10 +27,11 @@ export function DialogueMessage({
   className,
   showEnglish,
   onToggleTranslation,
-  isFirst
+  isFirst,
+  notes
 }: DialogueMessageProps) {
   const [isHovering, setIsHovering] = useState(false);
-  const isFirstSpeaker = speaker.toLowerCase() === "민준"; // Default first speaker
+  const isFirstSpeaker = speaker.toLowerCase() === "jin"; // Default first speaker
   
   return (
     <div 
@@ -75,6 +78,12 @@ export function DialogueMessage({
               "transition-all duration-300"
             )}>
               {englishText}
+            </p>
+          )}
+
+          {notes && (
+            <p className="text-sm text-gray-500 mt-2 italic">
+              {notes}
             </p>
           )}
         </Card>

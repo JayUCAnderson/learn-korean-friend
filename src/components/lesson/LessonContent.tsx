@@ -26,64 +26,8 @@ export function LessonContent({ content, mnemonicImages }: LessonContentProps) {
   try {
     parsedContent = JSON.parse(content);
   } catch (e) {
-    // If content is not JSON, create a structured object from markdown
-    console.log("Content is not JSON, converting from markdown:", content);
-    parsedContent = {
-      setting: "A casual conversation",
-      dialogue: [],
-      vocabulary: [],
-      exercises: []
-    };
-
-    // Split content by sections using markdown headers
-    const sections = content.split(/(?=###)/);
-    sections.forEach(section => {
-      const lines = section.trim().split('\n');
-      const header = lines[0].replace('###', '').trim().toLowerCase();
-      const content = lines.slice(1).join('\n').trim();
-
-      if (header.includes('dialogue') || header.includes('dialog')) {
-        // Parse dialogue content into structured format
-        const dialogueLines = content.split('\n\n').filter(Boolean);
-        parsedContent.dialogue = dialogueLines.map(line => {
-          const [speaker, ...textParts] = line.split(':').map(part => part.trim());
-          const text = textParts.join(':').trim();
-          const [koreanText, englishText] = text.split('/').map(part => part.trim());
-          return {
-            speaker: speaker || 'Speaker',
-            koreanText: koreanText || text,
-            englishText: englishText || ''
-          };
-        });
-      } else if (header.includes('vocabulary')) {
-        // Parse vocabulary content
-        const vocabLines = content.split('\n').filter(Boolean);
-        parsedContent.vocabulary = vocabLines.map(line => {
-          const [korean, english] = line.split('-').map(part => part.trim());
-          return {
-            korean: korean || '',
-            english: english || '',
-            mastery: 0,
-            timesReviewed: 0,
-            mnemonicImage: mnemonicImages?.[korean]
-          };
-        });
-      } else if (header.includes('setting')) {
-        parsedContent.setting = content.trim();
-      } else if (header.includes('practice') || header.includes('exercises')) {
-        // Parse practice exercises
-        const exerciseLines = content.split('\n\n').filter(Boolean);
-        parsedContent.exercises = exerciseLines.map(exercise => {
-          const lines = exercise.split('\n');
-          return {
-            type: 'multiple-choice',
-            question: lines[0].trim(),
-            options: lines.slice(1, -1).map(line => line.replace('-', '').trim()),
-            correctAnswer: lines[lines.length - 1].replace('Answer:', '').trim()
-          };
-        });
-      }
-    });
+    console.log("Content is not JSON or failed to parse:", e);
+    return null;
   }
   
   return (
@@ -118,13 +62,8 @@ export function LessonContent({ content, mnemonicImages }: LessonContentProps) {
               </Button>
             </div>
 
-            <div className="prose max-w-none mb-6">
-              <h3>Setting</h3>
-              <p>{parsedContent.setting}</p>
-            </div>
-
             <div className="space-y-8">
-              {parsedContent.dialogue.map((part: DialoguePart, index: number) => (
+              {parsedContent.content.dialogue.map((part: any, index: number) => (
                 <DialogueMessage
                   key={index}
                   speaker={part.speaker}
@@ -132,11 +71,35 @@ export function LessonContent({ content, mnemonicImages }: LessonContentProps) {
                   englishText={part.englishText}
                   showEnglish={showAllTranslations}
                   onToggleTranslation={() => setShowAllTranslations(!showAllTranslations)}
-                  isFirst={index === 0 || parsedContent.dialogue[index - 1]?.speaker !== part.speaker}
+                  isFirst={index === 0 || parsedContent.content.dialogue[index - 1]?.speaker !== part.speaker}
+                  notes={part.notes}
+                  gender={part.gender}
                   content=""
                 />
               ))}
             </div>
+
+            {parsedContent.content.cultural_notes && (
+              <div className="mt-8 p-4 bg-korean-50 rounded-lg">
+                <h3 className="font-semibold mb-2">Cultural Notes</h3>
+                <ul className="list-disc pl-4 space-y-2">
+                  {parsedContent.content.cultural_notes.map((note: string, index: number) => (
+                    <li key={index} className="text-gray-700">{note}</li>
+                  ))}
+                </ul>
+              </div>
+            )}
+
+            {parsedContent.content.review_suggestions && (
+              <div className="mt-4 p-4 bg-korean-50/50 rounded-lg">
+                <h3 className="font-semibold mb-2">Review Suggestions</h3>
+                <ul className="list-disc pl-4 space-y-2">
+                  {parsedContent.content.review_suggestions.map((suggestion: string, index: number) => (
+                    <li key={index} className="text-gray-700">{suggestion}</li>
+                  ))}
+                </ul>
+              </div>
+            )}
           </Card>
         </TabsContent>
 
@@ -150,7 +113,16 @@ export function LessonContent({ content, mnemonicImages }: LessonContentProps) {
         <TabsContent value="practice">
           <Card className="p-6 bg-gradient-to-b from-white/90 to-white/50 backdrop-blur">
             <h2 className="text-lg font-semibold mb-4">Practice Exercises</h2>
-            <PracticeExercises exercises={parsedContent.exercises} />
+            <div className="space-y-4">
+              <div className="p-4 bg-korean-50 rounded-lg">
+                <h3 className="font-semibold mb-4">Review Suggestions</h3>
+                <ul className="list-disc pl-4 space-y-2">
+                  {parsedContent.content.review_suggestions.map((suggestion: string, index: number) => (
+                    <li key={index} className="text-gray-700">{suggestion}</li>
+                  ))}
+                </ul>
+              </div>
+            </div>
           </Card>
         </TabsContent>
       </Tabs>

@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { supabase } from "@/integrations/supabase/client";
@@ -68,13 +67,7 @@ export default function LessonDetail() {
             : lessonData.audio_content) as AudioContent
         : null;
 
-      let contentStr = '';
-      if (typeof lessonData.content === 'string') {
-        contentStr = lessonData.content;
-      } else if (lessonData.content && typeof lessonData.content === 'object') {
-        const typedContent = lessonData.content as LessonContent;
-        contentStr = typedContent.content?.content || '';
-      }
+      let contentStr = JSON.stringify(lessonData.content);
 
       // Parse mnemonic_images and ensure it's correctly typed
       let parsedMnemonicImages: Record<string, string> | null = null;
@@ -142,7 +135,7 @@ export default function LessonDetail() {
       <div className="min-h-screen flex items-center justify-center">
         <div className="text-center">
           <h2 className="text-xl font-semibold mb-2">Lesson not found</h2>
-          <Button onClick={() => navigate('/')}>Return to Dashboard</Button>
+          <Button onClick={() => navigate('/lessons')}>Return to Lessons</Button>
         </div>
       </div>
     );
@@ -153,11 +146,11 @@ export default function LessonDetail() {
       <div className="max-w-4xl mx-auto space-y-6">
         <Button 
           variant="ghost" 
-          onClick={() => navigate('/')}
+          onClick={() => navigate('/lessons')}
           className="mb-4"
         >
           <ArrowLeft className="h-4 w-4 mr-2" />
-          Back to Dashboard
+          Back to Lessons
         </Button>
 
         <Card className="p-6">
