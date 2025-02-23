@@ -66,24 +66,28 @@ serve(async (req: Request) => {
       )
     }
 
-    // Generate new image
+    // Generate new image with explicit parameter validation
     console.log('No existing image found, generating new one...')
+    const requestBody = {
+      prompt: basePrompt,
+      height: 512,
+      width: 512,
+      num_inference_steps: 10, // Reduced to be safely under the limit of 12
+      guidance_scale: 7.5,
+      negative_prompt: "text, words, letters, blurry, complex, confusing",
+      output_format: "webp",
+      output_quality: 80,
+    }
+
+    console.log('Sending request to Fal AI with body:', JSON.stringify(requestBody))
+
     const response = await fetch('https://fal.run/fal-ai/flux/schnell', {
       method: 'POST',
       headers: {
         'Authorization': `Key ${falApiKey}`,
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify({
-        prompt: basePrompt,
-        height: 512,
-        width: 512,
-        num_inference_steps: 12, // Updated to maximum allowed value
-        guidance_scale: 7.5,
-        negative_prompt: "text, words, letters, blurry, complex, confusing",
-        output_format: "webp",
-        output_quality: 80,
-      }),
+      body: JSON.stringify(requestBody),
     })
 
     if (!response.ok) {
