@@ -1,4 +1,5 @@
 
+import { useState } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { HangulLesson } from "./HangulLesson";
 import { HangulProgress } from "./HangulProgress";
@@ -6,6 +7,10 @@ import { LoadingSpinner } from "./LoadingSpinner";
 import { EmptyState } from "./EmptyState";
 import { useHangulLessons } from "@/hooks/useHangulLessons";
 import { cn } from "@/lib/utils";
+import { QuizModal } from "./QuizModal";
+import { ReviewModal } from "./ReviewModal";
+import { Button } from "@/components/ui/button";
+import { SearchIcon, BookOpen } from "lucide-react";
 
 interface HangulLearningContainerProps {
   onComplete?: () => void;
@@ -21,6 +26,9 @@ export function HangulLearningContainer({ onComplete }: HangulLearningContainerP
     currentSection,
     getLessonSection
   } = useHangulLessons();
+
+  const [showQuiz, setShowQuiz] = useState(false);
+  const [showReview, setShowReview] = useState(false);
   const { toast } = useToast();
 
   const handleLessonComplete = () => {
@@ -30,19 +38,29 @@ export function HangulLearningContainer({ onComplete }: HangulLearningContainerP
       const nextSectionType = getLessonSection(currentLessonIndex + 1);
       
       if (currentSectionType !== nextSectionType) {
-        toast({
-          title: `${currentSectionType.split('_').map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(' ')} Completed! 🎉`,
-          description: `You've completed the ${currentSectionType.replace('_', ' ')} section. Moving on to ${nextSectionType.replace('_', ' ')}.`,
-        });
+        setShowQuiz(true);
+      } else {
+        handleNext();
       }
-      handleNext();
     } else {
       toast({
         title: "Congratulations! 축하해요!",
         description: "You've completed all Hangul lessons! Now you can move on to other content.",
       });
+      onComplete?.();
     }
-    onComplete?.();
+  };
+
+  const getCurrentSectionLessons = () => {
+    const sectionSize = Math.ceil(lessons.length / 3);
+    const startIndex = currentSection === 'vowels' ? 0 :
+                      currentSection === 'basic_consonants' ? sectionSize :
+                      sectionSize * 2;
+    const endIndex = currentSection === 'vowels' ? sectionSize :
+                    currentSection === 'basic_consonants' ? sectionSize * 2 :
+                    lessons.length;
+    
+    return lessons.slice(startIndex, endIndex);
   };
 
   if (isLoading) {
@@ -68,6 +86,10 @@ export function HangulLearningContainer({ onComplete }: HangulLearningContainerP
     advanced_consonants: "Challenge yourself with complex consonant combinations",
   };
 
+  const sectionName = currentSection.split('_')
+    .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+    .join(' ');
+
   return (
     <div className={cn(
       "min-h-screen transition-all duration-1000",
@@ -76,11 +98,22 @@ export function HangulLearningContainer({ onComplete }: HangulLearningContainerP
       <div className="max-w-4xl mx-auto px-4 py-8">
         <div className="bg-white/90 backdrop-blur-sm rounded-2xl p-6 shadow-xl">
           <div className="mb-8">
-            <HangulProgress 
-              currentLesson={currentLessonIndex + 1} 
-              totalLessons={lessons.length}
-              theme={themeSection}
-            />
+            <div className="flex justify-between items-center mb-4">
+              <HangulProgress 
+                currentLesson={currentLessonIndex + 1} 
+                totalLessons={lessons.length}
+                theme={themeSection}
+              />
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setShowReview(true)}
+                className="ml-4"
+              >
+                <BookOpen className="w-4 h-4 mr-2" />
+                Review Section
+              </Button>
+            </div>
             <p className="text-center mt-2 text-gray-600 italic">
               {sectionDescriptions[currentSection]}
             </p>
@@ -94,6 +127,24 @@ export function HangulLearningContainer({ onComplete }: HangulLearningContainerP
           />
         </div>
       </div>
+
+      <QuizModal 
+        isOpen={showQuiz}
+        onClose={() => setShowQuiz(false)}
+        onPass={() => {
+          setShowQuiz(false);
+          handleNext();
+        }}
+        sectionLessons={getCurrentSectionLessons()}
+        sectionName={sectionName}
+      />
+
+      <ReviewModal
+        isOpen={showReview}
+        onClose={() => setShowReview(false)}
+        sectionLessons={getCurrentSectionLessons()}
+        sectionName={sectionName}
+      />
     </div>
   );
 }
