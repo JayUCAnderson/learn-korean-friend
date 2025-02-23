@@ -4,3 +4,5 @@ project_id = "emwgbdwpjicxtbuilwqu"
 [functions.generate-mnemonic]
 verify_jwt = true
 
+[functions.generate-learning-content]
+verify_jwt = true

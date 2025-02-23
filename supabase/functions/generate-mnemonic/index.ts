@@ -41,7 +41,7 @@ serve(async (req: Request) => {
       )
     }
 
-    // Generate mnemonic image using Fal AI
+    // Generate mnemonic image using Fal AI directly via fetch
     const falApiKey = Deno.env.get('FAL_AI_API_KEY')
     const prompt = `Create a memorable, simple cartoon drawing that helps remember the Korean letter "${character}". The image should be clear and focused on a single concept.`
 
@@ -58,11 +58,17 @@ serve(async (req: Request) => {
     })
 
     if (!response.ok) {
+      const errorText = await response.text()
+      console.error('Fal AI Error:', errorText)
       throw new Error('Failed to generate image')
     }
 
     const imageData = await response.json()
-    const imageUrl = imageData.images[0].url
+    const imageUrl = imageData.images?.[0]?.url
+
+    if (!imageUrl) {
+      throw new Error('No image URL received from Fal AI')
+    }
 
     // Store the generated image URL in the database
     const { error: insertError } = await supabase
@@ -73,7 +79,10 @@ serve(async (req: Request) => {
         prompt: prompt
       })
 
-    if (insertError) throw insertError
+    if (insertError) {
+      console.error('Database insertion error:', insertError)
+      throw insertError
+    }
 
     return new Response(
       JSON.stringify({ image_url: imageUrl }),
@@ -84,6 +93,7 @@ serve(async (req: Request) => {
     )
 
   } catch (error) {
+    console.error('Function error:', error)
     return new Response(
       JSON.stringify({ error: error.message }),
       {
@@ -93,4 +103,3 @@ serve(async (req: Request) => {
     )
   }
 })
-
