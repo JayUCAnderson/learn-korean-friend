@@ -9,7 +9,7 @@ interface HangulProgressProps {
 
 export function HangulProgress({ theme }: HangulProgressProps) {
   const { currentLessonInSection, sectionLessons, currentSection } = useHangulLessons();
-  const progressPercentage = ((currentLessonInSection + 1) / sectionLessons) * 100;
+  const progressPercentage = (currentLessonInSection / sectionLessons) * 100;
 
   const themeColors = {
     temple: "bg-[#D46A6A]",
@@ -35,11 +35,12 @@ export function HangulProgress({ theme }: HangulProgressProps) {
 
   return (
     <div className="space-y-4">
-      <div className="flex items-center text-sm text-gray-600">
+      <div className="flex items-center justify-between text-sm text-gray-600">
         <span className="flex items-center gap-2">
           <span className="text-lg">{themeIcons[theme]}</span>
-          <span>{sectionMap[currentSection]} - Lesson {currentLessonInSection + 1} of {sectionLessons}</span>
+          <span>{sectionMap[currentSection]} - Lesson {currentLessonInSection} of {sectionLessons}</span>
         </span>
+        <span>{Math.round(progressPercentage)}%</span>
       </div>
       <Progress 
         value={progressPercentage} 

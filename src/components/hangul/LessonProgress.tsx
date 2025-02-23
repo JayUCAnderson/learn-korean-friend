@@ -47,47 +47,28 @@ export function LessonProgress({ lessonId, onComplete }: LessonProgressProps) {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error("User not authenticated");
 
-      // First check if there's an existing progress record
-      const { data: existingProgress } = await supabase
-        .from('hangul_progress')
-        .select()
-        .eq('user_id', user.id)
-        .eq('character_id', lessonId)
-        .maybeSingle();
+      const { error } = await supabase.from('hangul_progress').upsert({
+        user_id: user.id,
+        character_id: lessonId,
+        total_practice_sessions: 1,
+        recognition_accuracy: 100,
+        sound_association_accuracy: 100,
+        last_reviewed: new Date().toISOString(),
+      });
 
-      if (existingProgress) {
-        // Update existing record
-        const { error } = await supabase
-          .from('hangul_progress')
-          .update({
-            total_practice_sessions: existingProgress.total_practice_sessions + 1,
-            recognition_accuracy: 100,
-            sound_association_accuracy: 100,
-            last_reviewed: new Date().toISOString(),
-          })
-          .eq('user_id', user.id)
-          .eq('character_id', lessonId);
-
-        if (error) throw error;
-      } else {
-        // Insert new record
-        const { error } = await supabase
-          .from('hangul_progress')
-          .insert({
-            user_id: user.id,
-            character_id: lessonId,
-            total_practice_sessions: 1,
-            recognition_accuracy: 100,
-            sound_association_accuracy: 100,
-            last_reviewed: new Date().toISOString(),
-          });
-
-        if (error) throw error;
-      }
+      if (error) throw error;
 
       toast({
         title: "Progress Saved",
         description: "Keep up the great work! 잘 했어요! (jal haesseoyo!)",
+      });
+      
+      // Reset state before moving to next lesson
+      setShowMasteryCheck(false);
+      setMasteryChecks({
+        recognition: false,
+        pronunciation: false,
+        writing: false
       });
       
       onComplete();
