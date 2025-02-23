@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { HangulLesson } from "./HangulLesson";
@@ -38,7 +37,6 @@ export function HangulLearningContainer({ onComplete }: HangulLearningContainerP
   const [showReview, setShowReview] = useState(false);
   const { toast } = useToast();
 
-  // Set the current lesson index from URL parameter if it exists
   useState(() => {
     if (lessonParam) {
       const index = parseInt(lessonParam);
@@ -120,11 +118,7 @@ export function HangulLearningContainer({ onComplete }: HangulLearningContainerP
         <div className="bg-white/90 backdrop-blur-sm rounded-2xl p-6 shadow-xl">
           <div className="mb-8">
             <div className="flex justify-between items-center mb-4">
-              <HangulProgress 
-                currentLesson={currentLessonIndex + 1} 
-                totalLessons={lessons.length}
-                theme={themeSection}
-              />
+              <HangulProgress theme={themeSection} />
               <Button
                 variant="outline"
                 size="sm"
