@@ -13,10 +13,14 @@ interface VocabularyItem {
   difficulty?: number;
   mastery?: number;
   timesReviewed?: number;
+  mnemonicImage?: string;
 }
 
 interface VocabularyListProps {
   vocabulary: VocabularyItem[];
+  mnemonicImages?: {
+    [key: string]: string;
+  } | null;
 }
 
 export function VocabularyList({ vocabulary }: VocabularyListProps) {
@@ -62,6 +66,16 @@ export function VocabularyList({ vocabulary }: VocabularyListProps) {
         <div className="text-center space-y-4">
           <h3 className="text-2xl font-bold text-gray-900">{currentWord.korean}</h3>
           
+          {currentWord.mnemonicImage && (
+            <div className="max-w-sm mx-auto mb-4">
+              <img 
+                src={currentWord.mnemonicImage} 
+                alt={`Mnemonic for ${currentWord.korean}`}
+                className="rounded-lg shadow-lg"
+              />
+            </div>
+          )}
+
           <div className="flex items-center justify-center gap-2 text-sm text-gray-500">
             {currentWord.pronunciation && (
               <>

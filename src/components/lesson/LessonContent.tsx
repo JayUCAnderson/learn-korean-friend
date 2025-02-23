@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -10,9 +9,7 @@ import { PracticeExercises } from "./PracticeExercises";
 
 interface LessonContentProps {
   content: string;
-  mnemonicImages?: {
-    [key: string]: string;
-  } | null;
+  mnemonicImages?: Record<string, string> | null;
 }
 
 type DialoguePart = {

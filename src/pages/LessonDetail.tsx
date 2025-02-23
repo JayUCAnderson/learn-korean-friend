@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { supabase } from "@/integrations/supabase/client";
@@ -24,9 +23,7 @@ interface Lesson {
   status: 'not_started' | 'in_progress' | 'completed';
   vocabulary?: any[];
   audio_content?: AudioContent | null;
-  mnemonic_images?: {
-    [key: string]: string;
-  } | null;
+  mnemonic_images?: Record<string, string> | null;
 }
 
 interface LessonContent {
