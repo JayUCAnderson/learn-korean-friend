@@ -1,6 +1,7 @@
 
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
+import "https://deno.land/x/xhr@0.1.0/mod.ts"
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -50,30 +51,38 @@ serve(async (req: Request) => {
       )
     }
 
-    // Generate mnemonic image using Fal AI flux/schnell model
+    // Generate a concise, image-focused prompt
+    const defaultStyleSuffix = "Render in a minimalist Korean design style with clean lines and soft colors"
+    const generateImagePrompt = (character: string, mnemonic: string): string => {
+      // Remove any existing explanatory text and focus on visual description
+      const cleanMnemonic = mnemonic.replace(/makes .* sound|for the Korean character/g, '').trim()
+      return `Create a simple, iconic illustration of ${cleanMnemonic}. ${defaultStyleSuffix}`
+    }
+
+    const finalPrompt = basePrompt 
+      ? `${basePrompt}. ${defaultStyleSuffix}`
+      : generateImagePrompt(character, `a ${characterType} that looks like ${character}`)
+
+    console.log('Generating new mnemonic image with prompt:', finalPrompt)
+
     const falApiKey = Deno.env.get('FAL_AI_API_KEY')
     if (!falApiKey) {
       throw new Error('FAL_AI_API_KEY is not configured')
     }
 
-    const defaultPrompt = `Create a memorable, simple cartoon drawing that helps remember the Korean ${characterType} "${character}". The image should be clear, focused on a single concept, and use simple lines and shapes.`
-    const finalPrompt = basePrompt ? `${basePrompt} for the Korean character "${character}"` : defaultPrompt
-
-    console.log('Generating new mnemonic image with prompt:', finalPrompt)
-
     const response = await fetch('https://fal.run/fal-ai/flux/schnell', {
       method: 'POST',
       headers: {
-        'Authorization': `Bearer ${falApiKey}`, // Changed from 'Key' to 'Bearer'
+        'Authorization': `Bearer ${falApiKey}`,
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
         prompt: finalPrompt,
-        height: 512, // Added specific dimensions
+        height: 512,
         width: 512,
         num_inference_steps: 20,
         guidance_scale: 7.5,
-        negative_prompt: "text, words, letters, blurry, complex, confusing",
+        negative_prompt: "text, words, letters, blurry, complex, confusing, photorealistic, detailed, noise",
       }),
     })
 
@@ -128,3 +137,4 @@ serve(async (req: Request) => {
     )
   }
 })
+
