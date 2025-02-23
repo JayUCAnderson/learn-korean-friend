@@ -69,8 +69,8 @@ serve(async (req: Request) => {
     // Generate new image with explicit parameter validation
     console.log('No existing image found, generating new one...')
     
-    // Construct an enhanced prompt that includes Korean cultural elements
-    const enhancedPrompt = `Design ${basePrompt} that blends traditional Korean cultural elements with modern K-pop aesthetics. Use a vibrant color palette inspired by hanbok (traditional Korean clothing) and temple architecture. The image should clearly resemble the Korean character "${character}" while maintaining cultural authenticity.`
+    // Construct the enhanced prompt with the exact format specified
+    const enhancedPrompt = `Design ${basePrompt} thats blend traditional Korean cultural elements with modern K-pop aesthetics. Use a vibrant color palette inspired by hanbok (traditional Korean clothing) and temple architecture`
 
     const requestBody = {
       prompt: enhancedPrompt,
