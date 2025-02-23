@@ -1,11 +1,9 @@
 
 import { UserGreeting } from "./learning/UserGreeting";
 import { LearningProgress } from "./learning/LearningProgress";
-import { LearningPathContainer } from "./learning/LearningPathContainer";
 import { getThemeColors } from "./learning/ThemeProvider";
 import { Card } from "@/components/ui/card";
 import { Book, Scroll } from "lucide-react";
-import { useToast } from "@/components/ui/use-toast";
 import { useNavigate } from "react-router-dom";
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
@@ -13,7 +11,6 @@ import { supabase } from "@/integrations/supabase/client";
 const LearningInterface = ({ userData }: { userData: any }) => {
   const [hangulCompleted, setHangulCompleted] = useState(false);
   const [isCheckingProgress, setIsCheckingProgress] = useState(true);
-  const { toast } = useToast();
   const navigate = useNavigate();
   const theme = getThemeColors(
     Array.isArray(userData.interests) && userData.interests.length > 0 
@@ -54,7 +51,6 @@ const LearningInterface = ({ userData }: { userData: any }) => {
   };
 
   const handleLessonsClick = () => {
-    // Show lessons content - removed Hangul completion check
     navigate("/lessons");
   };
 
@@ -87,7 +83,7 @@ const LearningInterface = ({ userData }: { userData: any }) => {
             </div>
           </Card>
 
-          {/* Regular Lessons Card - Removed disabled state */}
+          {/* Regular Lessons Card */}
           <Card 
             className="group relative overflow-hidden p-6 cursor-pointer transition-all duration-300
               hover:shadow-lg border-none bg-white ring-1 ring-black/5"
@@ -116,14 +112,9 @@ const LearningInterface = ({ userData }: { userData: any }) => {
         <div className="relative">
           <LearningProgress themeColors={theme} />
         </div>
-
-        <div className="mt-8">
-          <LearningPathContainer userData={userData} themeColors={theme} />
-        </div>
       </div>
     </div>
   );
 };
 
 export default LearningInterface;
-
