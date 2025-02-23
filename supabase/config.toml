@@ -1,1 +1,4 @@
+
 project_id = "emwgbdwpjicxtbuilwqu"
+[functions.generate-mnemonic]
+verify_jwt = true

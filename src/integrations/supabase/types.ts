@@ -44,6 +44,101 @@ export type Database = {
           },
         ]
       }
+      hangul_lessons: {
+        Row: {
+          character: string
+          created_at: string
+          examples: Json
+          id: string
+          lesson_order: number
+          mnemonic_base: string
+          mnemonic_image_id: string | null
+          romanization: string
+          similar_sounds: string[] | null
+          sound_description: string
+          stroke_order: Json | null
+        }
+        Insert: {
+          character: string
+          created_at?: string
+          examples: Json
+          id?: string
+          lesson_order: number
+          mnemonic_base: string
+          mnemonic_image_id?: string | null
+          romanization: string
+          similar_sounds?: string[] | null
+          sound_description: string
+          stroke_order?: Json | null
+        }
+        Update: {
+          character?: string
+          created_at?: string
+          examples?: Json
+          id?: string
+          lesson_order?: number
+          mnemonic_base?: string
+          mnemonic_image_id?: string | null
+          romanization?: string
+          similar_sounds?: string[] | null
+          sound_description?: string
+          stroke_order?: Json | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "hangul_lessons_mnemonic_image_id_fkey"
+            columns: ["mnemonic_image_id"]
+            isOneToOne: false
+            referencedRelation: "mnemonic_images"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      hangul_progress: {
+        Row: {
+          character_id: string | null
+          created_at: string
+          id: string
+          last_reviewed: string | null
+          mastery_level: number | null
+          next_review: string | null
+          user_id: string | null
+        }
+        Insert: {
+          character_id?: string | null
+          created_at?: string
+          id?: string
+          last_reviewed?: string | null
+          mastery_level?: number | null
+          next_review?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          character_id?: string | null
+          created_at?: string
+          id?: string
+          last_reviewed?: string | null
+          mastery_level?: number | null
+          next_review?: string | null
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "hangul_progress_character_id_fkey"
+            columns: ["character_id"]
+            isOneToOne: false
+            referencedRelation: "hangul_lessons"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "hangul_progress_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       learning_content: {
         Row: {
           content: Json
@@ -177,6 +272,27 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      mnemonic_images: {
+        Row: {
+          created_at: string
+          id: string
+          image_url: string
+          prompt: string | null
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          image_url: string
+          prompt?: string | null
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          image_url?: string
+          prompt?: string | null
+        }
+        Relationships: []
       }
       profiles: {
         Row: {
