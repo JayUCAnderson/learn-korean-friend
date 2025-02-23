@@ -10,13 +10,19 @@ import { cn } from "@/lib/utils";
 import { QuizModal } from "./QuizModal";
 import { ReviewModal } from "./ReviewModal";
 import { Button } from "@/components/ui/button";
-import { SearchIcon, BookOpen } from "lucide-react";
+import { BookOpen } from "lucide-react";
+import { HangulLandingPage } from "./HangulLandingPage";
+import { useSearchParams } from 'react-router-dom';
 
 interface HangulLearningContainerProps {
   onComplete?: () => void;
 }
 
 export function HangulLearningContainer({ onComplete }: HangulLearningContainerProps) {
+  const [searchParams] = useSearchParams();
+  const lessonParam = searchParams.get('lesson');
+  const showLanding = !lessonParam;
+
   const { 
     lessons, 
     currentLessonIndex, 
@@ -24,12 +30,23 @@ export function HangulLearningContainer({ onComplete }: HangulLearningContainerP
     handleNext, 
     handlePrevious, 
     currentSection,
-    getLessonSection
+    getLessonSection,
+    setCurrentLessonIndex
   } = useHangulLessons();
 
   const [showQuiz, setShowQuiz] = useState(false);
   const [showReview, setShowReview] = useState(false);
   const { toast } = useToast();
+
+  // Set the current lesson index from URL parameter if it exists
+  useState(() => {
+    if (lessonParam) {
+      const index = parseInt(lessonParam);
+      if (!isNaN(index) && index >= 0 && index < lessons.length) {
+        setCurrentLessonIndex(index);
+      }
+    }
+  });
 
   const handleLessonComplete = () => {
     const nextLesson = lessons[currentLessonIndex + 1];
@@ -69,6 +86,10 @@ export function HangulLearningContainer({ onComplete }: HangulLearningContainerP
 
   if (!lessons.length) {
     return <EmptyState />;
+  }
+
+  if (showLanding) {
+    return <HangulLandingPage />;
   }
 
   const themeSection = currentSection === 'vowels' ? 'temple' :
