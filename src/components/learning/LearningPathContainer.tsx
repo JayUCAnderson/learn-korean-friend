@@ -87,18 +87,17 @@ export const LearningPathContainer = ({ userData, themeColors }: LearningPathCon
       
       // Transform the content into a properly typed structure for the database
       const lessonContent = {
-        content: typeof content.content === 'string' 
-          ? content.content 
-          : content.content?.content || '',
-        vocabulary: (typeof content.content === 'object' && Array.isArray(content.content.vocabulary)
-          ? content.content.vocabulary
-          : []
-        ).map(item => ({
+        content: {
+          dialogue: content.dialogue || [],
+          cultural_notes: content.cultural_notes || [],
+          review_suggestions: content.review_suggestions || []
+        },
+        vocabulary: content.vocabulary?.map(item => ({
           korean: item.korean || '',
           english: item.english || '',
           pronunciation: item.pronunciation || '',
-          partOfSpeech: item.partOfSpeech || ''
-        }))
+          contextualUsage: item.contextualUsage || ''
+        })) || []
       };
 
       console.log("Prepared lesson content:", lessonContent);
@@ -153,3 +152,4 @@ export const LearningPathContainer = ({ userData, themeColors }: LearningPathCon
     </div>
   );
 };
+
