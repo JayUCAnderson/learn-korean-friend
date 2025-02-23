@@ -45,7 +45,8 @@ export const HangulLesson = memo(function HangulLesson({
       sound_description: lesson?.sound_description,
       examples: lesson?.examples,
       mnemonic_base: lesson?.mnemonic_base,
-      mnemonic_image_url: lesson?.mnemonic_image_url
+      mnemonic_image_url: lesson?.mnemonic_image_url,
+      pronunciation_url: lesson?.pronunciation_url
     });
   }, [lesson]);
 
@@ -57,6 +58,13 @@ export const HangulLesson = memo(function HangulLesson({
 
     const loadAudio = async () => {
       try {
+        // First try to use the pronunciation_url from the database
+        if (lesson.pronunciation_url) {
+          setAudioUrl(lesson.pronunciation_url);
+          return;
+        }
+
+        // If no pronunciation_url exists, generate new audio
         if (!audioUrl) {
           const url = await processAudio(lesson.character);
           if (isMounted && url) {
@@ -77,7 +85,7 @@ export const HangulLesson = memo(function HangulLesson({
         URL.revokeObjectURL(audioUrl);
       }
     };
-  }, [lesson?.id, audioUrl]); 
+  }, [lesson?.id, lesson?.pronunciation_url]); 
 
   const playPronunciation = () => {
     if (audioRef.current && audioUrl) {
