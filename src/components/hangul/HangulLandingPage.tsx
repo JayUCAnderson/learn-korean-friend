@@ -2,7 +2,7 @@
 import { useNavigate } from 'react-router-dom';
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { ArrowRight, ArrowLeft } from "lucide-react";
+import { ArrowRight, ArrowLeft, Lock } from "lucide-react";
 import { Progress } from "@/components/ui/progress";
 import { useHangulLessons } from "@/hooks/useHangulLessons";
 
@@ -47,21 +47,18 @@ export function HangulLandingPage() {
   };
 
   const findFirstIncompleteLessonIndex = (section: keyof typeof sectionInfo) => {
+    const sectionStartIndex = lessons.findIndex(lesson => getLessonSection(lesson) === section);
     const sectionLessons = lessons.filter(lesson => getLessonSection(lesson) === section);
-    return lessons.findIndex(lesson => 
-      getLessonSection(lesson) === section && 
-      lessons.indexOf(lesson) > currentLessonIndex
+    const firstIncompleteInSection = sectionLessons.findIndex((_, index) => 
+      index > (currentLessonIndex - sectionStartIndex)
     );
+    
+    return firstIncompleteInSection === -1 ? sectionStartIndex : sectionStartIndex + firstIncompleteInSection;
   };
 
   const handleContinueLearning = (section: keyof typeof sectionInfo) => {
-    const incompleteIndex = findFirstIncompleteLessonIndex(section);
-    const sectionLessons = lessons.filter(lesson => getLessonSection(lesson) === section);
-    const startIndex = incompleteIndex === -1 ? 
-      lessons.findIndex(lesson => getLessonSection(lesson) === section) : 
-      incompleteIndex;
-    
-    navigate(`/hangul?section=${section}&lesson=${startIndex}`);
+    const lessonIndex = findFirstIncompleteLessonIndex(section);
+    navigate(`/hangul?section=${section}&lesson=${lessonIndex}`);
   };
 
   return (
@@ -91,12 +88,12 @@ export function HangulLandingPage() {
             return (
               <Card 
                 key={key}
-                className={`relative overflow-hidden transition-all duration-300 ${
+                className={`relative overflow-hidden transition-all duration-300 flex flex-col ${
                   available ? 'hover:shadow-lg' : 'opacity-75'
                 }`}
               >
                 <div className={`absolute inset-0 bg-gradient-to-br ${section.gradient} opacity-50`} />
-                <div className="relative p-6 space-y-4">
+                <div className="relative p-6 flex-grow space-y-4">
                   <h3 className="text-xl font-semibold">{section.title}</h3>
                   <div className="flex gap-2">
                     {section.examples.map((char) => (
@@ -105,21 +102,35 @@ export function HangulLandingPage() {
                   </div>
                   <p className="text-sm text-gray-600">{section.description}</p>
                   
-                  <div className="space-y-2">
-                    <div className="flex justify-between text-sm text-gray-600">
-                      <span>Progress</span>
-                      <span>{Math.round(progress)}%</span>
+                  {available && (
+                    <div className="space-y-2">
+                      <div className="flex justify-between text-sm text-gray-600">
+                        <span>Progress</span>
+                        <span>{Math.round(progress)}%</span>
+                      </div>
+                      <Progress value={progress} className="h-2" />
                     </div>
-                    <Progress value={progress} className="h-2" />
-                  </div>
+                  )}
+                </div>
 
+                <div className="relative p-6 pt-0 mt-auto">
                   <Button
                     className="w-full"
                     disabled={!available}
-                    onClick={() => handleContinueLearning(key)}
+                    variant={available ? "default" : "secondary"}
+                    onClick={() => available && handleContinueLearning(key)}
                   >
-                    {progress === 100 ? "Review Section" : available ? "Continue Learning" : "Complete Previous Section"}
-                    <ArrowRight className="w-4 h-4 ml-2" />
+                    {available ? (
+                      <>
+                        {progress === 100 ? "Review Section" : "Continue Learning"}
+                        <ArrowRight className="w-4 h-4" />
+                      </>
+                    ) : (
+                      <>
+                        Locked
+                        <Lock className="w-4 h-4" />
+                      </>
+                    )}
                   </Button>
                 </div>
               </Card>
