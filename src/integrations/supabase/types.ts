@@ -46,7 +46,9 @@ export type Database = {
       }
       hangul_lessons: {
         Row: {
+          base_sound: string
           character: string
+          character_type: Database["public"]["Enums"]["character_type"][]
           created_at: string
           examples: Json
           id: string
@@ -59,7 +61,9 @@ export type Database = {
           stroke_order: Json | null
         }
         Insert: {
+          base_sound: string
           character: string
+          character_type?: Database["public"]["Enums"]["character_type"][]
           created_at?: string
           examples: Json
           id?: string
@@ -72,7 +76,9 @@ export type Database = {
           stroke_order?: Json | null
         }
         Update: {
+          base_sound?: string
           character?: string
+          character_type?: Database["public"]["Enums"]["character_type"][]
           created_at?: string
           examples?: Json
           id?: string
@@ -102,6 +108,11 @@ export type Database = {
           last_reviewed: string | null
           mastery_level: number | null
           next_review: string | null
+          recognition_accuracy: number | null
+          recognition_speed_ms: number | null
+          sound_association_accuracy: number | null
+          stroke_order_accuracy: number | null
+          total_practice_sessions: number | null
           user_id: string | null
         }
         Insert: {
@@ -111,6 +122,11 @@ export type Database = {
           last_reviewed?: string | null
           mastery_level?: number | null
           next_review?: string | null
+          recognition_accuracy?: number | null
+          recognition_speed_ms?: number | null
+          sound_association_accuracy?: number | null
+          stroke_order_accuracy?: number | null
+          total_practice_sessions?: number | null
           user_id?: string | null
         }
         Update: {
@@ -120,6 +136,11 @@ export type Database = {
           last_reviewed?: string | null
           mastery_level?: number | null
           next_review?: string | null
+          recognition_accuracy?: number | null
+          recognition_speed_ms?: number | null
+          sound_association_accuracy?: number | null
+          stroke_order_accuracy?: number | null
+          total_practice_sessions?: number | null
           user_id?: string | null
         }
         Relationships: [
@@ -376,6 +397,16 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      calculate_hangul_mastery: {
+        Args: {
+          recognition_speed: number
+          recognition_acc: number
+          stroke_acc: number
+          sound_acc: number
+          practice_sessions: number
+        }
+        Returns: number
+      }
       get_user_vocabulary_stats: {
         Args: {
           user_id_param: string
@@ -388,6 +419,7 @@ export type Database = {
       }
     }
     Enums: {
+      character_type: "consonant" | "vowel" | "final_consonant"
       content_type: "vocabulary" | "grammar" | "conversation" | "culture"
       korean_level: "beginner" | "intermediate" | "advanced"
       learning_goal: "casual" | "business" | "academic" | "culture"
