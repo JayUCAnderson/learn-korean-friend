@@ -6,7 +6,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { MasteryChecks } from "./MasteryChecks";
 
 interface LessonProgressProps {
-  lessonId: number;
+  lessonId: string;
   onComplete: () => void;
 }
 
@@ -49,7 +49,7 @@ export function LessonProgress({ lessonId, onComplete }: LessonProgressProps) {
 
       const { error } = await supabase.from('hangul_progress').upsert({
         user_id: user.id,
-        character_id: lessonId.toString(), // Convert to string as required by the database
+        character_id: lessonId,
         total_practice_sessions: 1,
         recognition_accuracy: 100,
         sound_association_accuracy: 100,
@@ -95,3 +95,4 @@ export function LessonProgress({ lessonId, onComplete }: LessonProgressProps) {
     </div>
   );
 }
+
