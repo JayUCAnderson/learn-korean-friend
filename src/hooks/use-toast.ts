@@ -1,6 +1,5 @@
 
 import * as React from "react"
-
 import type {
   ToastActionElement,
   ToastProps,
@@ -72,7 +71,7 @@ const addToRemoveQueue = (toastId: string) => {
   toastTimeouts.set(toastId, timeout)
 }
 
-export const reducer = (state: State, action: Action): State => {
+const reducer = (state: State, action: Action): State => {
   switch (action.type) {
     case "ADD_TOAST":
       return {
@@ -125,20 +124,37 @@ export const reducer = (state: State, action: Action): State => {
   }
 }
 
-const listeners: Array<(state: State) => void> = []
+// Create a React context for the toast state
+const ToastContext = React.createContext<{
+  state: State
+  dispatch: React.Dispatch<Action>
+}>({
+  state: { toasts: [] },
+  dispatch: () => null,
+})
 
-let memoryState: State = { toasts: [] }
-
-function dispatch(action: Action) {
-  memoryState = reducer(memoryState, action)
-  listeners.forEach((listener) => {
-    listener(memoryState)
-  })
+// Create a provider component
+export function ToastStateProvider({ children }: { children: React.ReactNode }) {
+  const [state, dispatch] = React.useReducer(reducer, { toasts: [] })
+  
+  return (
+    <ToastContext.Provider value={{ state, dispatch }}>
+      {children}
+    </ToastContext.Provider>
+  )
 }
 
-type Toast = Omit<ToasterToast, "id">
+// Hook to use the toast context
+function useToastContext() {
+  const context = React.useContext(ToastContext)
+  if (!context) {
+    throw new Error("useToast must be used within a ToastStateProvider")
+  }
+  return context
+}
 
-function toast({ ...props }: Toast) {
+function toast({ ...props }: Omit<ToasterToast, "id">) {
+  const { dispatch } = useToastContext()
   const id = genId()
 
   const update = (props: ToasterToast) =>
@@ -161,24 +177,14 @@ function toast({ ...props }: Toast) {
   })
 
   return {
-    id: id,
+    id,
     dismiss,
     update,
   }
 }
 
 function useToast() {
-  const [state, setState] = React.useState<State>(memoryState)
-
-  React.useEffect(() => {
-    listeners.push(setState)
-    return () => {
-      const index = listeners.indexOf(setState)
-      if (index > -1) {
-        listeners.splice(index, 1)
-      }
-    }
-  }, [state])
+  const { state, dispatch } = useToastContext()
 
   return {
     ...state,
@@ -187,4 +193,4 @@ function useToast() {
   }
 }
 
-export { useToast, toast }
+export { useToast, toast, ToastStateProvider }

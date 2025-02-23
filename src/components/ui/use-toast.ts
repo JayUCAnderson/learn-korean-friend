@@ -1,2 +1,2 @@
 
-export { useToast, toast } from "@/hooks/use-toast";
+export { useToast, toast, ToastStateProvider } from "@/hooks/use-toast"
