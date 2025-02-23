@@ -30,6 +30,15 @@ export function HangulProgress({ theme }: HangulProgressProps) {
     advanced_consonants: "Advanced Consonants"
   };
 
+  console.log('HangulProgress Debug:', {
+    currentSection,
+    sectionTitle: sectionMap[currentSection],
+    currentLessonNumber,
+    totalLessons: sectionLessons.length,
+    allLessons: lessons.length,
+    filtered: sectionLessons
+  });
+
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between text-sm text-gray-600">

@@ -1,4 +1,3 @@
-
 import { useState, useEffect, useMemo } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { HangulLesson } from "./HangulLesson";
@@ -103,6 +102,16 @@ export function HangulLearningContainer({ onComplete, section: propSection }: Ha
     advanced_consonants: "Challenge yourself with complex consonant combinations",
   };
 
+  console.log('HangulLearningContainer Debug:', {
+    currentSection,
+    description: sectionDescriptions[currentSection],
+    pathname: location.pathname,
+    routeSection,
+    section,
+    currentLessonIndex,
+    filteredLessonsLength: filteredLessons.length
+  });
+
   const sectionName = currentSection.split('_')
     .map(word => word.charAt(0).toUpperCase() + word.slice(1))
     .join(' ');
@@ -164,11 +173,10 @@ export function HangulLearningContainer({ onComplete, section: propSection }: Ha
 
       <ReviewModal
         isOpen={showReview}
-        onClose={() => setShowReview(false)} // Removed the navigation to /hangul
+        onClose={() => setShowReview(false)}
         sectionLessons={filteredLessons}
         sectionName={sectionName}
       />
     </div>
   );
 }
-
