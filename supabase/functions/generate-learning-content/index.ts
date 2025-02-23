@@ -9,22 +9,31 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
-const DIFFICULTY_MAPPINGS = {
-  'beginner': {
+const TOPIK_LEVEL_GUIDELINES = {
+  'topik1': {
     maxNewVocab: 5,
-    sentenceLength: 'very short (2-3 words)',
-    grammar: 'basic particles (은/는, 이/가) and simple verb endings (-어/아요)',
+    sentenceLength: '~5 words max',
+    grammar: 'Basic particles (은/는, 이/가, 을/를), simple present tense (-아/어요), basic questions (-이에요/예요), numbers (1-100)',
+    vocabulary: '800 basic words focused on daily life',
   },
-  'intermediate': {
+  'topik2': {
     maxNewVocab: 8,
-    sentenceLength: 'short to medium (3-5 words)',
-    grammar: 'past tense, connectors (고, 지만), and basic honorifics',
+    sentenceLength: '~8 words',
+    grammar: 'Past tense (-았/었어요), future tense (-을 거예요), basic connectors (-고, -지만), giving reasons (-아/어서)',
+    vocabulary: '1,500-2,000 words including daily life, hobbies, and basic emotions',
   },
-  'advanced': {
+  'topik3': {
+    maxNewVocab: 10,
+    sentenceLength: '~12 words',
+    grammar: 'Complex connectors (-는데, -니까), reported speech, honorifics, desires (-고 싶다)',
+    vocabulary: '2,000-3,000 words including abstract concepts and formal situations',
+  },
+  'topik4': {
     maxNewVocab: 12,
     sentenceLength: 'natural length',
-    grammar: 'all grammar patterns appropriate to context',
-  },
+    grammar: 'Advanced grammatical patterns, passive/causative, formal writing styles',
+    vocabulary: '3,000-4,000 words including academic and professional contexts',
+  }
 };
 
 serve(async (req) => {
@@ -36,8 +45,12 @@ serve(async (req) => {
     const { interest, level, contentType } = await req.json();
     console.log("Generating content for:", { interest, level, contentType });
 
-    // Determine difficulty parameters
-    const difficultyParams = DIFFICULTY_MAPPINGS[level.toLowerCase()] || DIFFICULTY_MAPPINGS.beginner;
+    // Map user level to TOPIK level
+    const topikLevel = level === 'beginner' ? 'topik1' : 
+                      level === 'intermediate' ? 'topik2' : 'topik3';
+    
+    const difficultyParams = TOPIK_LEVEL_GUIDELINES[topikLevel];
+    console.log("Using TOPIK level parameters:", difficultyParams);
 
     const response = await fetch('https://api.openai.com/v1/chat/completions', {
       method: 'POST',
@@ -58,16 +71,16 @@ serve(async (req) => {
 4. Clear Structure: Organize content logically with explicit connections
 5. Scaffolding: Support new concepts with familiar elements
 
-For ${level} level content about ${interest}, follow these specific guidelines:
+For ${level} level content about ${interest}, follow these specific TOPIK guidelines:
 - Maximum new vocabulary: ${difficultyParams.maxNewVocab} words
 - Sentence length: ${difficultyParams.sentenceLength}
 - Grammar focus: ${difficultyParams.grammar}
+- Vocabulary scope: ${difficultyParams.vocabulary}
 
 Generate a lesson in JSON format with this structure:
 {
-  "title": "unique, specific title incorporating the topic and key learning point",
+  "title": "unique, specific title that captures the key learning point",
   "description": "clear, specific description of what will be learned and how it connects to real-life usage",
-  "setting": "specific context where the dialogue takes place",
   "dialogue": [
     {
       "speaker": "string (specify name)",
@@ -95,7 +108,7 @@ Generate a lesson in JSON format with this structure:
   ],
   "cultural_notes": ["cultural context points"],
   "review_suggestions": ["practical review activities"],
-  "imagePrompt": "Design/create a scene showing ${interest} that blends traditional Korean cultural elements with modern K-pop aesthetics. Use a vibrant color palette inspired by hanbok and temple architecture"
+  "imagePrompt": "Generate a short, focused description based on the title's unique aspects for visual representation. This should capture the essence of the lesson's topic and learning goal."
 }`
           },
           {
@@ -116,6 +129,11 @@ Generate a lesson in JSON format with this structure:
 
     const generatedContent = JSON.parse(data.choices[0].message.content);
     console.log("Successfully parsed generated content:", generatedContent);
+
+    // Transform the image prompt to be surrounded by the hardcoded context
+    if (generatedContent.imagePrompt) {
+      generatedContent.imagePrompt = `Create a scene that showcases ${generatedContent.imagePrompt} while incorporating traditional Korean cultural elements. Use a vibrant color palette inspired by hanbok and temple architecture, balanced with modern aesthetics.`;
+    }
 
     if (!generatedContent.title || !generatedContent.description) {
       throw new Error('Generated content missing required fields');
