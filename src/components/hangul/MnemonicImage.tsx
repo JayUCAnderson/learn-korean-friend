@@ -17,10 +17,10 @@ export function MnemonicImage({
   lesson,
   mnemonicBase,
 }: MnemonicImageProps) {
-  const { mnemonicImage, isLoadingImage } = useMnemonicImage(lesson);
+  const { mnemonicImage } = useMnemonicImage(lesson);
   const { isRegeneratingImage, regenerateMnemonicImage } = useMnemonicRegenerator(lesson);
 
-  if (isLoadingImage || !mnemonicImage) {
+  if (!mnemonicImage) {
     return (
       <div className="flex flex-col items-center space-y-2">
         <Skeleton className="w-[300px] h-[300px] rounded-lg" />
@@ -36,7 +36,6 @@ export function MnemonicImage({
           src={mnemonicImage}
           alt="Mnemonic for learning"
           className="max-w-sm rounded-lg shadow-lg"
-          loading="lazy"
         />
         {process.env.NODE_ENV === 'development' && (
           <Button
