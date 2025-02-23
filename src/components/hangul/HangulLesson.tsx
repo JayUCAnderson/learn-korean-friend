@@ -22,24 +22,35 @@ export function HangulLesson({ lesson, onComplete, onNext, onPrevious }: HangulL
   const [audioUrl, setAudioUrl] = useState<string | null>(null);
   const [isLoadingAudio, setIsLoadingAudio] = useState(false);
   const audioRef = useRef<HTMLAudioElement | null>(null);
-
   const { isLoadingAudio: isAudioLoading, processAudio } = useAudioController();
 
   useEffect(() => {
+    let isMounted = true;
+    
     const loadAudio = async () => {
+      if (!lesson?.character) return;
+      
       setIsLoadingAudio(true);
       try {
         const url = await processAudio(lesson.character);
-        setAudioUrl(url);
+        if (isMounted) {
+          setAudioUrl(url);
+        }
       } catch (error) {
         console.error("Error loading audio:", error);
       } finally {
-        setIsLoadingAudio(false);
+        if (isMounted) {
+          setIsLoadingAudio(false);
+        }
       }
     };
 
     loadAudio();
-  }, [lesson.character, processAudio]);
+    
+    return () => {
+      isMounted = false;
+    };
+  }, [lesson?.character, processAudio]);
 
   const {
     mnemonicImage,
@@ -53,6 +64,10 @@ export function HangulLesson({ lesson, onComplete, onNext, onPrevious }: HangulL
       audioRef.current.play();
     }
   };
+
+  if (!lesson) {
+    return null;
+  }
 
   return (
     <Card className="p-6 space-y-6">

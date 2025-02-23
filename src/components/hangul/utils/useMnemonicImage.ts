@@ -10,13 +10,14 @@ export function useMnemonicImage(lesson: LessonType) {
   const [isRegeneratingImage, setIsRegeneratingImage] = useState(false);
 
   useEffect(() => {
-    if (lesson.mnemonic_image_url) {
+    if (lesson?.mnemonic_image_url) {
       setIsLoadingImage(false);
     }
-  }, [lesson.mnemonic_image_url]);
+  }, [lesson?.mnemonic_image_url]);
 
   const regenerateMnemonicImage = async () => {
     if (process.env.NODE_ENV !== 'development') return;
+    if (!lesson) return;
     
     setIsRegeneratingImage(true);
     
@@ -37,7 +38,7 @@ export function useMnemonicImage(lesson: LessonType) {
       if (generatedData?.imageUrl) {
         const { error: updateError } = await supabase
           .from('hangul_lessons')
-          .update({ mnemonic_image_url: generatedData.imageUrl })
+          .update({ mnemonic_image_id: generatedData.imageId })
           .eq('id', lesson.id);
 
         if (updateError) throw updateError;
@@ -50,7 +51,7 @@ export function useMnemonicImage(lesson: LessonType) {
   };
 
   return {
-    mnemonicImage: lesson.mnemonic_image_url,
+    mnemonicImage: lesson?.mnemonic_image_url,
     isLoadingImage,
     isRegeneratingImage,
     regenerateMnemonicImage

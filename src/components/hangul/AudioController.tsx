@@ -1,107 +1,87 @@
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { useToast } from "@/components/ui/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 
-interface AudioControllerProps {
-  character: string;
-  audioContent?: string | null;
-  onAudioReady: (url: string | null) => void;
-  onLoadingChange: (isLoading: boolean) => void;
-}
-
-export function useAudioController({ character, audioContent, onAudioReady, onLoadingChange }: AudioControllerProps) {
+export function useAudioController() {
   const [isLoadingAudio, setIsLoadingAudio] = useState(false);
   const { toast } = useToast();
   
   const JENNIE_VOICE_ID = 'z6Kj0hecH20CdetSElRT';
 
-  useEffect(() => {
-    let isMounted = true;
-    
-    const initializeAudio = async () => {
-      try {
-        setIsLoadingAudio(true);
-        onLoadingChange(true);
+  const processAudio = async (character: string) => {
+    try {
+      setIsLoadingAudio(true);
 
-        // If we have audio content from the preloaded data, use it
-        if (audioContent) {
-          const audioBlob = new Blob(
-            [Uint8Array.from(atob(audioContent), c => c.charCodeAt(0))],
-            { type: 'audio/mpeg' }
-          );
-          const url = URL.createObjectURL(audioBlob);
-          if (isMounted) {
-            onAudioReady(url);
-            setIsLoadingAudio(false);
-            onLoadingChange(false);
-          }
-          return;
-        }
+      // Check for existing pronunciation
+      const { data: existingPronunciation, error: fetchError } = await supabase
+        .from('character_pronunciations')
+        .select('audio_content')
+        .eq('character', character)
+        .maybeSingle();
 
-        // If no audio content is available, generate it
-        console.log(`No existing pronunciation found, generating new audio for character: ${character}`);
-        
-        const { data, error } = await supabase.functions.invoke(
-          'generate-pronunciation',
-          {
-            body: { 
-              character,
-              voiceId: JENNIE_VOICE_ID
-            }
-          }
-        );
+      if (fetchError) {
+        console.error('Error fetching audio:', fetchError);
+        throw fetchError;
+      }
 
-        if (error) throw error;
-        if (!data?.audioContent) {
-          throw new Error('No audio content received from generation');
-        }
-
+      // If we have existing audio content, use it
+      if (existingPronunciation?.audio_content) {
         const audioBlob = new Blob(
-          [Uint8Array.from(atob(data.audioContent), c => c.charCodeAt(0))],
+          [Uint8Array.from(atob(existingPronunciation.audio_content), c => c.charCodeAt(0))],
           { type: 'audio/mpeg' }
         );
-        const url = URL.createObjectURL(audioBlob);
-
-        // Store the audio in the database
-        const { error: storeError } = await supabase
-          .from('character_pronunciations')
-          .upsert({
-            character,
-            audio_content: data.audioContent
-          });
-
-        if (storeError) {
-          console.error('Error storing audio:', storeError);
-        }
-
-        if (isMounted) {
-          onAudioReady(url);
-        }
-      } catch (error: any) {
-        console.error("Error with audio:", error);
-        toast({
-          title: "Error",
-          description: "Failed to load pronunciation. Please try again.",
-          variant: "destructive",
-        });
-        if (isMounted) {
-          onAudioReady(null);
-        }
-      } finally {
-        if (isMounted) {
-          setIsLoadingAudio(false);
-          onLoadingChange(false);
-        }
+        return URL.createObjectURL(audioBlob);
       }
-    };
 
-    initializeAudio();
-    
-    return () => {
-      isMounted = false;
-    };
-  }, [character, audioContent]);
+      // Generate new audio if none exists
+      console.log(`Generating new audio for character: ${character}`);
+      
+      const { data, error } = await supabase.functions.invoke(
+        'generate-pronunciation',
+        {
+          body: { 
+            character,
+            voiceId: JENNIE_VOICE_ID
+          }
+        }
+      );
 
-  return { isLoadingAudio };
+      if (error) throw error;
+      if (!data?.audioContent) {
+        throw new Error('No audio content received from generation');
+      }
+
+      const audioBlob = new Blob(
+        [Uint8Array.from(atob(data.audioContent), c => c.charCodeAt(0))],
+        { type: 'audio/mpeg' }
+      );
+
+      // Store the audio in the database
+      const { error: storeError } = await supabase
+        .from('character_pronunciations')
+        .upsert({
+          character,
+          audio_content: data.audioContent
+        });
+
+      if (storeError) {
+        console.error('Error storing audio:', storeError);
+      }
+
+      return URL.createObjectURL(audioBlob);
+    } catch (error: any) {
+      console.error("Error with audio:", error);
+      toast({
+        title: "Error",
+        description: "Failed to load pronunciation. Please try again.",
+        variant: "destructive",
+      });
+      return null;
+    } finally {
+      setIsLoadingAudio(false);
+    }
+  };
+
+  return { isLoadingAudio, processAudio };
 }
