@@ -78,7 +78,7 @@ export function HangulLesson({ lesson, onComplete, onNext, onPrevious }: HangulL
         if (generatedData.imageId) {
           const { error: updateError } = await supabase
             .from('hangul_lessons')
-            .update({ mnemonic_image_id: generatedData.imageId.toString() })
+            .update({ mnemonic_image_id: generatedData.imageId })
             .eq('id', lesson.id);
 
           if (updateError) {
@@ -142,7 +142,7 @@ export function HangulLesson({ lesson, onComplete, onNext, onPrevious }: HangulL
         if (generatedData.imageId) {
           const { error: updateError } = await supabase
             .from('hangul_lessons')
-            .update({ mnemonic_image_id: generatedData.imageId.toString() })
+            .update({ mnemonic_image_id: generatedData.imageId })
             .eq('id', lesson.id);
 
           if (updateError) {
@@ -198,3 +198,4 @@ export function HangulLesson({ lesson, onComplete, onNext, onPrevious }: HangulL
     </Card>
   );
 }
+
