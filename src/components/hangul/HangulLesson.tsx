@@ -36,6 +36,19 @@ export const HangulLesson = memo(function HangulLesson({
     regenerateMnemonicImage
   } = useMnemonicImage(lesson);
 
+  // Log lesson data when it changes
+  useEffect(() => {
+    console.log("Current Hangul Lesson Data:", {
+      id: lesson?.id,
+      character: lesson?.character,
+      romanization: lesson?.romanization,
+      sound_description: lesson?.sound_description,
+      examples: lesson?.examples,
+      mnemonic_base: lesson?.mnemonic_base,
+      mnemonic_image_url: lesson?.mnemonic_image_url
+    });
+  }, [lesson]);
+
   useEffect(() => {
     if (!lesson?.id || hasAttemptedLoad.current) return;
     
