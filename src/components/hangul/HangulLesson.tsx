@@ -122,9 +122,9 @@ export function HangulLesson({ lesson, onComplete, onNext, onPrevious }: HangulL
           .from('mnemonic_images')
           .select('image_url')
           .eq('id', lesson.mnemonic_image_id)
-          .maybeSingle();
+          .single();
 
-        if (imageData?.image_url) {
+        if (imageData) { // Changed this check to be less specific
           console.log("Fetched existing mnemonic image:", imageData.image_url);
           setMnemonicImage(imageData.image_url);
           setIsLoadingImage(false);
@@ -209,3 +209,4 @@ export function HangulLesson({ lesson, onComplete, onNext, onPrevious }: HangulL
     </Card>
   );
 }
+
