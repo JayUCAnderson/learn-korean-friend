@@ -66,20 +66,8 @@ export function HangulLandingPage() {
       return;
     }
 
-    // Filter lessons for the specific section
-    const sectionLessons = lessons.filter(lesson => getLessonSection(lesson) === section);
-    
-    // Find the first incomplete lesson in this section
-    const firstIncompleteLessonIndex = sectionLessons.findIndex((lesson, index) => {
-      const lessonIndexInFullList = lessons.findIndex(l => l.id === lesson.id);
-      return lessonIndexInFullList > currentLessonIndex;
-    });
-
-    // If all lessons are complete, start from the beginning of the section
-    const targetIndex = firstIncompleteLessonIndex === -1 ? 0 : firstIncompleteLessonIndex;
-    
-    // Navigate to the appropriate route with section parameter
-    navigate(`${sectionInfo[section].route}?section=${section}`);
+    // Simply navigate to the appropriate route
+    navigate(sectionInfo[section].route);
   };
 
   return (
