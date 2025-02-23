@@ -1,6 +1,7 @@
 
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.7.1'
+import { fal } from 'https://esm.sh/@fal-ai/client@0.8.0'
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -24,63 +25,80 @@ serve(async (req) => {
   try {
     const { character, basePrompt } = await req.json()
     
-    const enhancedPrompt = `Create a memorable, visual mnemonic image to help remember the Korean character "${character}". The image should: ${basePrompt}`
-    
-    // Call fal.ai API
-    const response = await fetch('https://110602490-fast-sdxl.fal.run', {
-      method: 'POST',
-      headers: {
-        'Authorization': `Key ${falApiKey}`,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        prompt: enhancedPrompt,
-        image_size: "square_hd",
-        num_images: 1,
-      }),
-    })
+    // Configure fal client
+    fal.config({ credentials: falApiKey });
 
-    if (!response.ok) {
-      throw new Error(`Fal.ai API error: ${response.statusText}`)
-    }
-
-    const result = await response.json()
-    console.log('Image generation result:', result)
-    
-    if (!result.images?.[0]) {
-      throw new Error('No image generated')
-    }
-
-    // Store result in Supabase
+    // First check if we already have a mnemonic image for this character
     const supabaseUrl = Deno.env.get('SUPABASE_URL')
     const supabaseServiceRole = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')
     if (!supabaseUrl || !supabaseServiceRole) throw new Error('Supabase credentials not found')
     
     const supabase = createClient(supabaseUrl, supabaseServiceRole)
     
+    // Check if mnemonic image already exists
+    const { data: existingImage } = await supabase
+      .from('mnemonic_images')
+      .select('id, image_url')
+      .eq('character', character)
+      .maybeSingle()
+
+    if (existingImage) {
+      console.log('Found existing mnemonic image:', existingImage)
+      return new Response(
+        JSON.stringify({ 
+          success: true, 
+          imageUrl: existingImage.image_url,
+          imageId: existingImage.id,
+          isNew: false
+        }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      )
+    }
+
+    // Generate a structured prompt for the mnemonic image
+    const structuredPrompt = generateMnemonicPrompt(character, basePrompt)
+    console.log('Generated prompt:', structuredPrompt)
+
+    // Generate image using fal.ai Flux model
+    const result = await fal.subscribe('fal-ai/flux/schnell', {
+      input: {
+        prompt: structuredPrompt,
+      },
+      logs: true,
+      onQueueUpdate: (update) => {
+        if (update.status === "IN_PROGRESS") {
+          update.logs.map((log) => log.message).forEach(console.log);
+        }
+      },
+    })
+
+    if (!result.data?.images?.[0]) {
+      throw new Error('No image generated')
+    }
+
+    const imageUrl = result.data.images[0]
+    console.log('Generated image URL:', imageUrl)
+    
+    // Store result in Supabase
     const { data: imageRecord, error: insertError } = await supabase
       .from('mnemonic_images')
       .insert({
-        image_url: result.images[0],
-        prompt: enhancedPrompt,
+        image_url: imageUrl,
+        prompt: structuredPrompt,
+        character: character
       })
       .select('id')
       .single()
 
     if (insertError) throw insertError
 
-    const { error: updateError } = await supabase
-      .from('hangul_lessons')
-      .update({ mnemonic_image_id: imageRecord.id })
-      .eq('character', character)
-
-    if (updateError) throw updateError
-
     return new Response(
       JSON.stringify({ 
         success: true, 
-        imageUrl: result.images[0],
-        imageId: imageRecord.id
+        imageUrl: imageUrl,
+        imageId: imageRecord.id,
+        isNew: true,
+        requestId: result.requestId
       }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     )
@@ -93,3 +111,27 @@ serve(async (req) => {
     )
   }
 })
+
+function generateMnemonicPrompt(character: string, basePrompt: string): string {
+  // Create a structured prompt template for mnemonic images
+  const promptTemplate = `Create a memorable visual mnemonic for the Korean character "${character}". 
+The image should be clear, distinctive, and help learners remember both the shape and sound of the character.
+
+Requirements:
+- The Korean character should be visually incorporated into the scene
+- Image should be high quality, clear, and focused
+- Use vibrant colors and contrasting elements
+- Create a simple, uncluttered composition
+- Ensure the image is culturally appropriate
+
+Additional context: ${basePrompt}
+
+Style specifications:
+- Photographic quality
+- Clear lighting
+- Sharp focus
+- Simple background
+- Center composition`
+
+  return promptTemplate
+}
