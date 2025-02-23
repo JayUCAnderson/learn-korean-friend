@@ -1,5 +1,5 @@
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { HangulLesson } from "./HangulLesson";
 import { HangulProgress } from "./HangulProgress";
@@ -24,15 +24,15 @@ export function HangulLearningContainer({ onComplete, section: propSection }: Ha
   const navigate = useNavigate();
   const location = useLocation();
   
-  // Determine section from route if not provided via props
-  const getRouteSection = (): LessonSection | undefined => {
+  // Memoize the section determination to prevent recalculation on every render
+  const routeSection = useMemo((): LessonSection | undefined => {
     if (location.pathname === '/hangul/vowels') return 'vowels';
     if (location.pathname === '/hangul/basic-consonants') return 'basic_consonants';
     if (location.pathname === '/hangul/advanced-consonants') return 'advanced_consonants';
     return undefined;
-  };
+  }, [location.pathname]);
 
-  const section = propSection || getRouteSection();
+  const section = propSection || routeSection;
   const showLanding = !section;
 
   const { 
@@ -50,17 +50,18 @@ export function HangulLearningContainer({ onComplete, section: propSection }: Ha
   const [showReview, setShowReview] = useState(false);
   const { toast } = useToast();
 
-  // Filter lessons by section
-  const filteredLessons = section 
-    ? lessons.filter(lesson => getLessonSection(lesson) === section)
-    : lessons;
+  // Memoize filtered lessons to prevent unnecessary recalculations
+  const filteredLessons = useMemo(() => 
+    section ? lessons.filter(lesson => getLessonSection(lesson) === section) : lessons,
+    [section, lessons, getLessonSection]
+  );
 
-  // Ensure currentLessonIndex is valid for the current section
+  // Update lesson index when section changes
   useEffect(() => {
     if (filteredLessons.length > 0 && currentLessonIndex >= filteredLessons.length) {
       setCurrentLessonIndex(0);
     }
-  }, [section, filteredLessons.length, currentLessonIndex, setCurrentLessonIndex]);
+  }, [section, filteredLessons.length]);
 
   const handleLessonComplete = () => {
     const nextLesson = filteredLessons[currentLessonIndex + 1];
@@ -73,10 +74,6 @@ export function HangulLearningContainer({ onComplete, section: propSection }: Ha
       });
       navigate('/hangul');
     }
-  };
-
-  const getCurrentSectionLessons = () => {
-    return filteredLessons;
   };
 
   if (isLoading) {
@@ -161,19 +158,17 @@ export function HangulLearningContainer({ onComplete, section: propSection }: Ha
           setShowQuiz(false);
           handleNext();
         }}
-        sectionLessons={getCurrentSectionLessons()}
+        sectionLessons={filteredLessons}
         sectionName={sectionName}
       />
 
       <ReviewModal
         isOpen={showReview}
-        onClose={() => {
-          setShowReview(false);
-          navigate('/hangul');
-        }}
-        sectionLessons={getCurrentSectionLessons()}
+        onClose={() => setShowReview(false)} // Removed the navigation to /hangul
+        sectionLessons={filteredLessons}
         sectionName={sectionName}
       />
     </div>
   );
 }
+
