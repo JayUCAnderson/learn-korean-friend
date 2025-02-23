@@ -1,5 +1,5 @@
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import type { Database } from "@/integrations/supabase/types";
 
@@ -11,19 +11,16 @@ export function useMnemonicImage(lesson: LessonType) {
   const [mnemonicImage, setMnemonicImage] = useState<string | null>(null);
 
   useEffect(() => {
-    if (!lesson?.id) return;
+    // Early return if no lesson or if image URL hasn't changed
+    if (!lesson?.id || mnemonicImage === lesson.mnemonic_image_url) return;
     
     setIsLoadingImage(true);
-    // Use the mnemonic_image_url from the view
-    if (lesson.mnemonic_image_url) {
-      setMnemonicImage(lesson.mnemonic_image_url);
-      setIsLoadingImage(false);
-    }
-  }, [lesson?.id]); // Only depend on lesson ID
+    setMnemonicImage(lesson.mnemonic_image_url);
+    setIsLoadingImage(false);
+  }, [lesson?.id, lesson?.mnemonic_image_url]); // Only depend on these specific props
 
-  const regenerateMnemonicImage = async () => {
-    if (process.env.NODE_ENV !== 'development') return;
-    if (!lesson?.id) return;
+  const regenerateMnemonicImage = useCallback(async () => {
+    if (process.env.NODE_ENV !== 'development' || !lesson?.id) return;
     
     setIsRegeneratingImage(true);
     
@@ -56,7 +53,7 @@ export function useMnemonicImage(lesson: LessonType) {
     } finally {
       setIsRegeneratingImage(false);
     }
-  };
+  }, [lesson?.id, lesson?.character, lesson?.mnemonic_base, lesson?.character_type]);
 
   return {
     mnemonicImage,

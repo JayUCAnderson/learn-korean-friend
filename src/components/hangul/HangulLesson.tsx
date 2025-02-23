@@ -1,5 +1,5 @@
 
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, memo } from "react";
 import { Card } from "@/components/ui/card";
 import type { Database } from "@/integrations/supabase/types";
 import { LessonHeader } from "./LessonHeader";
@@ -18,10 +18,16 @@ interface HangulLessonProps {
   onPrevious?: () => void;
 }
 
-export function HangulLesson({ lesson, onComplete, onNext, onPrevious }: HangulLessonProps) {
+export const HangulLesson = memo(function HangulLesson({ 
+  lesson, 
+  onComplete, 
+  onNext, 
+  onPrevious 
+}: HangulLessonProps) {
   const [audioUrl, setAudioUrl] = useState<string | null>(null);
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const { isLoadingAudio: isAudioLoading, processAudio } = useAudioController();
+  const previousLessonId = useRef<string | null>(null);
 
   const {
     mnemonicImage,
@@ -31,11 +37,12 @@ export function HangulLesson({ lesson, onComplete, onNext, onPrevious }: HangulL
   } = useMnemonicImage(lesson);
 
   useEffect(() => {
+    if (!lesson?.id || !lesson?.character || previousLessonId.current === lesson.id) return;
+    
+    previousLessonId.current = lesson.id;
     let isMounted = true;
     
     const loadAudio = async () => {
-      if (!lesson?.id || !lesson?.character) return;
-      
       try {
         const url = await processAudio(lesson.character);
         if (isMounted) {
@@ -98,4 +105,4 @@ export function HangulLesson({ lesson, onComplete, onNext, onPrevious }: HangulL
       </div>
     </Card>
   );
-}
+});
