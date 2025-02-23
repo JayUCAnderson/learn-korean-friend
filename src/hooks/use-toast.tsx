@@ -55,7 +55,7 @@ interface State {
 
 const toastTimeouts = new Map<string, ReturnType<typeof setTimeout>>()
 
-const reducer = (state: State, action: Action): State => {
+const reducer = (state: State, action: Action, dispatch: React.Dispatch<Action>): State => {
   switch (action.type) {
     case "ADD_TOAST":
       return {
@@ -133,7 +133,10 @@ const ToastContext = React.createContext<{
 
 // Create a provider component
 function ToastStateProvider({ children }: { children: React.ReactNode }) {
-  const [state, dispatch] = React.useReducer(reducer, { toasts: [] })
+  const [state, dispatch] = React.useReducer(
+    (state: State, action: Action) => reducer(state, action, dispatch),
+    { toasts: [] }
+  )
   
   return (
     <ToastContext.Provider value={{ state, dispatch }}>
@@ -192,4 +195,3 @@ function useToast() {
 }
 
 export { useToast, toast, ToastStateProvider }
-
