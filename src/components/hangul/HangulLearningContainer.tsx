@@ -1,4 +1,5 @@
-import { useState } from "react";
+
+import { useState, useEffect } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { HangulLesson } from "./HangulLesson";
 import { HangulProgress } from "./HangulProgress";
@@ -11,7 +12,7 @@ import { ReviewModal } from "./ReviewModal";
 import { Button } from "@/components/ui/button";
 import { BookOpen } from "lucide-react";
 import { HangulLandingPage } from "./HangulLandingPage";
-import { useSearchParams } from 'react-router-dom';
+import { useSearchParams, useNavigate } from 'react-router-dom';
 
 interface HangulLearningContainerProps {
   onComplete?: () => void;
@@ -19,8 +20,10 @@ interface HangulLearningContainerProps {
 
 export function HangulLearningContainer({ onComplete }: HangulLearningContainerProps) {
   const [searchParams] = useSearchParams();
+  const navigate = useNavigate();
+  const sectionParam = searchParams.get('section');
   const lessonParam = searchParams.get('lesson');
-  const showLanding = !lessonParam;
+  const showLanding = !sectionParam && !lessonParam;
 
   const { 
     lessons, 
@@ -30,27 +33,31 @@ export function HangulLearningContainer({ onComplete }: HangulLearningContainerP
     handlePrevious, 
     currentSection,
     getLessonSection,
-    setCurrentLessonIndex
+    setCurrentLessonIndex,
   } = useHangulLessons();
 
   const [showQuiz, setShowQuiz] = useState(false);
   const [showReview, setShowReview] = useState(false);
   const { toast } = useToast();
 
-  useState(() => {
-    if (lessonParam) {
-      const index = parseInt(lessonParam);
-      if (!isNaN(index) && index >= 0 && index < lessons.length) {
-        setCurrentLessonIndex(index);
-      }
+  // Update URL when section changes
+  useEffect(() => {
+    if (lessons[currentLessonIndex]) {
+      const section = getLessonSection(lessons[currentLessonIndex]);
+      navigate(`/hangul/${section}?lesson=${currentLessonIndex}`, { replace: true });
     }
-  });
+  }, [currentLessonIndex, lessons, getLessonSection, navigate]);
+
+  // Filter lessons by section if section param is present
+  const filteredLessons = sectionParam 
+    ? lessons.filter(lesson => getLessonSection(lesson) === sectionParam)
+    : lessons;
 
   const handleLessonComplete = () => {
-    const nextLesson = lessons[currentLessonIndex + 1];
+    const nextLesson = filteredLessons[currentLessonIndex + 1];
     if (nextLesson) {
       const currentSectionType = currentSection;
-      const nextSectionType = getLessonSection(currentLessonIndex + 1);
+      const nextSectionType = getLessonSection(nextLesson);
       
       if (currentSectionType !== nextSectionType) {
         setShowQuiz(true);
@@ -60,22 +67,14 @@ export function HangulLearningContainer({ onComplete }: HangulLearningContainerP
     } else {
       toast({
         title: "Congratulations! 축하해요!",
-        description: "You've completed all Hangul lessons! Now you can move on to other content.",
+        description: "You've completed all lessons in this section!",
       });
       onComplete?.();
     }
   };
 
   const getCurrentSectionLessons = () => {
-    const sectionSize = Math.ceil(lessons.length / 3);
-    const startIndex = currentSection === 'vowels' ? 0 :
-                      currentSection === 'basic_consonants' ? sectionSize :
-                      sectionSize * 2;
-    const endIndex = currentSection === 'vowels' ? sectionSize :
-                    currentSection === 'basic_consonants' ? sectionSize * 2 :
-                    lessons.length;
-    
-    return lessons.slice(startIndex, endIndex);
+    return filteredLessons;
   };
 
   if (isLoading) {
@@ -94,9 +93,9 @@ export function HangulLearningContainer({ onComplete }: HangulLearningContainerP
                       currentSection === 'basic_consonants' ? 'hanbok' : 'palace';
   
   const themeGradients = {
-    temple: "from-[#FFF5F7] to-[#FCE7F3]", // Vowels theme - soft pink
-    hanbok: "from-[#F3F4F6] to-[#E5E7EB]", // Basic consonants theme - gentle gray
-    palace: "from-[#F5F3FF] to-[#EDE9FE]", // Advanced consonants theme - soft purple
+    temple: "from-[#FFF5F7] to-[#FCE7F3]",
+    hanbok: "from-[#F3F4F6] to-[#E5E7EB]",
+    palace: "from-[#F5F3FF] to-[#EDE9FE]",
   };
 
   const sectionDescriptions = {
@@ -134,12 +133,14 @@ export function HangulLearningContainer({ onComplete }: HangulLearningContainerP
             </p>
           </div>
           
-          <HangulLesson 
-            lesson={lessons[currentLessonIndex]}
-            onComplete={handleLessonComplete}
-            onNext={currentLessonIndex < lessons.length - 1 ? handleNext : undefined}
-            onPrevious={currentLessonIndex > 0 ? handlePrevious : undefined}
-          />
+          {filteredLessons[currentLessonIndex] && (
+            <HangulLesson 
+              lesson={filteredLessons[currentLessonIndex]}
+              onComplete={handleLessonComplete}
+              onNext={currentLessonIndex < filteredLessons.length - 1 ? handleNext : undefined}
+              onPrevious={currentLessonIndex > 0 ? handlePrevious : undefined}
+            />
+          )}
         </div>
       </div>
 

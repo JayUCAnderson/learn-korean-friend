@@ -40,7 +40,6 @@ export function HangulProgress({ theme }: HangulProgressProps) {
           <span className="text-lg">{themeIcons[theme]}</span>
           <span>{sectionMap[currentSection]} - Lesson {currentLessonInSection} of {sectionLessons}</span>
         </span>
-        <span>{Math.round(progressPercentage)}%</span>
       </div>
       <Progress 
         value={progressPercentage} 

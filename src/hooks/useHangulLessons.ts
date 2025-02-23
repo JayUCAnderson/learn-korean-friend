@@ -3,6 +3,7 @@ import { useState, useEffect, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import type { Database } from "@/integrations/supabase/types";
+import { useSearchParams } from 'react-router-dom';
 
 type HangulLessonType = Database['public']['Views']['hangul_lessons_complete']['Row'];
 
@@ -13,6 +14,7 @@ export function useHangulLessons() {
   const [currentLessonIndex, setCurrentLessonIndex] = useState(0);
   const [isLoading, setIsLoading] = useState(true);
   const { toast } = useToast();
+  const [searchParams] = useSearchParams();
 
   const fetchLessons = useCallback(async () => {
     try {
@@ -80,10 +82,12 @@ export function useHangulLessons() {
   const currentLesson = lessons[currentLessonIndex];
   const currentSection = currentLesson ? getLessonSection(currentLesson) : 'vowels';
   
+  // Filter lessons by current section
   const sectionLessons = lessons.filter(lesson => 
     getLessonSection(lesson) === currentSection
   ).length;
 
+  // Calculate current lesson number within section
   const currentLessonInSection = lessons.filter((lesson, index) => 
     index <= currentLessonIndex && getLessonSection(lesson) === currentSection
   ).length;
