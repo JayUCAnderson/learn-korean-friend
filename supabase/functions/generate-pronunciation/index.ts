@@ -1,5 +1,6 @@
 
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -19,7 +20,34 @@ serve(async (req) => {
       throw new Error('Character is required')
     }
 
-    // Using ElevenLabs API with the multilingual v2 model
+    // Initialize Supabase client
+    const supabaseClient = createClient(
+      Deno.env.get('SUPABASE_URL') ?? '',
+      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
+    )
+
+    // Check if pronunciation already exists
+    const { data: existingPronunciation, error: fetchError } = await supabaseClient
+      .from('character_pronunciations')
+      .select('audio_content')
+      .eq('character', character)
+      .single()
+
+    if (fetchError) {
+      console.error('Error fetching existing pronunciation:', fetchError)
+    }
+
+    if (existingPronunciation?.audio_content) {
+      console.log('Using cached pronunciation for character:', character)
+      return new Response(
+        JSON.stringify({ audioContent: existingPronunciation.audio_content }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      )
+    }
+
+    console.log('Generating new pronunciation for character:', character)
+    
+    // Generate new pronunciation using ElevenLabs API
     const response = await fetch('https://api.elevenlabs.io/v1/text-to-speech/pFZP5JQG7iQjIQuC4Bku', {
       method: 'POST',
       headers: {
@@ -44,6 +72,18 @@ serve(async (req) => {
     // Convert audio buffer to base64
     const arrayBuffer = await response.arrayBuffer()
     const base64Audio = btoa(String.fromCharCode(...new Uint8Array(arrayBuffer)))
+
+    // Store the pronunciation in the database
+    const { error: insertError } = await supabaseClient
+      .from('character_pronunciations')
+      .insert({
+        character,
+        audio_content: base64Audio
+      })
+
+    if (insertError) {
+      console.error('Error storing pronunciation:', insertError)
+    }
 
     return new Response(
       JSON.stringify({ audioContent: base64Audio }),

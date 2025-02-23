@@ -9,6 +9,27 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
+      character_pronunciations: {
+        Row: {
+          audio_content: string
+          character: string
+          created_at: string
+          id: string
+        }
+        Insert: {
+          audio_content: string
+          character: string
+          created_at?: string
+          id?: string
+        }
+        Update: {
+          audio_content?: string
+          character?: string
+          created_at?: string
+          id?: string
+        }
+        Relationships: []
+      }
       daily_progress: {
         Row: {
           created_at: string
