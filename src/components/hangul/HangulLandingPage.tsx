@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { ArrowRight, ArrowLeft, Lock } from "lucide-react";
 import { Progress } from "@/components/ui/progress";
 import { useHangulLessons } from "@/hooks/useHangulLessons";
+import { useToast } from "@/hooks/use-toast";
 
 const sectionInfo = {
   vowels: {
@@ -33,6 +34,7 @@ const sectionInfo = {
 export function HangulLandingPage() {
   const { lessons, currentLessonIndex, getLessonSection } = useHangulLessons();
   const navigate = useNavigate();
+  const { toast } = useToast();
   
   const calculateSectionProgress = (section: keyof typeof sectionInfo) => {
     if (!lessons.length) return 0;
@@ -55,8 +57,29 @@ export function HangulLandingPage() {
   };
 
   const handleContinueLearning = (section: keyof typeof sectionInfo) => {
-    if (!lessons.length || !isAvailable(section)) return;
-    navigate(sectionInfo[section].route);
+    if (!lessons.length || !isAvailable(section)) {
+      toast({
+        title: "Section Locked",
+        description: "You need to complete the previous section first.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    // Filter lessons for the specific section
+    const sectionLessons = lessons.filter(lesson => getLessonSection(lesson) === section);
+    
+    // Find the first incomplete lesson in this section
+    const firstIncompleteLessonIndex = sectionLessons.findIndex((lesson, index) => {
+      const lessonIndexInFullList = lessons.findIndex(l => l.id === lesson.id);
+      return lessonIndexInFullList > currentLessonIndex;
+    });
+
+    // If all lessons are complete, start from the beginning of the section
+    const targetIndex = firstIncompleteLessonIndex === -1 ? 0 : firstIncompleteLessonIndex;
+    
+    // Navigate to the appropriate route with section parameter
+    navigate(`${sectionInfo[section].route}?section=${section}`);
   };
 
   return (
