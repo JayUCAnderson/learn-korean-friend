@@ -57,7 +57,6 @@ serve(async (req) => {
     const guidelines = TOPIK_LEVEL_GUIDELINES[topikLevel];
     console.log("Using TOPIK guidelines:", guidelines);
 
-    // Comprehensive system prompt that integrates teaching principles and TOPIK guidelines.
     const systemPrompt = `You are a Korean language education expert creating scientifically-based, engaging, and practical lessons tailored to the user's interest in "${interest}". 
 Follow these principles:
 - Progressive Complexity: Begin with extremely simple language and gradually build complexity.
@@ -72,7 +71,7 @@ For this lesson, adhere to the following TOPIK guidelines for ${topikLevel.toUpp
 - Grammar focus: ${guidelines.grammar}
 - Vocabulary scope: ${guidelines.vocabulary}
 
-Generate a lesson in JSON format with this structure:
+Return ONLY a JSON object without any markdown formatting or code block indicators, using this exact structure:
 {
   "title": "Unique, specific title capturing the lesson's focus",
   "description": "Clear, engaging description outlining the lesson's objectives and its real-life relevance",
@@ -105,18 +104,6 @@ Generate a lesson in JSON format with this structure:
   "review_suggestions": ["Practical review activities"],
   "imagePrompt": "Short, focused description for visual representation"
 }`;
-    
-    // Build the chat messages
-    const messages = [
-      {
-        role: 'system',
-        content: systemPrompt
-      },
-      {
-        role: 'user',
-        content: `Create an engaging ${level} level Korean lesson about "${interest}". Ensure the lesson is practical, reflects everyday usage, and includes a unique title and description that capture the essence of the topic.`
-      }
-    ];
 
     const response = await fetch('https://api.openai.com/v1/chat/completions', {
       method: 'POST',
@@ -126,7 +113,13 @@ Generate a lesson in JSON format with this structure:
       },
       body: JSON.stringify({
         model: 'gpt-4o-mini',
-        messages,
+        messages: [
+          { role: 'system', content: systemPrompt },
+          { 
+            role: 'user', 
+            content: `Create an engaging ${level} level Korean lesson about "${interest}". Return ONLY the JSON object without any markdown formatting or code block indicators.`
+          }
+        ],
         temperature: 0.7,
       }),
     });
@@ -144,13 +137,28 @@ Generate a lesson in JSON format with this structure:
       throw new Error("Invalid response from OpenAI");
     }
 
-    const content = JSON.parse(data.choices[0].message.content);
-    console.log("Successfully parsed content:", content);
+    // Clean the response to ensure it's valid JSON
+    let content = data.choices[0].message.content.trim();
+    // Remove any markdown code block indicators if present
+    content = content.replace(/^```json\s*/, '').replace(/\s*```$/, '');
+    
+    try {
+      const parsedContent = JSON.parse(content);
+      console.log("Successfully parsed content:", parsedContent);
 
-    return new Response(
-      JSON.stringify(content),
-      { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-    );
+      if (!parsedContent.title) {
+        throw new Error("Generated content is missing required title");
+      }
+
+      return new Response(
+        JSON.stringify({ content: parsedContent }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    } catch (parseError) {
+      console.error("Error parsing OpenAI response:", parseError);
+      console.log("Raw content that failed to parse:", content);
+      throw new Error(`Failed to parse OpenAI response: ${parseError.message}`);
+    }
 
   } catch (error) {
     console.error("Error in generate-learning-content function:", error);
