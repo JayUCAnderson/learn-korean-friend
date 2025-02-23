@@ -27,6 +27,7 @@ export function HangulLesson({ lesson, onComplete, onNext, onPrevious }: HangulL
   const [isLoadingAudio, setIsLoadingAudio] = useState(false);
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const { toast } = useToast();
+  const currentLessonId = useRef(lesson.id);
 
   const { generatePronunciation } = useAudioController({
     character: lesson.character,
@@ -35,6 +36,12 @@ export function HangulLesson({ lesson, onComplete, onNext, onPrevious }: HangulL
   });
 
   useEffect(() => {
+    // Reset state when lesson changes
+    if (currentLessonId.current !== lesson.id) {
+      setMnemonicImage(null);
+      setIsLoadingImage(true);
+      currentLessonId.current = lesson.id;
+    }
     fetchOrGenerateMnemonicImage();
   }, [lesson.id]);
 
@@ -55,6 +62,8 @@ export function HangulLesson({ lesson, onComplete, onNext, onPrevious }: HangulL
     }
 
     setIsRegeneratingImage(true);
+    setMnemonicImage(null); // Clear current image while regenerating
+    
     try {
       console.log("Initiating mnemonic image regeneration for character:", lesson.character);
       const { data: generatedData, error } = await supabase.functions.invoke(
@@ -105,15 +114,17 @@ export function HangulLesson({ lesson, onComplete, onNext, onPrevious }: HangulL
   };
 
   const fetchOrGenerateMnemonicImage = async () => {
+    if (!lesson.id) return;
+
     try {
       if (lesson.mnemonic_image_id) {
         const { data: imageData, error: fetchError } = await supabase
           .from('mnemonic_images')
           .select('image_url')
           .eq('id', lesson.mnemonic_image_id)
-          .single();
+          .maybeSingle();
 
-        if (imageData) {
+        if (imageData?.image_url) {
           console.log("Fetched existing mnemonic image:", imageData.image_url);
           setMnemonicImage(imageData.image_url);
           setIsLoadingImage(false);
@@ -198,4 +209,3 @@ export function HangulLesson({ lesson, onComplete, onNext, onPrevious }: HangulL
     </Card>
   );
 }
-
