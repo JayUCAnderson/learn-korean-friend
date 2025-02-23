@@ -26,8 +26,8 @@ export const HangulLesson = memo(function HangulLesson({
 }: HangulLessonProps) {
   const [audioUrl, setAudioUrl] = useState<string | null>(null);
   const audioRef = useRef<HTMLAudioElement | null>(null);
-  const { isLoadingAudio: isAudioLoading, processAudio } = useAudioController();
-  const previousLessonId = useRef<string | null>(null);
+  const { isLoadingAudio, processAudio } = useAudioController();
+  const hasAttemptedLoad = useRef(false);
 
   const {
     mnemonicImage,
@@ -37,14 +37,14 @@ export const HangulLesson = memo(function HangulLesson({
   } = useMnemonicImage(lesson);
 
   useEffect(() => {
-    if (!lesson?.id || !lesson?.character || previousLessonId.current === lesson.id) return;
+    if (!lesson?.id || !lesson?.character || hasAttemptedLoad.current) return;
     
-    previousLessonId.current = lesson.id;
+    hasAttemptedLoad.current = true;
     let isMounted = true;
     
     const loadAudio = async () => {
       try {
-        const url = await processAudio(lesson.character);
+        const url = await processAudio(lesson.character, lesson.pronunciation_url);
         if (isMounted) {
           setAudioUrl(url);
         }
@@ -58,7 +58,7 @@ export const HangulLesson = memo(function HangulLesson({
     return () => {
       isMounted = false;
     };
-  }, [lesson?.id, lesson?.character]); // Only depend on lesson ID and character
+  }, [lesson?.id]); // Only depend on lesson ID to prevent unnecessary rerenders
 
   const playPronunciation = () => {
     if (audioRef.current && audioUrl) {
@@ -79,7 +79,7 @@ export const HangulLesson = memo(function HangulLesson({
         onPlayPronunciation={playPronunciation}
         onPrevious={onPrevious}
         onNext={onNext}
-        isLoadingAudio={isAudioLoading}
+        isLoadingAudio={isLoadingAudio}
         audioUrl={audioUrl}
       />
 

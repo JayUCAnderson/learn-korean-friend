@@ -9,12 +9,18 @@ export function useAudioController() {
   
   const JENNIE_VOICE_ID = 'z6Kj0hecH20CdetSElRT';
 
-  const processAudio = async (character: string) => {
+  const processAudio = async (character: string, existingUrl: string | null = null) => {
     if (!character) return null;
+    
+    // If we already have a URL, return it immediately
+    if (existingUrl) {
+      console.log("Using existing audio URL for character:", character);
+      return existingUrl;
+    }
     
     try {
       setIsLoadingAudio(true);
-      console.log("Processing audio for character:", character);
+      console.log("Checking for pronunciation in database:", character);
 
       // Check for existing pronunciation
       const { data: existingPronunciation, error: fetchError } = await supabase
@@ -89,4 +95,3 @@ export function useAudioController() {
 
   return { isLoadingAudio, processAudio };
 }
-
