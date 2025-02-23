@@ -56,7 +56,7 @@ export function useHangulLessons() {
 
   useEffect(() => {
     fetchLessons();
-  }, []); // Run only once on mount
+  }, [fetchLessons]);
 
   const handleNext = useCallback(() => {
     if (currentLessonIndex < lessons.length - 1) {
@@ -79,6 +79,20 @@ export function useHangulLessons() {
     return 'advanced_consonants';
   }, [lessons.length]);
 
+  const calculateSectionProgress = useCallback((section: LessonSection): number => {
+    const totalLessons = lessons.length;
+    const sectionSize = Math.ceil(totalLessons / 3);
+    
+    const startIndex = section === 'vowels' ? 0 :
+                      section === 'basic_consonants' ? sectionSize :
+                      sectionSize * 2;
+    const endIndex = section === 'vowels' ? sectionSize :
+                    section === 'basic_consonants' ? sectionSize * 2 :
+                    lessons.length;
+
+    return ((currentLessonIndex + 1 - startIndex) / (endIndex - startIndex)) * 100;
+  }, [currentLessonIndex, lessons.length]);
+
   return {
     lessons,
     currentLessonIndex,
@@ -88,5 +102,6 @@ export function useHangulLessons() {
     handlePrevious,
     currentSection: getLessonSection(currentLessonIndex),
     getLessonSection,
+    calculateSectionProgress,
   };
 }

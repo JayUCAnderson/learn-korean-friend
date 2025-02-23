@@ -1,6 +1,8 @@
 
 import { Progress } from "@/components/ui/progress";
 import { cn } from "@/lib/utils";
+import { useHangulLessons } from "@/hooks/useHangulLessons";
+import { type LessonSection } from "@/hooks/useHangulLessons";
 
 interface HangulProgressProps {
   currentLesson: number;
@@ -9,7 +11,8 @@ interface HangulProgressProps {
 }
 
 export function HangulProgress({ currentLesson, totalLessons, theme }: HangulProgressProps) {
-  const progressPercentage = (currentLesson / totalLessons) * 100;
+  const { calculateSectionProgress, currentSection } = useHangulLessons();
+  const progressPercentage = calculateSectionProgress(currentSection);
 
   const themeColors = {
     temple: "bg-[#D46A6A]",
