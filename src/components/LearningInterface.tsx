@@ -73,9 +73,8 @@ const LearningInterface = ({ userData }: { userData: any }) => {
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-8">
           {/* Hangul Learning Path Card */}
           <Card 
-            className={`group relative overflow-hidden p-6 cursor-pointer transition-all duration-300
-              hover:shadow-lg border-none bg-white ring-1 ring-black/5
-              ${!hangulCompleted && 'animate-pulse'}`}
+            className="group relative overflow-hidden p-6 cursor-pointer transition-all duration-300
+              hover:shadow-lg border-none bg-white ring-1 ring-black/5"
             onClick={navigateToHangul}
           >
             <div className="absolute inset-0 bg-gradient-to-br from-purple-50 to-pink-50 opacity-50" />

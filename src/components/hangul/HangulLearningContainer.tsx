@@ -12,11 +12,29 @@ interface HangulLearningContainerProps {
 }
 
 export function HangulLearningContainer({ onComplete }: HangulLearningContainerProps) {
-  const { lessons, currentLessonIndex, isLoading, handleNext, handlePrevious, currentSection } = useHangulLessons();
+  const { 
+    lessons, 
+    currentLessonIndex, 
+    isLoading, 
+    handleNext, 
+    handlePrevious, 
+    currentSection,
+    getLessonSection
+  } = useHangulLessons();
   const { toast } = useToast();
 
   const handleLessonComplete = () => {
-    if (currentLessonIndex < lessons.length - 1) {
+    const nextLesson = lessons[currentLessonIndex + 1];
+    if (nextLesson) {
+      const currentSectionType = currentSection;
+      const nextSectionType = getLessonSection(currentLessonIndex + 1);
+      
+      if (currentSectionType !== nextSectionType) {
+        toast({
+          title: `${currentSectionType.split('_').map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(' ')} Completed! 🎉`,
+          description: `You've completed the ${currentSectionType.replace('_', ' ')} section. Moving on to ${nextSectionType.replace('_', ' ')}.`,
+        });
+      }
       handleNext();
     } else {
       toast({
@@ -39,9 +57,9 @@ export function HangulLearningContainer({ onComplete }: HangulLearningContainerP
                       currentSection === 'basic_consonants' ? 'hanbok' : 'palace';
   
   const themeGradients = {
-    temple: "from-[#FFDEE2] to-[#FEF7CD]", // Vowels theme
-    hanbok: "from-[#9b87f5] to-[#7E69AB]", // Basic consonants theme
-    palace: "from-[#8B5CF6] to-[#D946EF]", // Advanced consonants theme
+    temple: "from-[#FFF5F7] to-[#FCE7F3]", // Vowels theme - soft pink
+    hanbok: "from-[#F3F4F6] to-[#E5E7EB]", // Basic consonants theme - gentle gray
+    palace: "from-[#F5F3FF] to-[#EDE9FE]", // Advanced consonants theme - soft purple
   };
 
   const sectionDescriptions = {
