@@ -12,7 +12,7 @@ import { ReviewModal } from "./ReviewModal";
 import { Button } from "@/components/ui/button";
 import { BookOpen } from "lucide-react";
 import { HangulLandingPage } from "./HangulLandingPage";
-import { useSearchParams, useNavigate } from 'react-router-dom';
+import { useSearchParams, useLocation } from 'react-router-dom';
 
 interface HangulLearningContainerProps {
   onComplete?: () => void;
@@ -20,10 +20,10 @@ interface HangulLearningContainerProps {
 
 export function HangulLearningContainer({ onComplete }: HangulLearningContainerProps) {
   const [searchParams] = useSearchParams();
-  const navigate = useNavigate();
+  const location = useLocation();
   const sectionParam = searchParams.get('section');
   const lessonParam = searchParams.get('lesson');
-  const showLanding = !sectionParam && !lessonParam;
+  const showLanding = location.pathname === '/hangul';
 
   const { 
     lessons, 
@@ -39,14 +39,6 @@ export function HangulLearningContainer({ onComplete }: HangulLearningContainerP
   const [showQuiz, setShowQuiz] = useState(false);
   const [showReview, setShowReview] = useState(false);
   const { toast } = useToast();
-
-  // Update URL when section changes
-  useEffect(() => {
-    if (lessons[currentLessonIndex]) {
-      const section = getLessonSection(lessons[currentLessonIndex]);
-      navigate(`/hangul/${section}?lesson=${currentLessonIndex}`, { replace: true });
-    }
-  }, [currentLessonIndex, lessons, getLessonSection, navigate]);
 
   // Filter lessons by section if section param is present
   const filteredLessons = sectionParam 
