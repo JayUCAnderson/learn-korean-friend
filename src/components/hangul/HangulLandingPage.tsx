@@ -1,4 +1,3 @@
-
 import { useNavigate } from 'react-router-dom';
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -40,6 +39,8 @@ export function HangulLandingPage() {
     if (!lessons.length) return 0;
     
     const sectionLessons = lessons.filter(lesson => getLessonSection(lesson) === section);
+    console.log(`[Progress] Section ${section} has ${sectionLessons.length} lessons`);
+    
     if (sectionLessons.length === 0) return 0;
     
     const completedCount = sectionLessons.filter((_, index) => {
@@ -47,17 +48,30 @@ export function HangulLandingPage() {
       return lessonIndexInFullList <= currentLessonIndex;
     }).length;
     
-    return (completedCount / sectionLessons.length) * 100;
+    const progress = (completedCount / sectionLessons.length) * 100;
+    console.log(`[Progress] Section ${section} progress: ${progress}%, Completed: ${completedCount}/${sectionLessons.length}`);
+    return progress;
   };
 
   const isAvailable = (section: keyof typeof sectionInfo) => {
     if (section === 'vowels') return true;
-    if (section === 'basic_consonants') return calculateSectionProgress('vowels') === 100;
-    return calculateSectionProgress('basic_consonants') === 100;
+    if (section === 'basic_consonants') {
+      const vowelsProgress = calculateSectionProgress('vowels');
+      console.log(`[Availability] Basic consonants check - Vowels progress: ${vowelsProgress}%`);
+      return vowelsProgress === 100;
+    }
+    const basicConsonantsProgress = calculateSectionProgress('basic_consonants');
+    console.log(`[Availability] Advanced consonants check - Basic consonants progress: ${basicConsonantsProgress}%`);
+    return basicConsonantsProgress === 100;
   };
 
   const handleContinueLearning = (section: keyof typeof sectionInfo) => {
+    console.log(`[Navigation] Attempting to navigate to section: ${section}`);
+    console.log(`[Navigation] Current lesson index: ${currentLessonIndex}`);
+    console.log(`[Navigation] Total lessons: ${lessons.length}`);
+
     if (!lessons.length || !isAvailable(section)) {
+      console.log(`[Navigation] Section ${section} is locked or no lessons available`);
       toast({
         title: "Section Locked",
         description: "You need to complete the previous section first.",
@@ -66,8 +80,9 @@ export function HangulLandingPage() {
       return;
     }
 
-    // Simply navigate to the appropriate route
-    navigate(sectionInfo[section].route);
+    const targetRoute = sectionInfo[section].route;
+    console.log(`[Navigation] Navigating to route: ${targetRoute}`);
+    navigate(targetRoute);
   };
 
   return (
@@ -127,7 +142,10 @@ export function HangulLandingPage() {
                     className="w-full rounded-lg"
                     disabled={!available}
                     variant={available ? "default" : "secondary"}
-                    onClick={() => handleContinueLearning(key)}
+                    onClick={() => {
+                      console.log(`[Button] Clicked continue learning for section: ${key}`);
+                      handleContinueLearning(key);
+                    }}
                   >
                     {available ? (
                       <>
