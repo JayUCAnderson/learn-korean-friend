@@ -275,18 +275,21 @@ export type Database = {
       }
       mnemonic_images: {
         Row: {
+          character: string | null
           created_at: string
           id: string
           image_url: string
           prompt: string | null
         }
         Insert: {
+          character?: string | null
           created_at?: string
           id?: string
           image_url: string
           prompt?: string | null
         }
         Update: {
+          character?: string | null
           created_at?: string
           id?: string
           image_url?: string
