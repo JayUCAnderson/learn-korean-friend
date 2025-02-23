@@ -81,26 +81,22 @@ export function useHangulLessons() {
 
   const calculateSectionProgress = useCallback((section: LessonSection): number => {
     if (lessons.length === 0) return 0;
-
-    const totalLessons = lessons.length;
-    const sectionSize = Math.ceil(totalLessons / 3);
     
-    // Calculate section boundaries
+    const sectionSize = Math.ceil(lessons.length / 3);
     const startIndex = section === 'vowels' ? 0 :
                       section === 'basic_consonants' ? sectionSize :
                       sectionSize * 2;
     
-    const endIndex = section === 'vowels' ? sectionSize :
-                    section === 'basic_consonants' ? sectionSize * 2 :
-                    totalLessons;
-
-    // Calculate lessons completed in this section
-    const lessonsCompleted = Math.max(0, Math.min(currentLessonIndex + 1 - startIndex, endIndex - startIndex));
-    const sectionTotal = endIndex - startIndex;
-
-    // Ensure we don't divide by zero and clamp the result between 0 and 100
-    return Math.min(100, Math.max(0, (lessonsCompleted / Math.max(1, sectionTotal)) * 100));
-  }, [currentLessonIndex, lessons.length]);
+    const sectionLessonNumber = currentLessonIndex - startIndex + 1;
+    
+    // If we haven't reached this section yet
+    if (currentLessonIndex < startIndex) return 0;
+    
+    // If we've moved past this section
+    if (section !== getLessonSection(currentLessonIndex)) return 100;
+    
+    return Math.min(100, Math.max(0, (sectionLessonNumber / sectionSize) * 100));
+  }, [currentLessonIndex, lessons.length, getLessonSection]);
 
   return {
     lessons,
