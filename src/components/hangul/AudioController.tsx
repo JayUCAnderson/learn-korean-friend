@@ -1,7 +1,8 @@
 
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect } from "react";
 import { useToast } from "@/components/ui/use-toast";
 import { supabase } from "@/integrations/supabase/client";
+import { VOICE_OPTIONS } from "@/types/voice";
 
 interface AudioControllerProps {
   character: string;
@@ -12,6 +13,13 @@ interface AudioControllerProps {
 export function useAudioController({ character, onAudioReady, onLoadingChange }: AudioControllerProps) {
   const [isLoadingAudio, setIsLoadingAudio] = useState(false);
   const { toast } = useToast();
+  
+  // Randomly select a voice for each character while maintaining gender consistency
+  const selectRandomVoice = () => {
+    // You can adjust this to always use female or male voices if preferred
+    const voices = VOICE_OPTIONS;
+    return voices[Math.floor(Math.random() * voices.length)];
+  };
 
   useEffect(() => {
     generatePronunciation();
@@ -22,10 +30,15 @@ export function useAudioController({ character, onAudioReady, onLoadingChange }:
       setIsLoadingAudio(true);
       onLoadingChange(true);
       
+      const selectedVoice = selectRandomVoice();
+      
       const { data, error } = await supabase.functions.invoke(
         'generate-pronunciation',
         {
-          body: { character }
+          body: { 
+            character,
+            voiceId: selectedVoice.id
+          }
         }
       );
 

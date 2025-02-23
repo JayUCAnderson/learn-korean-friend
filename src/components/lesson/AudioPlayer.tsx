@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Volume2, Pause } from "lucide-react";
 import { useToast } from "@/components/ui/use-toast";
 import { supabase } from "@/integrations/supabase/client";
+import { VOICE_OPTIONS } from "@/types/voice";
 
 interface AudioPlayerProps {
   lessonId: string;
@@ -16,6 +17,12 @@ interface AudioPlayerProps {
 export function AudioPlayer({ lessonId, title, description, audioUrl, onAudioUrlUpdate }: AudioPlayerProps) {
   const [isPlaying, setIsPlaying] = useState(false);
   const { toast } = useToast();
+
+  // Randomly select a voice while maintaining gender consistency
+  const selectRandomVoice = () => {
+    const voices = VOICE_OPTIONS;
+    return voices[Math.floor(Math.random() * voices.length)];
+  };
 
   const handlePlayAudio = async () => {
     try {
@@ -35,10 +42,12 @@ export function AudioPlayer({ lessonId, title, description, audioUrl, onAudioUrl
         description: "Please wait while we prepare the lesson audio.",
       });
 
+      const selectedVoice = selectRandomVoice();
+
       const { data, error } = await supabase.functions.invoke('text-to-voice', {
         body: {
           text: `${title}. ${description}`,
-          voice: "alloy"
+          voiceId: selectedVoice.id
         }
       });
 
@@ -56,6 +65,7 @@ export function AudioPlayer({ lessonId, title, description, audioUrl, onAudioUrl
         .update({
           audio_content: {
             url: url,
+            voice_id: selectedVoice.id,
             last_generated: new Date().toISOString()
           }
         })
