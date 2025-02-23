@@ -1,3 +1,4 @@
+
 import { useState, useEffect, useRef, memo } from "react";
 import { Card } from "@/components/ui/card";
 import type { Database } from "@/integrations/supabase/types";
@@ -26,6 +27,7 @@ export const HangulLesson = memo(function HangulLesson({
   const [audioUrl, setAudioUrl] = useState<string | null>(null);
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const { isLoadingAudio, processAudio } = useAudioController();
+  const [key, setKey] = useState(0); // Add key for forcing re-render
 
   useEffect(() => {
     if (!lesson?.id) return;
@@ -35,6 +37,9 @@ export const HangulLesson = memo(function HangulLesson({
       URL.revokeObjectURL(audioUrl);
       setAudioUrl(null);
     }
+    
+    // Force re-render of components when lesson changes
+    setKey(prev => prev + 1);
     
     let isMounted = true;
 
@@ -57,7 +62,7 @@ export const HangulLesson = memo(function HangulLesson({
         URL.revokeObjectURL(audioUrl);
       }
     };
-  }, [lesson?.id, lesson?.pronunciation_url, lesson?.character]); 
+  }, [lesson?.id]); 
 
   const playPronunciation = () => {
     if (audioRef.current && audioUrl) {
@@ -88,6 +93,7 @@ export const HangulLesson = memo(function HangulLesson({
 
       <div className="space-y-4">
         <MnemonicImage
+          key={`mnemonic-${key}`}
           lesson={lesson}
           mnemonicBase={lesson.mnemonic_base}
         />
@@ -95,6 +101,7 @@ export const HangulLesson = memo(function HangulLesson({
         <ExamplesSection examples={lesson.examples as Record<string, string>} />
 
         <LessonProgress
+          key={`progress-${key}`}
           lessonId={lesson.id}
           onComplete={onComplete}
         />

@@ -86,17 +86,22 @@ export function useHangulLessons() {
     const startIndex = section === 'vowels' ? 0 :
                       section === 'basic_consonants' ? sectionSize :
                       sectionSize * 2;
-    
-    const sectionLessonNumber = currentLessonIndex - startIndex + 1;
+    const endIndex = section === 'vowels' ? sectionSize :
+                    section === 'basic_consonants' ? sectionSize * 2 :
+                    lessons.length;
+                    
+    const currentSectionIndex = currentLessonIndex - startIndex;
     
     // If we haven't reached this section yet
     if (currentLessonIndex < startIndex) return 0;
     
-    // If we've moved past this section
-    if (section !== getLessonSection(currentLessonIndex)) return 100;
+    // If we've completed this section
+    if (currentLessonIndex >= endIndex) return 100;
     
-    return Math.min(100, Math.max(0, (sectionLessonNumber / sectionSize) * 100));
-  }, [currentLessonIndex, lessons.length, getLessonSection]);
+    // Calculate progress within the current section
+    const progress = ((currentSectionIndex + 1) / (endIndex - startIndex)) * 100;
+    return Math.min(100, Math.max(0, progress));
+  }, [currentLessonIndex, lessons.length]);
 
   return {
     lessons,
