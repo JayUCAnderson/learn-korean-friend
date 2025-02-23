@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { supabase } from "@/integrations/supabase/client";
@@ -75,6 +76,19 @@ export default function LessonDetail() {
         contentStr = typedContent.content?.content || '';
       }
 
+      // Parse mnemonic_images and ensure it's correctly typed
+      let parsedMnemonicImages: Record<string, string> | null = null;
+      if (lessonData.mnemonic_images) {
+        // If it's a string, parse it
+        if (typeof lessonData.mnemonic_images === 'string') {
+          parsedMnemonicImages = JSON.parse(lessonData.mnemonic_images);
+        }
+        // If it's already an object, use it directly
+        else if (typeof lessonData.mnemonic_images === 'object') {
+          parsedMnemonicImages = lessonData.mnemonic_images as Record<string, string>;
+        }
+      }
+
       const typedLesson: Lesson = {
         id: lessonData.id,
         title: lessonData.title,
@@ -83,7 +97,7 @@ export default function LessonDetail() {
         status: lessonData.status || 'not_started',
         vocabulary: lessonData.vocabulary,
         audio_content: parsedAudioContent,
-        mnemonic_images: lessonData.mnemonic_images
+        mnemonic_images: parsedMnemonicImages
       };
 
       setLesson(typedLesson);
