@@ -2,7 +2,6 @@
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { RefreshCw } from "lucide-react";
-import { useToast } from "@/components/ui/use-toast";
 
 interface MnemonicImageProps {
   mnemonicImage: string | null;
@@ -19,9 +18,7 @@ export function MnemonicImage({
   isRegeneratingImage,
   onRegenerateImage,
 }: MnemonicImageProps) {
-  const { toast } = useToast();
-
-  if (isLoadingImage) {
+  if (isLoadingImage || !mnemonicImage) {
     return (
       <div className="flex flex-col items-center space-y-2">
         <Skeleton className="w-[300px] h-[300px] rounded-lg" />
@@ -30,14 +27,12 @@ export function MnemonicImage({
     );
   }
 
-  if (!mnemonicImage) return null;
-
   return (
     <div className="flex flex-col items-center space-y-2">
       <div className="relative">
         <img
           src={mnemonicImage}
-          alt={`Mnemonic for learning`}
+          alt="Mnemonic for learning"
           className="max-w-sm rounded-lg shadow-lg"
           loading="lazy"
         />
@@ -59,4 +54,3 @@ export function MnemonicImage({
     </div>
   );
 }
-

@@ -3,7 +3,7 @@ import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/components/ui/use-toast";
 import type { Database } from "@/integrations/supabase/types";
-import { imageCache, isPreloadComplete } from "@/hooks/useHangulImagePreloader";
+import { imageCache } from "@/hooks/useHangulImagePreloader";
 
 type LessonType = Database['public']['Tables']['hangul_lessons']['Row'];
 
@@ -18,6 +18,8 @@ export function useMnemonicImage(lesson: LessonType) {
 
     const fetchImage = async () => {
       try {
+        setIsLoadingImage(true);
+
         // Try to get from cache first
         if (imageCache.has(lesson.character)) {
           console.log("Using cached image for:", lesson.character);
@@ -28,25 +30,29 @@ export function useMnemonicImage(lesson: LessonType) {
           return;
         }
 
-        // If not in cache and preloading is not complete, fetch directly
-        if (!isPreloadComplete) {
-          console.log("Fetching image directly for:", lesson.character);
-          const { data, error } = await supabase
-            .from('hangul_lessons_complete')
-            .select('mnemonic_image_url')
-            .eq('character', lesson.character)
-            .single();
+        // If not in cache, fetch from database
+        const { data: imageData, error: imageError } = await supabase
+          .from('mnemonic_images')
+          .select('image_url')
+          .eq('id', lesson.mnemonic_image_id)
+          .maybeSingle();
 
-          if (error) throw error;
-          
-          if (data?.mnemonic_image_url && isMounted) {
-            setMnemonicImage(data.mnemonic_image_url);
-            imageCache.set(lesson.character, data.mnemonic_image_url);
-            setIsLoadingImage(false);
+        if (imageError) throw imageError;
+
+        if (imageData?.image_url) {
+          console.log("Found image in database for:", lesson.character);
+          if (isMounted) {
+            setMnemonicImage(imageData.image_url);
+            imageCache.set(lesson.character, imageData.image_url);
           }
+        } else {
+          // If no image found, generate one
+          console.log("No image found, generating for:", lesson.character);
+          await regenerateMnemonicImage();
         }
       } catch (error) {
         console.error("Error fetching mnemonic image:", error);
+      } finally {
         if (isMounted) {
           setIsLoadingImage(false);
         }
