@@ -1,12 +1,12 @@
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import type { Database } from "@/integrations/supabase/types";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/components/ui/use-toast";
-import { Loader2 } from "lucide-react";
+import { Loader2, Volume2 } from "lucide-react";
 
 type HangulLessonType = Database['public']['Tables']['hangul_lessons']['Row'];
 
@@ -20,10 +20,14 @@ export function HangulLesson({ lesson, onComplete }: HangulLessonProps) {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [mnemonicImage, setMnemonicImage] = useState<string | null>(null);
   const [isLoadingImage, setIsLoadingImage] = useState(true);
+  const [isLoadingAudio, setIsLoadingAudio] = useState(false);
+  const [audioUrl, setAudioUrl] = useState<string | null>(null);
+  const audioRef = useRef<HTMLAudioElement | null>(null);
   const { toast } = useToast();
 
   useEffect(() => {
     fetchOrGenerateMnemonicImage();
+    generatePronunciation();
   }, [lesson.id]);
 
   const fetchOrGenerateMnemonicImage = async () => {
@@ -80,13 +84,50 @@ export function HangulLesson({ lesson, onComplete }: HangulLessonProps) {
     }
   };
 
+  const generatePronunciation = async () => {
+    try {
+      setIsLoadingAudio(true);
+      const { data, error } = await supabase.functions.invoke(
+        'generate-pronunciation',
+        {
+          body: { character: lesson.character }
+        }
+      );
+
+      if (error) throw error;
+
+      if (data?.audioContent) {
+        const audioBlob = new Blob(
+          [Uint8Array.from(atob(data.audioContent), c => c.charCodeAt(0))],
+          { type: 'audio/mpeg' }
+        );
+        const url = URL.createObjectURL(audioBlob);
+        setAudioUrl(url);
+      }
+    } catch (error: any) {
+      console.error("Error generating pronunciation:", error);
+      toast({
+        title: "Error",
+        description: "Failed to load pronunciation. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsLoadingAudio(false);
+    }
+  };
+
+  const playPronunciation = () => {
+    if (audioRef.current && audioUrl) {
+      audioRef.current.play();
+    }
+  };
+
   const handleLessonComplete = async () => {
     setIsSubmitting(true);
     try {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error("User not authenticated");
 
-      // Record progress
       const { error } = await supabase.from('hangul_progress').upsert({
         user_id: user.id,
         character_id: lesson.id,
@@ -120,11 +161,27 @@ export function HangulLesson({ lesson, onComplete }: HangulLessonProps) {
     <Card className="p-6 space-y-6">
       <div className="text-center">
         <h2 className="text-3xl font-bold mb-2">{lesson.character}</h2>
-        <p className="text-lg text-gray-600 mb-4">
-          Romanization: {lesson.romanization}
-        </p>
-        <p className="text-gray-700">{lesson.sound_description}</p>
+        <div className="flex items-center justify-center gap-4">
+          <p className="text-lg text-gray-600">
+            Romanization: {lesson.romanization}
+          </p>
+          <Button
+            variant="outline"
+            size="icon"
+            onClick={playPronunciation}
+            disabled={isLoadingAudio || !audioUrl}
+          >
+            {isLoadingAudio ? (
+              <Loader2 className="h-4 w-4 animate-spin" />
+            ) : (
+              <Volume2 className="h-4 w-4" />
+            )}
+          </Button>
+        </div>
+        <p className="text-gray-700 mt-2">{lesson.sound_description}</p>
       </div>
+
+      <audio ref={audioRef} src={audioUrl || ''} />
 
       <div className="space-y-4">
         {isLoadingImage ? (
