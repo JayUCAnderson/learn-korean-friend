@@ -9,6 +9,7 @@ import Auth from "./pages/Auth";
 import NotFound from "./pages/NotFound";
 import LessonDetail from "./pages/LessonDetail";
 import HangulLearning from "./pages/HangulLearning";
+import Lessons from "./pages/Lessons";
 
 const queryClient = new QueryClient();
 
@@ -23,6 +24,7 @@ const App = () => (
           <Route path="/auth" element={<Auth />} />
           <Route path="/hangul/*" element={<HangulLearning />} />
           <Route path="/lesson/:id" element={<LessonDetail />} />
+          <Route path="/lessons" element={<Lessons />} />
           <Route path="*" element={<NotFound />} />
         </Routes>
       </BrowserRouter>
