@@ -55,6 +55,13 @@ export function HangulLearningContainer({ onComplete, section: propSection }: Ha
     ? lessons.filter(lesson => getLessonSection(lesson) === section)
     : lessons;
 
+  // Ensure currentLessonIndex is valid for the current section
+  useEffect(() => {
+    if (filteredLessons.length > 0 && currentLessonIndex >= filteredLessons.length) {
+      setCurrentLessonIndex(0);
+    }
+  }, [section, filteredLessons.length, currentLessonIndex, setCurrentLessonIndex]);
+
   const handleLessonComplete = () => {
     const nextLesson = filteredLessons[currentLessonIndex + 1];
     if (nextLesson) {
