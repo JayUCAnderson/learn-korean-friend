@@ -6,6 +6,9 @@ import type { Database } from "@/integrations/supabase/types";
 
 type LessonType = Database['public']['Tables']['hangul_lessons']['Row'];
 
+// Cache for mnemonic images
+const imageCache = new Map<string, string>();
+
 export function useMnemonicImage(lesson: LessonType) {
   const [mnemonicImage, setMnemonicImage] = useState<string | null>(null);
   const [isLoadingImage, setIsLoadingImage] = useState(true);
@@ -30,6 +33,7 @@ export function useMnemonicImage(lesson: LessonType) {
 
     setIsRegeneratingImage(true);
     setMnemonicImage(null);
+    imageCache.delete(lesson.character); // Clear cache for this character
     
     try {
       console.log("Initiating mnemonic image regeneration for character:", lesson.character);
@@ -58,6 +62,7 @@ export function useMnemonicImage(lesson: LessonType) {
       if (generatedData.imageUrl) {
         console.log("New mnemonic image received:", generatedData.imageUrl);
         setMnemonicImage(generatedData.imageUrl);
+        imageCache.set(lesson.character, generatedData.imageUrl); // Cache the new image
         
         if (generatedData.imageId) {
           const { error: updateError } = await supabase
@@ -91,10 +96,17 @@ export function useMnemonicImage(lesson: LessonType) {
     if (!lesson.id) return;
 
     setIsLoadingImage(true);
-    setMnemonicImage(null);
 
     try {
-      // First try to fetch existing image
+      // Check cache first
+      if (imageCache.has(lesson.character)) {
+        console.log("Using cached image for:", lesson.character);
+        setMnemonicImage(imageCache.get(lesson.character)!);
+        setIsLoadingImage(false);
+        return;
+      }
+
+      // Then try to fetch existing image
       if (lesson.mnemonic_image_id) {
         console.log("Attempting to fetch existing image for:", lesson.character);
         const { data: imageData, error: fetchError } = await supabase
@@ -108,6 +120,7 @@ export function useMnemonicImage(lesson: LessonType) {
         if (imageData?.image_url) {
           console.log("Fetched existing mnemonic image:", imageData.image_url);
           setMnemonicImage(imageData.image_url);
+          imageCache.set(lesson.character, imageData.image_url); // Cache the fetched image
           setIsLoadingImage(false);
           return;
         }
@@ -140,6 +153,7 @@ export function useMnemonicImage(lesson: LessonType) {
       if (generatedData.imageUrl) {
         console.log("Generated new mnemonic image:", generatedData.imageUrl);
         setMnemonicImage(generatedData.imageUrl);
+        imageCache.set(lesson.character, generatedData.imageUrl); // Cache the generated image
         
         if (generatedData.imageId) {
           const { error: updateError } = await supabase
@@ -176,3 +190,4 @@ export function useMnemonicImage(lesson: LessonType) {
     regenerateMnemonicImage
   };
 }
+
