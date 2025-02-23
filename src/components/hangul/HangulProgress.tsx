@@ -11,8 +11,8 @@ interface HangulProgressProps {
 }
 
 export function HangulProgress({ currentLesson, totalLessons, theme }: HangulProgressProps) {
-  const { calculateSectionProgress, currentSection } = useHangulLessons();
-  const progressPercentage = calculateSectionProgress(currentSection);
+  const { currentSection } = useHangulLessons();
+  const progressPercentage = (currentLesson / totalLessons) * 100;
 
   const themeColors = {
     temple: "bg-[#D46A6A]",
@@ -36,22 +36,12 @@ export function HangulProgress({ currentLesson, totalLessons, theme }: HangulPro
     advanced_consonants: "Advanced Consonants"
   };
 
-  // Calculate section-specific lesson numbers
-  const sectionSize = Math.ceil(totalLessons / 3);
-  const sectionStartIndex = currentSection === 'vowels' ? 0 :
-                          currentSection === 'basic_consonants' ? sectionSize :
-                          sectionSize * 2;
-  const sectionCurrentLesson = currentLesson - sectionStartIndex;
-  const sectionTotalLessons = currentSection === 'advanced_consonants' ? 
-                             totalLessons - (sectionSize * 2) : 
-                             sectionSize;
-
   return (
     <div className="space-y-4">
       <div className="flex justify-between items-center text-sm text-gray-600">
         <span className="flex items-center gap-2">
           <span className="text-lg">{themeIcons[theme]}</span>
-          <span>{sectionMap[currentSection]} - Lesson {sectionCurrentLesson} of {sectionTotalLessons}</span>
+          <span>{sectionMap[currentSection]} - Lesson {currentLesson + 1} of {totalLessons}</span>
         </span>
         <span>{Math.round(progressPercentage)}%</span>
       </div>

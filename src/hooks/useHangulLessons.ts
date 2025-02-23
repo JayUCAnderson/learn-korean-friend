@@ -71,37 +71,35 @@ export function useHangulLessons() {
   }, [currentLessonIndex]);
 
   const getLessonSection = useCallback((index: number): LessonSection => {
-    const totalLessons = lessons.length;
-    const sectionSize = Math.ceil(totalLessons / 3);
+    const vowelsCount = lessons.filter(l => l.character_type?.includes('vowel')).length;
+    const basicConsonantsCount = lessons.filter(l => l.character_type?.includes('basic_consonant')).length;
     
-    if (index < sectionSize) return 'vowels';
-    if (index < sectionSize * 2) return 'basic_consonants';
+    if (index < vowelsCount) return 'vowels';
+    if (index < vowelsCount + basicConsonantsCount) return 'basic_consonants';
     return 'advanced_consonants';
-  }, [lessons.length]);
+  }, [lessons]);
 
-  const calculateSectionProgress = useCallback((section: LessonSection): number => {
-    if (lessons.length === 0) return 0;
-    
-    const sectionSize = Math.ceil(lessons.length / 3);
-    const startIndex = section === 'vowels' ? 0 :
-                      section === 'basic_consonants' ? sectionSize :
-                      sectionSize * 2;
-    const endIndex = section === 'vowels' ? sectionSize :
-                    section === 'basic_consonants' ? sectionSize * 2 :
-                    lessons.length;
-                    
-    const currentSectionIndex = currentLessonIndex - startIndex;
-    
-    // If we haven't reached this section yet
-    if (currentLessonIndex < startIndex) return 0;
-    
-    // If we've completed this section
-    if (currentLessonIndex >= endIndex) return 100;
-    
-    // Calculate progress within the current section
-    const progress = ((currentSectionIndex + 1) / (endIndex - startIndex)) * 100;
-    return Math.min(100, Math.max(0, progress));
-  }, [currentLessonIndex, lessons.length]);
+  const getSectionLessons = useCallback((section: LessonSection): number => {
+    switch (section) {
+      case 'vowels':
+        return lessons.filter(l => l.character_type?.includes('vowel')).length;
+      case 'basic_consonants':
+        return lessons.filter(l => l.character_type?.includes('basic_consonant')).length;
+      case 'advanced_consonants':
+        return lessons.filter(l => l.character_type?.includes('advanced_consonant')).length;
+      default:
+        return 0;
+    }
+  }, [lessons]);
+
+  const currentSection = getLessonSection(currentLessonIndex);
+  const sectionLessons = getSectionLessons(currentSection);
+  const sectionStartIndex = currentSection === 'vowels' ? 0 :
+    currentSection === 'basic_consonants' ? 
+    getSectionLessons('vowels') :
+    getSectionLessons('vowels') + getSectionLessons('basic_consonants');
+  
+  const currentLessonInSection = currentLessonIndex - sectionStartIndex;
 
   return {
     lessons,
@@ -110,8 +108,9 @@ export function useHangulLessons() {
     isLoading,
     handleNext,
     handlePrevious,
-    currentSection: getLessonSection(currentLessonIndex),
+    currentSection,
     getLessonSection,
-    calculateSectionProgress,
+    currentLessonInSection,
+    sectionLessons,
   };
-}
+};
