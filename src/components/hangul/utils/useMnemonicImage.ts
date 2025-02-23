@@ -8,10 +8,11 @@ type LessonType = Database['public']['Views']['hangul_lessons_complete']['Row'];
 export function useMnemonicImage(lesson: LessonType) {
   const [isRegeneratingImage, setIsRegeneratingImage] = useState(false);
 
-  // Use the mnemonic_image_url directly from the lesson
+  // Early return if we have an image URL
   const mnemonicImage = lesson?.mnemonic_image_url || null;
 
   const regenerateMnemonicImage = useCallback(async () => {
+    // Only allow regeneration in development and if we have a lesson ID
     if (process.env.NODE_ENV !== 'development' || !lesson?.id) return;
     
     setIsRegeneratingImage(true);
@@ -31,14 +32,12 @@ export function useMnemonicImage(lesson: LessonType) {
       if (error) throw error;
 
       if (generatedData?.imageUrl) {
-        const { error: updateError } = await supabase
+        await supabase
           .from('hangul_lessons')
           .update({ mnemonic_image_id: generatedData.imageId })
           .eq('id', lesson.id);
-
-        if (updateError) throw updateError;
       }
-    } catch (error: any) {
+    } catch (error) {
       console.error("Error regenerating mnemonic image:", error);
     } finally {
       setIsRegeneratingImage(false);
@@ -52,4 +51,3 @@ export function useMnemonicImage(lesson: LessonType) {
     regenerateMnemonicImage
   };
 }
-
