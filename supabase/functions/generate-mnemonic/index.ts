@@ -10,7 +10,7 @@ const corsHeaders = {
 
 serve(async (req: Request) => {
   if (req.method === 'OPTIONS') {
-    return new Response('ok', { headers: corsHeaders })
+    return new Response(null, { headers: corsHeaders })
   }
 
   try {
@@ -53,15 +53,9 @@ serve(async (req: Request) => {
 
     // Generate a concise, image-focused prompt
     const defaultStyleSuffix = "Render in a minimalist Korean design style with clean lines and soft colors"
-    const generateImagePrompt = (character: string, mnemonic: string): string => {
-      // Remove any existing explanatory text and focus on visual description
-      const cleanMnemonic = mnemonic.replace(/makes .* sound|for the Korean character/g, '').trim()
-      return `Create a simple, iconic illustration of ${cleanMnemonic}. ${defaultStyleSuffix}`
-    }
-
     const finalPrompt = basePrompt 
       ? `${basePrompt}. ${defaultStyleSuffix}`
-      : generateImagePrompt(character, `a ${characterType} that looks like ${character}`)
+      : `Create a simple, iconic illustration that helps remember the Korean ${characterType} "${character}". ${defaultStyleSuffix}`
 
     console.log('Generating new mnemonic image with prompt:', finalPrompt)
 
@@ -78,11 +72,17 @@ serve(async (req: Request) => {
       },
       body: JSON.stringify({
         prompt: finalPrompt,
+        go_fast: true,
         height: 512,
         width: 512,
+        num_outputs: 1,
         num_inference_steps: 20,
         guidance_scale: 7.5,
-        negative_prompt: "text, words, letters, blurry, complex, confusing, photorealistic, detailed, noise",
+        output_format: "webp",
+        negative_prompt: "text, words, letters, blurry, complex, confusing",
+        output_quality: 80,
+        aspect_ratio: "1:1",
+        megapixels: "1"
       }),
     })
 
