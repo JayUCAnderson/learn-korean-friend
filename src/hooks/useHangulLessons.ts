@@ -1,10 +1,10 @@
 
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { useToast } from "@/components/ui/use-toast";
+import { useToast } from "@/hooks/use-toast";
 import type { Database } from "@/integrations/supabase/types";
 
-type HangulLessonType = Database['public']['Tables']['hangul_lessons']['Row'];
+type HangulLessonType = Database['public']['Views']['hangul_lessons_complete']['Row'];
 
 export function useHangulLessons() {
   const [lessons, setLessons] = useState<HangulLessonType[]>([]);
@@ -15,7 +15,7 @@ export function useHangulLessons() {
   const fetchLessons = async () => {
     try {
       const { data, error } = await supabase
-        .from('hangul_lessons')
+        .from('hangul_lessons_complete')
         .select('*')
         .order('lesson_order', { ascending: true });
 

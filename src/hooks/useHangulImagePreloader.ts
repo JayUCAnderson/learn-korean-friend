@@ -1,12 +1,12 @@
 
 import { useState, useEffect } from "react";
-import { supabase } from "@/integrations/supabase/client";
+import type { Database } from "@/integrations/supabase/types";
 
-// Create and export the cache so it can be imported by other components
+type HangulLessonType = Database['public']['Views']['hangul_lessons_complete']['Row'];
 export const imageCache = new Map<string, string>();
 export let isPreloadComplete = false;
 
-export function useHangulImagePreloader(lessons: any[]) {
+export function useHangulImagePreloader(lessons: HangulLessonType[]) {
   const [isPreloading, setIsPreloading] = useState(true);
 
   useEffect(() => {
@@ -20,6 +20,11 @@ export function useHangulImagePreloader(lessons: any[]) {
       try {
         console.log("Starting to preload Hangul images...");
         const preloadPromises = lessons.map(async (lesson) => {
+          if (!lesson.mnemonic_image_url) {
+            console.log(`No mnemonic image URL for character: ${lesson.character}`);
+            return;
+          }
+
           // Skip if already cached
           if (imageCache.has(lesson.character)) {
             console.log("Using cached image for:", lesson.character);
@@ -27,69 +32,17 @@ export function useHangulImagePreloader(lessons: any[]) {
           }
 
           try {
-            // Try to find existing mnemonic image
-            const { data: existingImage } = await supabase
-              .from('mnemonic_images')
-              .select('id, image_url')
-              .eq('character', lesson.character)
-              .maybeSingle();
-
-            if (existingImage?.image_url) {
-              // Preload and cache existing image
-              const img = new Image();
-              img.src = existingImage.image_url;
-              await new Promise((resolve, reject) => {
-                img.onload = resolve;
-                img.onerror = reject;
-              });
-              imageCache.set(lesson.character, existingImage.image_url);
-
-              // Update lesson with mnemonic_image_id if needed
-              if (lesson.mnemonic_image_id !== existingImage.id) {
-                await supabase
-                  .from('hangul_lessons')
-                  .update({ mnemonic_image_id: existingImage.id })
-                  .eq('id', lesson.id);
-              }
-              return;
-            }
-
-            // Generate new image if none exists
-            const { data: generatedData, error: generateError } = await supabase.functions.invoke<{
-              imageUrl: string;
-              imageId: string;
-            }>('generate-mnemonic', {
-              body: {
-                character: lesson.character,
-                basePrompt: lesson.mnemonic_base,
-                characterType: lesson.character_type[0]
-              }
+            // Preload and cache image
+            const img = new Image();
+            img.src = lesson.mnemonic_image_url;
+            await new Promise((resolve, reject) => {
+              img.onload = resolve;
+              img.onerror = reject;
             });
-
-            if (generateError) {
-              console.error("Error generating image:", generateError);
-              return;
-            }
-
-            if (generatedData?.imageUrl) {
-              const img = new Image();
-              img.src = generatedData.imageUrl;
-              await new Promise((resolve, reject) => {
-                img.onload = resolve;
-                img.onerror = reject;
-              });
-              imageCache.set(lesson.character, generatedData.imageUrl);
-
-              // Update the lesson with the new image ID
-              if (generatedData.imageId) {
-                await supabase
-                  .from('hangul_lessons')
-                  .update({ mnemonic_image_id: generatedData.imageId })
-                  .eq('id', lesson.id);
-              }
-            }
+            imageCache.set(lesson.character, lesson.mnemonic_image_url);
+            console.log(`Successfully preloaded image for ${lesson.character}`);
           } catch (error) {
-            console.error(`Error handling image for character ${lesson.character}:`, error);
+            console.error(`Error preloading image for character ${lesson.character}:`, error);
           }
         });
 
