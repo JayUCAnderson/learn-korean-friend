@@ -68,48 +68,65 @@ export const LearningPathContainer = ({ userData, themeColors }: LearningPathCon
         ? userData.interests[0]
         : 'general';
 
-      const content = await startSession(interest, userData.level, 'conversation');
+      console.log("Starting lesson generation with:", { interest, level: userData.level });
       
-      if (content) {
-        const lessonNumber = lessons.length + 1;
-        
-        // Transform the content into a properly typed structure for the database
-        const lessonContent = {
-          content: typeof content.content === 'string' 
-            ? content.content 
-            : content.content.content || '',
-          vocabulary: typeof content.content === 'object' && Array.isArray(content.content.vocabulary)
-            ? content.content.vocabulary.map(item => ({
-                korean: item.korean || '',
-                english: item.english || '',
-                pronunciation: item.pronunciation || '',
-                partOfSpeech: item.partOfSpeech || ''
-              }))
-            : []
-        };
-
-        const { error } = await supabase
-          .from('lessons')
-          .insert({
-            user_id: userData.id,
-            title: content.title,
-            description: content.description,
-            content: lessonContent as unknown as Database['public']['Tables']['lessons']['Insert']['content'],
-            lesson_number: lessonNumber,
-            status: 'not_started'
-          });
-
-        if (error) throw error;
-
-        toast({
-          title: "Lesson ready!",
-          description: "Your personalized lesson has been generated.",
-        });
-        
-        fetchLessons();
+      const content = await startSession(interest, userData.level, 'conversation');
+      console.log("Received content from startSession:", content);
+      
+      if (!content) {
+        throw new Error("No content received from session");
       }
+
+      if (!content.title) {
+        console.error("Missing title in content:", content);
+        throw new Error("Generated content is missing required title");
+      }
+
+      const lessonNumber = lessons.length + 1;
+      console.log("Creating lesson with number:", lessonNumber);
+      
+      // Transform the content into a properly typed structure for the database
+      const lessonContent = {
+        content: typeof content.content === 'string' 
+          ? content.content 
+          : content.content?.content || '',
+        vocabulary: (typeof content.content === 'object' && Array.isArray(content.content.vocabulary)
+          ? content.content.vocabulary
+          : []
+        ).map(item => ({
+          korean: item.korean || '',
+          english: item.english || '',
+          pronunciation: item.pronunciation || '',
+          partOfSpeech: item.partOfSpeech || ''
+        }))
+      };
+
+      console.log("Prepared lesson content:", lessonContent);
+
+      const { error } = await supabase
+        .from('lessons')
+        .insert({
+          user_id: userData.id,
+          title: content.title,
+          description: content.description || '',
+          content: lessonContent as unknown as Database['public']['Tables']['lessons']['Insert']['content'],
+          lesson_number: lessonNumber,
+          status: 'not_started'
+        });
+
+      if (error) {
+        console.error("Error inserting lesson:", error);
+        throw error;
+      }
+
+      toast({
+        title: "Lesson ready!",
+        description: "Your personalized lesson has been generated.",
+      });
+      
+      fetchLessons();
     } catch (error: any) {
-      console.error("Error generating lesson:", error);
+      console.error("Error in handleStartLearning:", error);
       toast({
         title: "Error",
         description: "Failed to generate lesson content. Please try again.",
@@ -136,3 +153,4 @@ export const LearningPathContainer = ({ userData, themeColors }: LearningPathCon
     </div>
   );
 };
+

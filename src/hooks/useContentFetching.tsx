@@ -37,10 +37,17 @@ export const useContentFetching = () => {
           target_skills: string[];
           key_points: string[];
         };
+
+        if (!contentObj.title) {
+          console.error("Missing title in existing content:", contentObj);
+          throw new Error("Content is missing required title");
+        }
         
         let parsedContent = typeof contentObj.content === 'string'
           ? parseMarkdownContent(contentObj.content)
           : { vocabulary: [] };
+
+        console.log("Parsed content:", parsedContent);
 
         // Increment usage count
         await supabase
@@ -59,15 +66,27 @@ export const useContentFetching = () => {
         };
       }
 
+      console.log("No existing content found, generating new content...");
+      
       // Generate new content via edge function
       const response = await supabase.functions.invoke('generate-learning-content', {
         body: { interest, level, contentType }
       });
 
-      if (response.error) throw new Error('Failed to generate content');
+      console.log("Edge function response:", response);
+
+      if (response.error) {
+        console.error("Edge function error:", response.error);
+        throw new Error('Failed to generate content');
+      }
       
       const generatedContent = response.data as LearningContent;
       console.log("Generated new content:", generatedContent);
+
+      if (!generatedContent.title) {
+        console.error("Missing title in generated content:", generatedContent);
+        throw new Error("Generated content is missing required title");
+      }
 
       // Store the generated content
       const { error } = await supabase
@@ -81,7 +100,10 @@ export const useContentFetching = () => {
           usage_count: 1
         });
 
-      if (error) throw error;
+      if (error) {
+        console.error("Error storing generated content:", error);
+        throw error;
+      }
       
       return generatedContent;
     } catch (error: any) {
@@ -102,3 +124,4 @@ export const useContentFetching = () => {
     isLoading,
   };
 };
+
