@@ -6,8 +6,8 @@ import type { Database } from "@/integrations/supabase/types";
 
 type LessonType = Database['public']['Tables']['hangul_lessons']['Row'];
 
-// Cache for mnemonic images
-const imageCache = new Map<string, string>();
+// Use the same cache instance from useHangulImagePreloader
+declare const imageCache: Map<string, string>;
 
 export function useMnemonicImage(lesson: LessonType) {
   const [mnemonicImage, setMnemonicImage] = useState<string | null>(null);
@@ -33,7 +33,7 @@ export function useMnemonicImage(lesson: LessonType) {
 
     setIsRegeneratingImage(true);
     setMnemonicImage(null);
-    imageCache.delete(lesson.character); // Clear cache for this character
+    imageCache.delete(lesson.character);
     
     try {
       console.log("Initiating mnemonic image regeneration for character:", lesson.character);
@@ -48,28 +48,18 @@ export function useMnemonicImage(lesson: LessonType) {
         }
       });
 
-      if (error) {
-        console.error("Edge function error:", error);
-        throw error;
-      }
-
-      if (!generatedData) {
-        throw new Error("No data received from edge function");
-      }
-
-      console.log("Generated data received:", generatedData);
+      if (error) throw error;
+      if (!generatedData) throw new Error("No data received from edge function");
 
       if (generatedData.imageUrl) {
         console.log("New mnemonic image received:", generatedData.imageUrl);
         setMnemonicImage(generatedData.imageUrl);
-        imageCache.set(lesson.character, generatedData.imageUrl); // Cache the new image
+        imageCache.set(lesson.character, generatedData.imageUrl);
         
         if (generatedData.imageId) {
           const { error: updateError } = await supabase
             .from('hangul_lessons')
-            .update({ 
-              mnemonic_image_id: generatedData.imageId
-            })
+            .update({ mnemonic_image_id: generatedData.imageId })
             .eq('id', lesson.id);
 
           if (updateError) throw updateError;
@@ -106,66 +96,9 @@ export function useMnemonicImage(lesson: LessonType) {
         return;
       }
 
-      // Then try to fetch existing image
-      if (lesson.mnemonic_image_id) {
-        console.log("Attempting to fetch existing image for:", lesson.character);
-        const { data: imageData, error: fetchError } = await supabase
-          .from('mnemonic_images')
-          .select('image_url')
-          .eq('id', lesson.mnemonic_image_id)
-          .maybeSingle();
-
-        if (fetchError) throw fetchError;
-
-        if (imageData?.image_url) {
-          console.log("Fetched existing mnemonic image:", imageData.image_url);
-          setMnemonicImage(imageData.image_url);
-          imageCache.set(lesson.character, imageData.image_url); // Cache the fetched image
-          setIsLoadingImage(false);
-          return;
-        }
-      }
-
-      // If no existing image, generate new one
-      console.log("No existing image found, generating new mnemonic image for:", lesson.character);
-      const { data: generatedData, error: generateError } = await supabase.functions.invoke<{
-        imageUrl: string;
-        imageId: string;
-      }>('generate-mnemonic', {
-        body: {
-          character: lesson.character,
-          basePrompt: lesson.mnemonic_base,
-          characterType: lesson.character_type[0]
-        }
-      });
-
-      if (generateError) {
-        console.error("Edge function error:", generateError);
-        throw generateError;
-      }
-
-      if (!generatedData) {
-        throw new Error("No data received from edge function");
-      }
-
-      console.log("Generated data received:", generatedData);
-
-      if (generatedData.imageUrl) {
-        console.log("Generated new mnemonic image:", generatedData.imageUrl);
-        setMnemonicImage(generatedData.imageUrl);
-        imageCache.set(lesson.character, generatedData.imageUrl); // Cache the generated image
-        
-        if (generatedData.imageId) {
-          const { error: updateError } = await supabase
-            .from('hangul_lessons')
-            .update({ 
-              mnemonic_image_id: generatedData.imageId
-            })
-            .eq('id', lesson.id);
-
-          if (updateError) throw updateError;
-        }
-      }
+      // All other image fetching/generation logic is now handled by the preloader
+      setMnemonicImage(null);
+      setIsLoadingImage(false);
     } catch (error: any) {
       console.error("Error with mnemonic image:", error);
       toast({
@@ -190,4 +123,3 @@ export function useMnemonicImage(lesson: LessonType) {
     regenerateMnemonicImage
   };
 }
-

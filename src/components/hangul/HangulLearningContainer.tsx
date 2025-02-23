@@ -5,6 +5,7 @@ import { HangulProgress } from "./HangulProgress";
 import { LoadingSpinner } from "./LoadingSpinner";
 import { EmptyState } from "./EmptyState";
 import { useHangulLessons } from "@/hooks/useHangulLessons";
+import { useHangulImagePreloader } from "@/hooks/useHangulImagePreloader";
 
 interface HangulLearningContainerProps {
   onComplete?: () => void;
@@ -12,6 +13,7 @@ interface HangulLearningContainerProps {
 
 export function HangulLearningContainer({ onComplete }: HangulLearningContainerProps) {
   const { lessons, currentLessonIndex, isLoading, handleNext, handlePrevious } = useHangulLessons();
+  const { isPreloading } = useHangulImagePreloader(lessons);
   const { toast } = useToast();
 
   const handleLessonComplete = () => {
@@ -27,7 +29,7 @@ export function HangulLearningContainer({ onComplete }: HangulLearningContainerP
     onComplete?.();
   };
 
-  if (isLoading) {
+  if (isLoading || isPreloading) {
     return <LoadingSpinner />;
   }
 
@@ -53,3 +55,4 @@ export function HangulLearningContainer({ onComplete }: HangulLearningContainerP
     </div>
   );
 }
+
