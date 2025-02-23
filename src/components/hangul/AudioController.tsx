@@ -5,11 +5,12 @@ import { supabase } from "@/integrations/supabase/client";
 
 interface AudioControllerProps {
   character: string;
+  audioContent?: string | null;
   onAudioReady: (url: string | null) => void;
   onLoadingChange: (isLoading: boolean) => void;
 }
 
-export function useAudioController({ character, onAudioReady, onLoadingChange }: AudioControllerProps) {
+export function useAudioController({ character, audioContent, onAudioReady, onLoadingChange }: AudioControllerProps) {
   const [isLoadingAudio, setIsLoadingAudio] = useState(false);
   const { toast } = useToast();
   
@@ -18,24 +19,15 @@ export function useAudioController({ character, onAudioReady, onLoadingChange }:
   useEffect(() => {
     let isMounted = true;
     
-    const fetchAudio = async () => {
+    const initializeAudio = async () => {
       try {
         setIsLoadingAudio(true);
         onLoadingChange(true);
 
-        // First check if we have it in character_pronunciations
-        const { data: pronunciationData, error: pronunciationError } = await supabase
-          .from('character_pronunciations')
-          .select('audio_url, audio_content')
-          .eq('character', character)
-          .maybeSingle();
-
-        if (pronunciationError) throw pronunciationError;
-
-        if (pronunciationData?.audio_content) {
-          console.log('Using existing pronunciation from database');
+        // If we have audio content from the preloaded data, use it
+        if (audioContent) {
           const audioBlob = new Blob(
-            [Uint8Array.from(atob(pronunciationData.audio_content), c => c.charCodeAt(0))],
+            [Uint8Array.from(atob(audioContent), c => c.charCodeAt(0))],
             { type: 'audio/mpeg' }
           );
           const url = URL.createObjectURL(audioBlob);
@@ -47,6 +39,7 @@ export function useAudioController({ character, onAudioReady, onLoadingChange }:
           return;
         }
 
+        // If no audio content is available, generate it
         console.log(`No existing pronunciation found, generating new audio for character: ${character}`);
         
         const { data, error } = await supabase.functions.invoke(
@@ -75,20 +68,18 @@ export function useAudioController({ character, onAudioReady, onLoadingChange }:
           .from('character_pronunciations')
           .upsert({
             character,
-            audio_content: data.audioContent,
-            audio_url: url
+            audio_content: data.audioContent
           });
 
         if (storeError) {
           console.error('Error storing audio:', storeError);
-          // Continue anyway since we have the audio
         }
 
         if (isMounted) {
           onAudioReady(url);
         }
       } catch (error: any) {
-        console.error("Error generating pronunciation:", error);
+        console.error("Error with audio:", error);
         toast({
           title: "Error",
           description: "Failed to load pronunciation. Please try again.",
@@ -105,12 +96,12 @@ export function useAudioController({ character, onAudioReady, onLoadingChange }:
       }
     };
 
-    fetchAudio();
+    initializeAudio();
     
     return () => {
       isMounted = false;
     };
-  }, [character]);
+  }, [character, audioContent]);
 
   return { isLoadingAudio };
 }

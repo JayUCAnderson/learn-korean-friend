@@ -25,6 +25,7 @@ export function HangulLesson({ lesson, onComplete, onNext, onPrevious }: HangulL
 
   const { isLoadingAudio: isAudioLoading } = useAudioController({
     character: lesson.character,
+    audioContent: lesson.audio_content,
     onAudioReady: setAudioUrl,
     onLoadingChange: setIsLoadingAudio,
   });
