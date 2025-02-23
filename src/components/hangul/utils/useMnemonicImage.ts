@@ -1,6 +1,7 @@
 
 import { useState, useEffect } from "react";
 import type { Database } from "@/integrations/supabase/types";
+import { supabase } from "@/integrations/supabase/client";
 import { imageCache } from "@/hooks/useHangulImagePreloader";
 
 type LessonType = Database['public']['Views']['hangul_lessons_complete']['Row'];

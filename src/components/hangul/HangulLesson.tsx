@@ -9,7 +9,7 @@ import { LessonProgress } from "./LessonProgress";
 import { useAudioController } from "./AudioController";
 import { useMnemonicImage } from "./utils/useMnemonicImage";
 
-type HangulLessonType = Database['public']['Tables']['hangul_lessons']['Row'];
+type HangulLessonType = Database['public']['Views']['hangul_lessons_complete']['Row'];
 
 interface HangulLessonProps {
   lesson: HangulLessonType;
@@ -71,7 +71,7 @@ export function HangulLesson({ lesson, onComplete, onNext, onPrevious }: HangulL
         <ExamplesSection examples={lesson.examples as Record<string, string>} />
 
         <LessonProgress
-          lessonId={Number(lesson.id)}
+          lessonId={lesson.id}
           onComplete={onComplete}
         />
       </div>
