@@ -12,19 +12,17 @@ import { ReviewModal } from "./ReviewModal";
 import { Button } from "@/components/ui/button";
 import { BookOpen, ArrowLeft } from "lucide-react";
 import { HangulLandingPage } from "./HangulLandingPage";
-import { useSearchParams, useLocation, useNavigate } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
+import type { LessonSection } from "@/hooks/useHangulLessons";
 
 interface HangulLearningContainerProps {
   onComplete?: () => void;
+  section?: LessonSection;
 }
 
-export function HangulLearningContainer({ onComplete }: HangulLearningContainerProps) {
-  const [searchParams] = useSearchParams();
-  const location = useLocation();
+export function HangulLearningContainer({ onComplete, section }: HangulLearningContainerProps) {
   const navigate = useNavigate();
-  const sectionParam = searchParams.get('section');
-  const lessonParam = searchParams.get('lesson');
-  const showLanding = !location.pathname.includes('/hangul/learn');
+  const showLanding = !section;
 
   const { 
     lessons, 
@@ -41,22 +39,15 @@ export function HangulLearningContainer({ onComplete }: HangulLearningContainerP
   const [showReview, setShowReview] = useState(false);
   const { toast } = useToast();
 
-  // Filter lessons by section if section param is present
-  const filteredLessons = sectionParam 
-    ? lessons.filter(lesson => getLessonSection(lesson) === sectionParam)
+  // Filter lessons by section
+  const filteredLessons = section 
+    ? lessons.filter(lesson => getLessonSection(lesson) === section)
     : lessons;
 
   const handleLessonComplete = () => {
     const nextLesson = filteredLessons[currentLessonIndex + 1];
     if (nextLesson) {
-      const currentSectionType = currentSection;
-      const nextSectionType = getLessonSection(nextLesson);
-      
-      if (currentSectionType !== nextSectionType) {
-        setShowQuiz(true);
-      } else {
-        handleNext();
-      }
+      handleNext();
     } else {
       toast({
         title: "Congratulations! 축하해요!",

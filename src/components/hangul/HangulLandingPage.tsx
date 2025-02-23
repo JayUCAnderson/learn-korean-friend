@@ -12,18 +12,21 @@ const sectionInfo = {
     description: "Master the basic building blocks of Hangul with vowels",
     gradient: "from-[#FFF5F7] to-[#FCE7F3]",
     examples: ["ㅏ", "ㅓ", "ㅗ"],
+    route: "/hangul/vowels"
   },
   basic_consonants: {
     title: "Basic Consonants (기본 자음)",
     description: "Learn the essential consonants of the Korean alphabet",
     gradient: "from-[#F3F4F6] to-[#E5E7EB]",
     examples: ["ㄱ", "ㄴ", "ㄷ"],
+    route: "/hangul/basic-consonants"
   },
   advanced_consonants: {
     title: "Advanced Consonants (복합 자음)",
     description: "Challenge yourself with complex consonant combinations",
     gradient: "from-[#F5F3FF] to-[#EDE9FE]",
     examples: ["ㄲ", "ㄸ", "ㅃ"],
+    route: "/hangul/advanced-consonants"
   },
 };
 
@@ -37,7 +40,6 @@ export function HangulLandingPage() {
     const sectionLessons = lessons.filter(lesson => getLessonSection(lesson) === section);
     if (sectionLessons.length === 0) return 0;
     
-    // Find the last completed lesson index in this section
     const completedCount = sectionLessons.filter((_, index) => {
       const lessonIndexInFullList = lessons.findIndex(l => l.id === sectionLessons[index].id);
       return lessonIndexInFullList <= currentLessonIndex;
@@ -52,32 +54,9 @@ export function HangulLandingPage() {
     return calculateSectionProgress('basic_consonants') === 100;
   };
 
-  const findFirstIncompleteLessonIndex = (section: keyof typeof sectionInfo) => {
-    // Filter lessons for the specific section first
-    const sectionLessons = lessons.filter(lesson => getLessonSection(lesson) === section);
-    
-    // Find the index of the first incomplete lesson in this section
-    const firstIncompleteIndex = sectionLessons.findIndex((lesson, index) => {
-      const lessonIndexInFullList = lessons.findIndex(l => l.id === lesson.id);
-      return lessonIndexInFullList > currentLessonIndex;
-    });
-    
-    // If all lessons are complete or no lessons found, return the first lesson of the section
-    if (firstIncompleteIndex === -1) {
-      const sectionStartIndex = lessons.findIndex(lesson => getLessonSection(lesson) === section);
-      return sectionStartIndex !== -1 ? sectionStartIndex : 0;
-    }
-    
-    // Get the actual index in the full lessons array
-    return lessons.findIndex(lesson => lesson.id === sectionLessons[firstIncompleteIndex].id);
-  };
-
   const handleContinueLearning = (section: keyof typeof sectionInfo) => {
-    if (!lessons.length) return;
-    
-    const lessonIndex = findFirstIncompleteLessonIndex(section);
-    console.log(`Navigating to section: ${section}, lesson index: ${lessonIndex}`);
-    navigate(`/hangul/learn?section=${section}&lesson=${lessonIndex}`);
+    if (!lessons.length || !isAvailable(section)) return;
+    navigate(sectionInfo[section].route);
   };
 
   return (
@@ -137,7 +116,7 @@ export function HangulLandingPage() {
                     className="w-full rounded-lg"
                     disabled={!available}
                     variant={available ? "default" : "secondary"}
-                    onClick={() => available && handleContinueLearning(key)}
+                    onClick={() => handleContinueLearning(key)}
                   >
                     {available ? (
                       <>
