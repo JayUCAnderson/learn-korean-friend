@@ -29,6 +29,10 @@ serve(async (req: Request) => {
       throw new Error('FAL_AI_API_KEY is not configured')
     }
 
+    // Temporary debug log - REMOVE AFTER DEBUGGING
+    console.log('FAL API Key value (first 4 chars):', falApiKey.substring(0, 4))
+    console.log('FAL API Key length:', falApiKey.length)
+
     // Create Supabase client
     const supabaseUrl = Deno.env.get('SUPABASE_URL')
     const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')
