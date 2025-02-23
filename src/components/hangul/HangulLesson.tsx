@@ -11,6 +11,7 @@ import { LessonProgress } from "./LessonProgress";
 import { useAudioController } from "./AudioController";
 
 type HangulLessonType = Database['public']['Tables']['hangul_lessons']['Row'];
+type LessonId = HangulLessonType['id'];
 
 interface HangulLessonProps {
   lesson: HangulLessonType;
@@ -27,7 +28,7 @@ export function HangulLesson({ lesson, onComplete, onNext, onPrevious }: HangulL
   const [isLoadingAudio, setIsLoadingAudio] = useState(false);
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const { toast } = useToast();
-  const currentLessonId = useRef(lesson.id);
+  const currentLessonId = useRef<LessonId>(lesson.id);
 
   const { generatePronunciation } = useAudioController({
     character: lesson.character,
