@@ -64,18 +64,16 @@ serve(async (req: Request) => {
     const response = await fetch('https://fal.run/fal-ai/flux/schnell', {
       method: 'POST',
       headers: {
-        'Authorization': `Key ${falApiKey}`,
+        'Authorization': `Bearer ${falApiKey}`, // Changed from 'Key' to 'Bearer'
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
         prompt: finalPrompt,
-        go_fast: true,
-        megapixels: "1",
-        num_outputs: 1,
-        aspect_ratio: "1:1",
-        output_format: "webp",
-        output_quality: 80,
-        num_inference_steps: 4
+        height: 512, // Added specific dimensions
+        width: 512,
+        num_inference_steps: 20,
+        guidance_scale: 7.5,
+        negative_prompt: "text, words, letters, blurry, complex, confusing",
       }),
     })
 
