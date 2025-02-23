@@ -1,5 +1,5 @@
 
-import { useRouter } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { ArrowRight } from "lucide-react";
@@ -29,10 +29,12 @@ const sectionInfo = {
 
 export function HangulLandingPage() {
   const { lessons, currentLessonIndex, getLessonSection } = useHangulLessons();
-  const currentSection = getLessonSection(currentLessonIndex);
+  const navigate = useNavigate();
   
   const calculateSectionProgress = (section: keyof typeof sectionInfo) => {
-    const sectionSize = Math.ceil(lessons.length / 3);
+    const totalLessons = lessons.length;
+    const sectionSize = Math.ceil(totalLessons / 3);
+    
     const startIndex = section === 'vowels' ? 0 :
                       section === 'basic_consonants' ? sectionSize :
                       sectionSize * 2;
@@ -40,10 +42,10 @@ export function HangulLandingPage() {
                     section === 'basic_consonants' ? sectionSize * 2 :
                     lessons.length;
     
-    const completed = currentLessonIndex >= startIndex ? 
-                     Math.min(currentLessonIndex - startIndex + 1, endIndex - startIndex) : 0;
+    const sectionLessons = lessons.slice(startIndex, endIndex);
+    const currentSectionIndex = currentLessonIndex - startIndex;
     
-    return (completed / (endIndex - startIndex)) * 100;
+    return (Math.min(Math.max(currentSectionIndex + 1, 0), sectionLessons.length) / sectionLessons.length) * 100;
   };
 
   const isAvailable = (section: keyof typeof sectionInfo) => {
@@ -94,12 +96,11 @@ export function HangulLandingPage() {
                     className="w-full"
                     disabled={!available}
                     onClick={() => {
-                      // Find the first lesson of this section and navigate to it
                       const sectionSize = Math.ceil(lessons.length / 3);
                       const startIndex = key === 'vowels' ? 0 :
-                                       key === 'basic_consonants' ? sectionSize :
-                                       sectionSize * 2;
-                      window.location.href = `/hangul?lesson=${startIndex}`;
+                                      key === 'basic_consonants' ? sectionSize :
+                                      sectionSize * 2;
+                      navigate(`/hangul?lesson=${startIndex}`);
                     }}
                   >
                     {progress === 100 ? "Review Section" : available ? "Continue Learning" : "Complete Previous Section"}
@@ -114,3 +115,4 @@ export function HangulLandingPage() {
     </div>
   );
 }
+

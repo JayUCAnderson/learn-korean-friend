@@ -71,7 +71,6 @@ export function useHangulLessons() {
   }, [currentLessonIndex]);
 
   const getLessonSection = useCallback((index: number): LessonSection => {
-    // Assuming lessons are ordered: vowels first, then basic consonants, then advanced consonants
     const totalLessons = lessons.length;
     const sectionSize = Math.ceil(totalLessons / 3);
     
@@ -80,15 +79,14 @@ export function useHangulLessons() {
     return 'advanced_consonants';
   }, [lessons.length]);
 
-  const currentSection = getLessonSection(currentLessonIndex);
-
   return {
     lessons,
     currentLessonIndex,
+    setCurrentLessonIndex,
     isLoading,
     handleNext,
     handlePrevious,
-    currentSection,
+    currentSection: getLessonSection(currentLessonIndex),
     getLessonSection,
   };
 }
