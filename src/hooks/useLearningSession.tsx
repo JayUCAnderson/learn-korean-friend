@@ -2,69 +2,19 @@
 import { useState } from 'react';
 import { useToast } from "@/components/ui/use-toast";
 import { supabase } from "@/integrations/supabase/client";
-import type { Database } from '@/integrations/supabase/types';
-
-type ContentType = Database['public']['Enums']['content_type'];
-type KoreanLevel = Database['public']['Enums']['korean_level'];
-type LearningContent = {
-  title: string;
-  description: string;
-  content: string | {
-    content: string;
-    vocabulary?: VocabularyItem[];
-  };
-  difficulty_level: number;
-  target_skills: string[];
-  key_points: string[];
-};
-
-interface VocabularyItem {
-  korean: string;
-  english: string;
-  pronunciation?: string;
-  partOfSpeech?: string;
-}
-
-interface ParsedContent {
-  setting?: string;
-  dialogue?: Array<{
-    speaker: string;
-    koreanText: string;
-    englishText: string;
-  }>;
-  vocabulary?: VocabularyItem[];
-}
+import { parseMarkdownContent } from '@/utils/contentParser';
+import { updateVocabularyProgress } from '@/utils/vocabularyProgress';
+import type { 
+  ContentType, 
+  KoreanLevel, 
+  LearningContent, 
+  VocabularyItem,
+  ParsedContent 
+} from '@/types/learning';
 
 export const useLearningSession = () => {
   const [isLoading, setIsLoading] = useState(false);
   const { toast } = useToast();
-
-  const parseMarkdownContent = (content: string): ParsedContent => {
-    const result: ParsedContent = {};
-    const sections = content.split(/(?=###)/);
-    
-    sections.forEach(section => {
-      const lines = section.trim().split('\n');
-      const header = lines[0].replace('###', '').trim().toLowerCase();
-      const content = lines.slice(1).join('\n').trim();
-
-      if (header.includes('vocabulary')) {
-        const vocabLines = content.split('\n').filter(Boolean);
-        result.vocabulary = vocabLines
-          .filter(line => line.includes('-') || line.includes('('))
-          .map(line => {
-            const [korean, english] = line.split(/[-()]/).map(part => part.trim());
-            return {
-              korean: korean.replace(/\d+\.\s*/, ''), // Remove numbering if present
-              english: english?.replace(/[()]/g, '').trim() || ''
-            };
-          })
-          .filter(item => item.korean && item.english); // Filter out any malformed entries
-      }
-    });
-    
-    return result;
-  };
 
   const startSession = async (interest: string, level: KoreanLevel, contentType: ContentType) => {
     setIsLoading(true);
@@ -97,7 +47,7 @@ export const useLearningSession = () => {
         // Increment usage count
         await supabase
           .from('learning_content')
-          .update({ usage_count: existingContent.usage_count + 1 })
+          .update({ usage_count: (existingContent.usage_count || 0) + 1 })
           .eq('id', existingContent.id);
           
         return {
@@ -122,7 +72,7 @@ export const useLearningSession = () => {
       console.log("Generated new content:", generatedContent);
       
       // Store the generated content
-      const { data: newContent, error } = await supabase
+      const { error } = await supabase
         .from('learning_content')
         .insert({
           content_type: contentType,
@@ -134,9 +84,7 @@ export const useLearningSession = () => {
           difficulty_level: generatedContent.difficulty_level,
           target_skills: generatedContent.target_skills,
           key_points: generatedContent.key_points
-        })
-        .select()
-        .single();
+        });
 
       if (error) throw error;
       
@@ -159,7 +107,7 @@ export const useLearningSession = () => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error('User not authenticated');
 
-      // Get the content first to ensure we have the vocabulary
+      // Get the content to ensure we have the vocabulary
       const { data: content } = await supabase
         .from('learning_content')
         .select('content')
@@ -191,21 +139,7 @@ export const useLearningSession = () => {
 
       // Update vocabulary progress if available
       if (performance && vocabularyItems.length > 0) {
-        for (const vocab of vocabularyItems) {
-          const { error: vocabError } = await supabase
-            .from('vocabulary_progress')
-            .insert({
-              user_id: user.id,
-              vocabulary_item: vocab as unknown as Database['public']['Tables']['vocabulary_progress']['Insert']['vocabulary_item'],
-              times_encountered: 1,
-              times_correct: performance >= 0.7 ? 1 : 0,
-              last_reviewed: new Date().toISOString()
-            })
-            .select()
-            .single();
-
-          if (vocabError) console.error("Error updating vocabulary progress:", vocabError);
-        }
+        await updateVocabularyProgress(user.id, vocabularyItems, performance);
       }
     } catch (error: any) {
       console.error("Error in recordSession:", error);
@@ -223,4 +157,3 @@ export const useLearningSession = () => {
     isLoading,
   };
 };
-
