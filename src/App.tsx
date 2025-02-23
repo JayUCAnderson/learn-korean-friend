@@ -21,7 +21,7 @@ const App = () => (
         <Routes>
           <Route path="/" element={<Index />} />
           <Route path="/auth" element={<Auth />} />
-          <Route path="/hangul" element={<HangulLearning />} />
+          <Route path="/hangul/*" element={<HangulLearning />} />
           <Route path="/lesson/:id" element={<LessonDetail />} />
           <Route path="*" element={<NotFound />} />
         </Routes>
@@ -31,3 +31,4 @@ const App = () => (
 );
 
 export default App;
+

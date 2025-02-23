@@ -15,6 +15,7 @@ export function useHangulLessons() {
   const [isLoading, setIsLoading] = useState(true);
   const { toast } = useToast();
   const [searchParams] = useSearchParams();
+  const sectionParam = searchParams.get('section') as LessonSection | null;
 
   const getLessonSection = useCallback((lesson: HangulLessonType): LessonSection => {
     if (!lesson) return 'vowels';
@@ -67,11 +68,16 @@ export function useHangulLessons() {
     fetchLessons();
   }, [fetchLessons]);
 
+  // Filter lessons by section if section parameter is present
+  const filteredLessons = sectionParam
+    ? lessons.filter(lesson => getLessonSection(lesson) === sectionParam)
+    : lessons;
+
   const handleNext = useCallback(() => {
-    if (currentLessonIndex < lessons.length - 1) {
+    if (currentLessonIndex < filteredLessons.length - 1) {
       setCurrentLessonIndex(prev => prev + 1);
     }
-  }, [currentLessonIndex, lessons.length]);
+  }, [currentLessonIndex, filteredLessons.length]);
 
   const handlePrevious = useCallback(() => {
     if (currentLessonIndex > 0) {
@@ -80,20 +86,20 @@ export function useHangulLessons() {
   }, [currentLessonIndex]);
 
   // Initialize current lesson and section
-  const currentLesson = lessons[currentLessonIndex] || null;
+  const currentLesson = filteredLessons[currentLessonIndex] || null;
   const currentSection = getLessonSection(currentLesson as HangulLessonType);
   
   // Calculate section-specific values
-  const sectionLessons = lessons.filter(lesson => 
+  const sectionLessons = filteredLessons.filter(lesson => 
     getLessonSection(lesson) === currentSection
   ).length || 1;
 
-  const currentLessonInSection = lessons.filter((lesson, index) => 
+  const currentLessonInSection = filteredLessons.filter((lesson, index) => 
     index <= currentLessonIndex && getLessonSection(lesson) === currentSection
   ).length || 1;
 
   return {
-    lessons,
+    lessons: filteredLessons,
     currentLessonIndex,
     setCurrentLessonIndex,
     isLoading,

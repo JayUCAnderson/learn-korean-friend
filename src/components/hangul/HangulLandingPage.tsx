@@ -32,20 +32,12 @@ export function HangulLandingPage() {
   const navigate = useNavigate();
   
   const calculateSectionProgress = (section: keyof typeof sectionInfo) => {
-    const totalLessons = lessons.length;
-    const sectionSize = Math.ceil(totalLessons / 3);
+    if (!lessons.length) return 0;
     
-    const startIndex = section === 'vowels' ? 0 :
-                      section === 'basic_consonants' ? sectionSize :
-                      sectionSize * 2;
-    const endIndex = section === 'vowels' ? sectionSize :
-                    section === 'basic_consonants' ? sectionSize * 2 :
-                    lessons.length;
+    const sectionLessons = lessons.filter(lesson => getLessonSection(lesson) === section);
+    const completedLessons = sectionLessons.filter((_, index) => index <= currentLessonIndex).length;
     
-    const sectionLessons = lessons.slice(startIndex, endIndex);
-    const currentSectionIndex = currentLessonIndex - startIndex;
-    
-    return (Math.min(Math.max(currentSectionIndex + 1, 0), sectionLessons.length) / sectionLessons.length) * 100;
+    return (completedLessons / sectionLessons.length) * 100;
   };
 
   const isAvailable = (section: keyof typeof sectionInfo) => {
@@ -95,13 +87,7 @@ export function HangulLandingPage() {
                   <Button
                     className="w-full"
                     disabled={!available}
-                    onClick={() => {
-                      const sectionSize = Math.ceil(lessons.length / 3);
-                      const startIndex = key === 'vowels' ? 0 :
-                                      key === 'basic_consonants' ? sectionSize :
-                                      sectionSize * 2;
-                      navigate(`/hangul?lesson=${startIndex}`);
-                    }}
+                    onClick={() => navigate(`/hangul?section=${key}`)}
                   >
                     {progress === 100 ? "Review Section" : available ? "Continue Learning" : "Complete Previous Section"}
                     <ArrowRight className="w-4 h-4 ml-2" />
@@ -115,4 +101,3 @@ export function HangulLandingPage() {
     </div>
   );
 }
-
