@@ -73,10 +73,20 @@ export const LearningPathContainer = ({ userData, themeColors }: LearningPathCon
       if (content) {
         const lessonNumber = lessons.length + 1;
         
-        // Transform the content into proper JSON structure
-        const lessonContent = typeof content.content === 'string' 
-          ? { content: content.content }
-          : content.content;
+        // Transform the content into a properly typed structure for the database
+        const lessonContent = {
+          content: typeof content.content === 'string' 
+            ? content.content 
+            : content.content.content || '',
+          vocabulary: typeof content.content === 'object' && Array.isArray(content.content.vocabulary)
+            ? content.content.vocabulary.map(item => ({
+                korean: item.korean || '',
+                english: item.english || '',
+                pronunciation: item.pronunciation || '',
+                partOfSpeech: item.partOfSpeech || ''
+              }))
+            : []
+        };
 
         const { error } = await supabase
           .from('lessons')
@@ -84,7 +94,7 @@ export const LearningPathContainer = ({ userData, themeColors }: LearningPathCon
             user_id: userData.id,
             title: content.title,
             description: content.description,
-            content: lessonContent as Database['public']['Tables']['lessons']['Insert']['content'],
+            content: lessonContent as unknown as Database['public']['Tables']['lessons']['Insert']['content'],
             lesson_number: lessonNumber,
             status: 'not_started'
           });
