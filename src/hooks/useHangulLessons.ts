@@ -72,7 +72,8 @@ export function useHangulLessons() {
 
   const getLessonSection = useCallback((index: number): LessonSection => {
     const vowelsCount = lessons.filter(l => l.character_type?.includes('vowel')).length;
-    const basicConsonantsCount = lessons.filter(l => l.character_type?.includes('basic_consonant')).length;
+    const basicConsonantsCount = lessons.filter(l => l.character_type?.includes('consonant') && 
+      !l.character_type?.includes('final_consonant')).length;
     
     if (index < vowelsCount) return 'vowels';
     if (index < vowelsCount + basicConsonantsCount) return 'basic_consonants';
@@ -84,9 +85,10 @@ export function useHangulLessons() {
       case 'vowels':
         return lessons.filter(l => l.character_type?.includes('vowel')).length;
       case 'basic_consonants':
-        return lessons.filter(l => l.character_type?.includes('basic_consonant')).length;
+        return lessons.filter(l => l.character_type?.includes('consonant') && 
+          !l.character_type?.includes('final_consonant')).length;
       case 'advanced_consonants':
-        return lessons.filter(l => l.character_type?.includes('advanced_consonant')).length;
+        return lessons.filter(l => l.character_type?.includes('final_consonant')).length;
       default:
         return 0;
     }
