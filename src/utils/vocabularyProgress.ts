@@ -1,6 +1,7 @@
 
 import { supabase } from "@/integrations/supabase/client";
 import type { VocabularyItem } from '@/types/learning';
+import type { Database } from '@/integrations/supabase/types';
 
 export const updateVocabularyProgress = async (
   userId: string, 
