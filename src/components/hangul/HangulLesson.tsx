@@ -37,16 +37,18 @@ export const HangulLesson = memo(function HangulLesson({
   } = useMnemonicImage(lesson);
 
   useEffect(() => {
-    if (!lesson?.id || !lesson?.character || hasAttemptedLoad.current) return;
+    if (!lesson?.id || hasAttemptedLoad.current) return;
     
     hasAttemptedLoad.current = true;
     let isMounted = true;
-    
+
     const loadAudio = async () => {
       try {
-        const url = await processAudio(lesson.character, lesson.pronunciation_url);
-        if (isMounted) {
-          setAudioUrl(url);
+        if (!audioUrl) {
+          const url = await processAudio(lesson.character);
+          if (isMounted && url) {
+            setAudioUrl(url);
+          }
         }
       } catch (error) {
         console.error("Error loading audio:", error);
@@ -57,12 +59,16 @@ export const HangulLesson = memo(function HangulLesson({
     
     return () => {
       isMounted = false;
+      // Clean up old audio URL to prevent memory leaks
+      if (audioUrl) {
+        URL.revokeObjectURL(audioUrl);
+      }
     };
-  }, [lesson?.id]); // Only depend on lesson ID to prevent unnecessary rerenders
+  }, [lesson?.id, audioUrl]); 
 
   const playPronunciation = () => {
     if (audioRef.current && audioUrl) {
-      audioRef.current.play();
+      audioRef.current.play().catch(console.error);
     }
   };
 

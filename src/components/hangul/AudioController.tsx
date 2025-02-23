@@ -12,15 +12,8 @@ export function useAudioController() {
   const processAudio = async (character: string, existingUrl: string | null = null) => {
     if (!character) return null;
     
-    // If we already have a URL, return it immediately
-    if (existingUrl) {
-      console.log("Using existing audio URL for character:", character);
-      return existingUrl;
-    }
-    
     try {
       setIsLoadingAudio(true);
-      console.log("Checking for pronunciation in database:", character);
 
       // Check for existing pronunciation
       const { data: existingPronunciation, error: fetchError } = await supabase
@@ -29,14 +22,10 @@ export function useAudioController() {
         .eq('character', character)
         .maybeSingle();
 
-      if (fetchError) {
-        console.error('Error fetching audio:', fetchError);
-        throw fetchError;
-      }
+      if (fetchError) throw fetchError;
 
       // If we have existing audio content, use it
       if (existingPronunciation?.audio_content) {
-        console.log("Using existing audio for character:", character);
         const audioBlob = new Blob(
           [Uint8Array.from(atob(existingPronunciation.audio_content), c => c.charCodeAt(0))],
           { type: 'audio/mpeg' }
@@ -45,8 +34,6 @@ export function useAudioController() {
       }
 
       // Generate new audio if none exists
-      console.log(`Generating new audio for character: ${character}`);
-      
       const { data, error } = await supabase.functions.invoke(
         'generate-pronunciation',
         {
