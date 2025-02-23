@@ -56,6 +56,7 @@ export function HangulLesson({ lesson, onComplete, onNext, onPrevious }: HangulL
 
     setIsRegeneratingImage(true);
     try {
+      console.log("Initiating mnemonic image regeneration for character:", lesson.character);
       const { data: generatedData, error } = await supabase.functions.invoke(
         'generate-mnemonic',
         {
@@ -70,7 +71,22 @@ export function HangulLesson({ lesson, onComplete, onNext, onPrevious }: HangulL
       if (error) throw error;
 
       if (generatedData?.imageUrl) {
+        console.log("New mnemonic image received:", generatedData.imageUrl);
         setMnemonicImage(generatedData.imageUrl);
+        
+        // Update the mnemonic_image_id in the lesson
+        if (generatedData.imageId) {
+          const { error: updateError } = await supabase
+            .from('hangul_lessons')
+            .update({ mnemonic_image_id: generatedData.imageId.toString() })
+            .eq('id', lesson.id);
+
+          if (updateError) {
+            console.error("Error updating lesson with new mnemonic image:", updateError);
+            throw updateError;
+          }
+        }
+
         toast({
           title: "Success",
           description: "Mnemonic image regenerated successfully.",
@@ -98,12 +114,14 @@ export function HangulLesson({ lesson, onComplete, onNext, onPrevious }: HangulL
           .single();
 
         if (imageData) {
+          console.log("Fetched existing mnemonic image:", imageData.image_url);
           setMnemonicImage(imageData.image_url);
           setIsLoadingImage(false);
           return;
         }
       }
 
+      console.log("No existing image found, generating new mnemonic image for:", lesson.character);
       const { data: generatedData, error: generateError } = await supabase.functions.invoke(
         'generate-mnemonic',
         {
@@ -118,12 +136,19 @@ export function HangulLesson({ lesson, onComplete, onNext, onPrevious }: HangulL
       if (generateError) throw generateError;
 
       if (generatedData?.imageUrl) {
+        console.log("Generated new mnemonic image:", generatedData.imageUrl);
         setMnemonicImage(generatedData.imageUrl);
         
-        await supabase
-          .from('hangul_lessons')
-          .update({ mnemonic_image_id: generatedData.imageId })
-          .eq('id', lesson.id);
+        if (generatedData.imageId) {
+          const { error: updateError } = await supabase
+            .from('hangul_lessons')
+            .update({ mnemonic_image_id: generatedData.imageId.toString() })
+            .eq('id', lesson.id);
+
+          if (updateError) {
+            console.error("Error updating lesson with new mnemonic image:", updateError);
+          }
+        }
       }
     } catch (error: any) {
       console.error("Error with mnemonic image:", error);

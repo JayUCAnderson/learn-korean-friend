@@ -49,7 +49,7 @@ export function LessonProgress({ lessonId, onComplete }: LessonProgressProps) {
 
       const { error } = await supabase.from('hangul_progress').upsert({
         user_id: user.id,
-        character_id: lessonId,
+        character_id: lessonId.toString(), // Convert to string as required by the database
         total_practice_sessions: 1,
         recognition_accuracy: 100,
         sound_association_accuracy: 100,
