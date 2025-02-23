@@ -63,6 +63,18 @@ export function HangulLearningContainer({ onComplete }: HangulLearningContainerP
     }
   };
 
+  const handleNext = () => {
+    if (currentLessonIndex < lessons.length - 1) {
+      setCurrentLessonIndex(prev => prev + 1);
+    }
+  };
+
+  const handlePrevious = () => {
+    if (currentLessonIndex > 0) {
+      setCurrentLessonIndex(prev => prev - 1);
+    }
+  };
+
   if (isLoading) {
     return (
       <div className="flex items-center justify-center min-h-[400px]">
@@ -102,8 +114,10 @@ export function HangulLearningContainer({ onComplete }: HangulLearningContainerP
       </div>
       
       <HangulLesson 
-        lesson={lessons[currentLessonIndex]} 
+        lesson={lessons[currentLessonIndex]}
         onComplete={handleLessonComplete}
+        onNext={currentLessonIndex < lessons.length - 1 ? handleNext : undefined}
+        onPrevious={currentLessonIndex > 0 ? handlePrevious : undefined}
       />
     </div>
   );
