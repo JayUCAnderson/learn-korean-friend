@@ -1,5 +1,5 @@
 
-import { useToast } from "@/components/ui/use-toast";
+import { useToast } from "@/hooks/use-toast";
 import { HangulLesson } from "./HangulLesson";
 import { HangulProgress } from "./HangulProgress";
 import { LoadingSpinner } from "./LoadingSpinner";
@@ -55,4 +55,3 @@ export function HangulLearningContainer({ onComplete }: HangulLearningContainerP
     </div>
   );
 }
-
