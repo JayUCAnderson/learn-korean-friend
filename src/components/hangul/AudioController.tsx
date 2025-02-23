@@ -69,7 +69,8 @@ export function useAudioController({ character, onAudioReady, onLoadingChange }:
             .from('character_pronunciations')
             .upsert({
               character,
-              audio_url: url
+              audio_url: url,
+              audio_content: data.audioContent // Adding the required audio_content field
             });
 
           if (updateError) {

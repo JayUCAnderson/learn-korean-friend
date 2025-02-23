@@ -23,7 +23,7 @@ export function HangulLesson({ lesson, onComplete, onNext, onPrevious }: HangulL
   const [isLoadingAudio, setIsLoadingAudio] = useState(false);
   const audioRef = useRef<HTMLAudioElement | null>(null);
 
-  const { generatePronunciation } = useAudioController({
+  const { isLoadingAudio: isAudioLoading } = useAudioController({
     character: lesson.character,
     onAudioReady: setAudioUrl,
     onLoadingChange: setIsLoadingAudio,
