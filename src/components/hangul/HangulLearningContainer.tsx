@@ -24,7 +24,7 @@ export function HangulLearningContainer({ onComplete }: HangulLearningContainerP
   const navigate = useNavigate();
   const sectionParam = searchParams.get('section');
   const lessonParam = searchParams.get('lesson');
-  const showLanding = location.pathname === '/hangul';
+  const showLanding = !location.pathname.includes('/hangul/learn');
 
   const { 
     lessons, 

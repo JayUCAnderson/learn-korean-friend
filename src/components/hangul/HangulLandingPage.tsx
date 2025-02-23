@@ -47,18 +47,24 @@ export function HangulLandingPage() {
   };
 
   const findFirstIncompleteLessonIndex = (section: keyof typeof sectionInfo) => {
-    const sectionStartIndex = lessons.findIndex(lesson => getLessonSection(lesson) === section);
     const sectionLessons = lessons.filter(lesson => getLessonSection(lesson) === section);
+    const sectionStartIndex = lessons.findIndex(lesson => getLessonSection(lesson) === section);
+    
+    if (sectionStartIndex === -1) return 0;
+    
     const firstIncompleteInSection = sectionLessons.findIndex((_, index) => 
       index > (currentLessonIndex - sectionStartIndex)
     );
     
-    return firstIncompleteInSection === -1 ? sectionStartIndex : sectionStartIndex + firstIncompleteInSection;
+    return sectionStartIndex + (firstIncompleteInSection === -1 ? 0 : firstIncompleteInSection);
   };
 
   const handleContinueLearning = (section: keyof typeof sectionInfo) => {
+    if (!lessons.length) return;
+    
     const lessonIndex = findFirstIncompleteLessonIndex(section);
-    navigate(`/hangul?section=${section}&lesson=${lessonIndex}`);
+    console.log(`Navigating to section: ${section}, lesson: ${lessonIndex}`);
+    navigate(`/hangul/learn?section=${section}&lesson=${lessonIndex}`);
   };
 
   return (
@@ -88,7 +94,7 @@ export function HangulLandingPage() {
             return (
               <Card 
                 key={key}
-                className={`relative overflow-hidden transition-all duration-300 flex flex-col ${
+                className={`relative overflow-hidden transition-all duration-300 flex flex-col rounded-xl ${
                   available ? 'hover:shadow-lg' : 'opacity-75'
                 }`}
               >
@@ -108,14 +114,14 @@ export function HangulLandingPage() {
                         <span>Progress</span>
                         <span>{Math.round(progress)}%</span>
                       </div>
-                      <Progress value={progress} className="h-2" />
+                      <Progress value={progress} className="h-2 rounded-full" />
                     </div>
                   )}
                 </div>
 
                 <div className="relative p-6 pt-0 mt-auto">
                   <Button
-                    className="w-full"
+                    className="w-full rounded-lg"
                     disabled={!available}
                     variant={available ? "default" : "secondary"}
                     onClick={() => available && handleContinueLearning(key)}
@@ -123,12 +129,12 @@ export function HangulLandingPage() {
                     {available ? (
                       <>
                         {progress === 100 ? "Review Section" : "Continue Learning"}
-                        <ArrowRight className="w-4 h-4" />
+                        <ArrowRight className="h-4 w-4 ml-2" />
                       </>
                     ) : (
                       <>
                         Locked
-                        <Lock className="w-4 h-4" />
+                        <Lock className="h-4 w-4 ml-2" />
                       </>
                     )}
                   </Button>
