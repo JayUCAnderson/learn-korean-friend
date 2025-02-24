@@ -9,30 +9,116 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
-// Define TOPIK level guidelines
-const TOPIK_LEVEL_GUIDELINES = {
-  topik1: {
-    maxNewVocab: 8,
-    sentenceLength: "~8-10 words",
-    grammar: "Basic sentence structures; simple tenses without complex connectors",
-    vocabulary: "Approximately 800 words focused on everyday and concrete topics"
-  },
-  topik2: {
-    maxNewVocab: 10,
-    sentenceLength: "~10-12 words",
-    grammar: "Simple sentences with basic connectors; clear distinction between formal and informal expressions",
-    vocabulary: "Approximately 1,500-2,000 words covering common daily situations"
-  },
-  topik4: {
-    maxNewVocab: 15,
-    sentenceLength: "~15-20 words",
-    grammar: "Use of complex connectors (e.g., -는데, -니까), reported speech, and moderate honorifics in compound sentences",
-    vocabulary: "Approximately 4,000 words including abstract concepts and formal language"
+async function generateDialogue(interest: string, level: string) {
+  console.log("Generating dialogue for:", { interest, level });
+  
+  const response = await fetch('https://api.openai.com/v1/chat/completions', {
+    method: 'POST',
+    headers: {
+      'Authorization': `Bearer ${openAIApiKey}`,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({
+      model: 'gpt-4o-mini',
+      messages: [
+        {
+          role: 'system',
+          content: `You are a Korean language education expert creating natural, engaging dialogues for language learners.
+          
+          Create an extended, natural dialogue about "${interest}" that:
+          - Has 8-10 back-and-forth exchanges between two speakers
+          - Uses realistic, natural conversation flows
+          - Gradually introduces new vocabulary and grammar patterns
+          - Maintains appropriate language level for ${level} learners
+          - Includes cultural context when relevant
+          
+          Return ONLY a JSON object with this structure:
+          {
+            "dialogue": [
+              {
+                "speaker": "Name",
+                "gender": "male|female",
+                "koreanText": "Korean dialogue line",
+                "englishText": "English translation",
+                "notes": "Optional pronunciation or cultural notes"
+              }
+            ]
+          }`
+        }
+      ],
+      temperature: 0.7,
+    }),
+  });
+
+  if (!response.ok) {
+    console.error("OpenAI API error in dialogue generation:", response.status);
+    throw new Error(`OpenAI API error: ${response.status}`);
   }
-};
+
+  const data = await response.json();
+  console.log("Received dialogue response from OpenAI");
+  const dialogueContent = JSON.parse(data.choices[0].message.content.trim());
+  return dialogueContent.dialogue;
+}
+
+async function generateLessonContent(interest: string, level: string, dialogue: any) {
+  console.log("Generating lesson content based on dialogue");
+  
+  const response = await fetch('https://api.openai.com/v1/chat/completions', {
+    method: 'POST',
+    headers: {
+      'Authorization': `Bearer ${openAIApiKey}`,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({
+      model: 'gpt-4o-mini',
+      messages: [
+        {
+          role: 'system',
+          content: `You are a Korean language education expert creating comprehensive lesson content based on an existing dialogue.
+          
+          Analyze the provided dialogue and create supplementary learning materials that:
+          - Extract key vocabulary and grammar points
+          - Provide clear explanations and examples
+          - Include relevant cultural context
+          - Match the ${level} skill level
+          
+          Return ONLY a JSON object with this structure:
+          {
+            "title": "Unique, specific title capturing the lesson's focus",
+            "description": "Clear description outlining objectives and real-life relevance",
+            "vocabulary": [
+              {
+                "korean": "Korean word",
+                "english": "English meaning",
+                "pronunciation": "Romanization",
+                "contextualUsage": "Example sentence or usage context"
+              }
+            ],
+            "cultural_notes": ["Cultural context points"],
+            "review_suggestions": ["Practical review activities"]
+          }`
+        },
+        {
+          role: 'user',
+          content: JSON.stringify({ dialogue, interest, level })
+        }
+      ],
+      temperature: 0.7,
+    }),
+  });
+
+  if (!response.ok) {
+    console.error("OpenAI API error in lesson content generation:", response.status);
+    throw new Error(`OpenAI API error: ${response.status}`);
+  }
+
+  const data = await response.json();
+  console.log("Received lesson content response from OpenAI");
+  return JSON.parse(data.choices[0].message.content.trim());
+}
 
 serve(async (req) => {
-  // Handle CORS preflight
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
   }
@@ -40,126 +126,25 @@ serve(async (req) => {
   try {
     const { interest, level, contentType } = await req.json();
     console.log("Generating content for:", { interest, level, contentType });
-    
-    // Map user level to TOPIK level
-    let topikLevel: keyof typeof TOPIK_LEVEL_GUIDELINES;
-    if (level === 'beginner') {
-      topikLevel = 'topik1';
-    } else if (level === 'intermediate') {
-      topikLevel = 'topik2';
-    } else if (level === 'advanced') {
-      topikLevel = 'topik4';
-    } else {
-      // default to beginner if unrecognized
-      topikLevel = 'topik1';
-    }
 
-    const guidelines = TOPIK_LEVEL_GUIDELINES[topikLevel];
-    console.log("Using TOPIK guidelines:", guidelines);
+    // Step 1: Generate the dialogue first
+    const dialogue = await generateDialogue(interest, level);
+    console.log("Generated dialogue with", dialogue.length, "exchanges");
 
-    const systemPrompt = `You are a Korean language education expert creating scientifically-based, engaging, and practical lessons tailored to the user's interest in "${interest}". 
-Follow these principles:
-- Progressive Complexity: Begin with extremely simple language and gradually build complexity.
-- Contextual Learning: Present vocabulary and grammar within realistic, everyday situations.
-- Cultural Integration: Seamlessly incorporate relevant cultural context.
-- Clear Structure: Organize the lesson with a logical flow and explicit connections.
-- Engaging and Unique: Ensure the title and description are unique and directly related to the user's interest.
+    // Step 2: Generate the rest of the lesson content based on the dialogue
+    const lessonContent = await generateLessonContent(interest, level, dialogue);
+    console.log("Generated lesson content with title:", lessonContent.title);
 
-For this lesson, adhere to the following TOPIK guidelines for ${topikLevel.toUpperCase()}:
-- Maximum new vocabulary: ${guidelines.maxNewVocab} words
-- Sentence length: ${guidelines.sentenceLength}
-- Grammar focus: ${guidelines.grammar}
-- Vocabulary scope: ${guidelines.vocabulary}
+    // Combine the results
+    const finalContent = {
+      ...lessonContent,
+      dialogue
+    };
 
-Return ONLY a JSON object without any markdown formatting or code block indicators, using this exact structure:
-{
-  "title": "Unique, specific title capturing the lesson's focus",
-  "description": "Clear, engaging description outlining the lesson's objectives and its real-life relevance",
-  "dialogue": [
-    {
-      "speaker": "Name",
-      "gender": "male|female",
-      "koreanText": "Korean dialogue",
-      "englishText": "English translation",
-      "notes": "Pronunciation or cultural notes"
-    }
-  ],
-  "vocabulary": [
-    {
-      "korean": "Korean word",
-      "english": "English meaning",
-      "pronunciation": "Romanization",
-      "contextualUsage": "Example sentence or usage context"
-    }
-  ],
-  "exercises": [
-    {
-      "type": "multiple-choice | fill-in-blank | matching",
-      "question": "Question text",
-      "options": ["Option1", "Option2"],
-      "correctAnswer": "Correct answer"
-    }
-  ],
-  "cultural_notes": ["Cultural context points"],
-  "review_suggestions": ["Practical review activities"],
-  "imagePrompt": "Short, focused description for visual representation"
-}`;
-
-    const response = await fetch('https://api.openai.com/v1/chat/completions', {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${openAIApiKey}`,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        model: 'gpt-4o-mini',
-        messages: [
-          { role: 'system', content: systemPrompt },
-          { 
-            role: 'user', 
-            content: `Create an engaging ${level} level Korean lesson about "${interest}". Return ONLY the JSON object without any markdown formatting or code block indicators.`
-          }
-        ],
-        temperature: 0.7,
-      }),
-    });
-
-    if (!response.ok) {
-      console.error("OpenAI API error:", response.status);
-      throw new Error(`OpenAI API error: ${response.status}`);
-    }
-
-    const data = await response.json();
-    console.log("Received response from OpenAI");
-
-    if (!data.choices?.[0]?.message?.content) {
-      console.error("Invalid response structure from OpenAI:", data);
-      throw new Error("Invalid response from OpenAI");
-    }
-
-    // Clean the response to ensure it's valid JSON
-    let content = data.choices[0].message.content.trim();
-    // Remove all markdown code block indicators (```), newlines, etc.
-    content = content.replace(/```/g, '').trim();
-    
-    try {
-      const parsedContent = JSON.parse(content);
-      console.log("Successfully parsed content:", parsedContent);
-
-      if (!parsedContent.title) {
-        throw new Error("Generated content is missing required title");
-      }
-
-      return new Response(
-        JSON.stringify({ content: parsedContent }),
-        { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
-    } catch (parseError) {
-      console.error("Error parsing OpenAI response:", parseError);
-      console.log("Raw content that failed to parse:", content);
-      throw new Error(`Failed to parse OpenAI response: ${parseError.message}`);
-    }
-
+    return new Response(
+      JSON.stringify({ content: finalContent }),
+      { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+    );
   } catch (error) {
     console.error("Error in generate-learning-content function:", error);
     return new Response(
@@ -171,4 +156,3 @@ Return ONLY a JSON object without any markdown formatting or code block indicato
     );
   }
 });
-
