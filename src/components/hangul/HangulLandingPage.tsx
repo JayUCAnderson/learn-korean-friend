@@ -1,3 +1,4 @@
+
 import { useNavigate } from 'react-router-dom';
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -14,19 +15,12 @@ const sectionInfo = {
     examples: ["ㅏ", "ㅓ", "ㅗ"],
     route: "/hangul/vowels"
   },
-  basic_consonants: {
-    title: "Basic Consonants (기본 자음)",
-    description: "Learn the essential consonants of the Korean alphabet",
+  consonants: {
+    title: "Consonants (자음)",
+    description: "Learn the consonants of the Korean alphabet",
     gradient: "from-[#F3F4F6] to-[#E5E7EB]",
     examples: ["ㄱ", "ㄴ", "ㄷ"],
-    route: "/hangul/basic-consonants"
-  },
-  advanced_consonants: {
-    title: "Advanced Consonants (복합 자음)",
-    description: "Challenge yourself with complex consonant combinations",
-    gradient: "from-[#F5F3FF] to-[#EDE9FE]",
-    examples: ["ㄲ", "ㄸ", "ㅃ"],
-    route: "/hangul/advanced-consonants"
+    route: "/hangul/consonants"
   }
 };
 
@@ -55,14 +49,9 @@ export function HangulLandingPage() {
 
   const isAvailable = (section: keyof typeof sectionInfo) => {
     if (section === 'vowels') return true;
-    if (section === 'basic_consonants') {
-      const vowelsProgress = calculateSectionProgress('vowels');
-      console.log(`[Availability] Basic consonants check - Vowels progress: ${vowelsProgress}%`);
-      return vowelsProgress === 100;
-    }
-    const basicConsonantsProgress = calculateSectionProgress('basic_consonants');
-    console.log(`[Availability] Advanced consonants check - Basic consonants progress: ${basicConsonantsProgress}%`);
-    return basicConsonantsProgress === 100;
+    const vowelsProgress = calculateSectionProgress('vowels');
+    console.log(`[Availability] Consonants check - Vowels progress: ${vowelsProgress}%`);
+    return vowelsProgress === 100;
   };
 
   const handleContinueLearning = (section: keyof typeof sectionInfo) => {

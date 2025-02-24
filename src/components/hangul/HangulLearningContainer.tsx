@@ -1,3 +1,4 @@
+
 import { useState, useEffect, useMemo } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { HangulLesson } from "./HangulLesson";
@@ -26,8 +27,7 @@ export function HangulLearningContainer({ onComplete, section: propSection }: Ha
   // Memoize the section determination to prevent recalculation on every render
   const routeSection = useMemo((): LessonSection | undefined => {
     if (location.pathname === '/hangul/vowels') return 'vowels';
-    if (location.pathname === '/hangul/basic-consonants') return 'basic_consonants';
-    if (location.pathname === '/hangul/advanced-consonants') return 'advanced_consonants';
+    if (location.pathname === '/hangul/consonants') return 'consonants';
     return undefined;
   }, [location.pathname]);
 
@@ -87,19 +87,16 @@ export function HangulLearningContainer({ onComplete, section: propSection }: Ha
     return <HangulLandingPage />;
   }
 
-  const themeSection = currentSection === 'vowels' ? 'temple' :
-                      currentSection === 'basic_consonants' ? 'hanbok' : 'palace';
+  const themeSection = currentSection === 'vowels' ? 'temple' : 'hanbok';
   
   const themeGradients = {
     temple: "from-[#FFF5F7] to-[#FCE7F3]",
     hanbok: "from-[#F3F4F6] to-[#E5E7EB]",
-    palace: "from-[#F5F3FF] to-[#EDE9FE]",
   };
 
   const sectionDescriptions = {
     vowels: "Master the building blocks of Hangul with vowels",
-    basic_consonants: "Learn the essential consonants of the Korean alphabet",
-    advanced_consonants: "Challenge yourself with complex consonant combinations",
+    consonants: "Learn the consonants of the Korean alphabet",
   };
 
   console.log('HangulLearningContainer Debug:', {
