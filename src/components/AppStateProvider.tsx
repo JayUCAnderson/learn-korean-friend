@@ -5,7 +5,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useNavigate } from 'react-router-dom';
 
 export function AppStateProvider({ children }: { children: React.ReactNode }) {
-  const { checkSession, setUserData } = useAppState();
+  const { checkSession, setUserData, setInitialized } = useAppState();
   const navigate = useNavigate();
 
   const handleAuthChange = useCallback(async (event: string, session: any) => {
@@ -13,21 +13,31 @@ export function AppStateProvider({ children }: { children: React.ReactNode }) {
       
     if (event === 'SIGNED_OUT') {
       setUserData(null);
+      setInitialized(true);
       navigate("/auth");
     } else if (event === 'SIGNED_IN' && session) {
       await checkSession();
     }
-  }, [checkSession, navigate, setUserData]);
+  }, [checkSession, navigate, setUserData, setInitialized]);
 
   useEffect(() => {
-    checkSession();
+    const initializeApp = async () => {
+      try {
+        await checkSession();
+      } catch (error) {
+        console.error("Error during initialization:", error);
+        setInitialized(true);
+      }
+    };
+
+    initializeApp();
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange(handleAuthChange);
 
     return () => {
       subscription.unsubscribe();
     };
-  }, [handleAuthChange]);
+  }, [handleAuthChange, checkSession, setInitialized]);
 
   return <>{children}</>;
 }

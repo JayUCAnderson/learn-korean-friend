@@ -22,7 +22,9 @@ export const useAppState = create<AppState>((set, get) => ({
     try {
       const { data: { session }, error: sessionError } = await supabase.auth.getSession();
       
-      if (sessionError) throw sessionError;
+      if (sessionError) {
+        throw sessionError;
+      }
 
       if (!session) {
         set({ userData: null, isInitialized: true });
