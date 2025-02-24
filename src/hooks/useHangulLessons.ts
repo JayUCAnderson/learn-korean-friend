@@ -16,7 +16,6 @@ export function useHangulLessons() {
   const { toast } = useToast();
   const location = useLocation();
 
-  // Memoize the section determination
   const currentSection = useMemo((): LessonSection => {
     if (location.pathname.includes('consonants')) return 'consonants';
     return 'vowels';
@@ -28,14 +27,24 @@ export function useHangulLessons() {
     return 'consonants';
   }, []);
 
-  // Memoize filtered lessons to prevent recalculation
   const filteredLessons = useMemo(() => 
     lessons.filter(lesson => getLessonSection(lesson) === currentSection),
     [lessons, getLessonSection, currentSection]
   );
 
+  const handleNext = useCallback(() => {
+    if (currentLessonIndex < filteredLessons.length - 1) {
+      setCurrentLessonIndex(prev => prev + 1);
+    }
+  }, [currentLessonIndex, filteredLessons.length]);
+
+  const handlePrevious = useCallback(() => {
+    if (currentLessonIndex > 0) {
+      setCurrentLessonIndex(prev => prev - 1);
+    }
+  }, [currentLessonIndex]);
+
   const fetchLessons = useCallback(async () => {
-    // Only fetch if we don't have lessons yet
     if (lessons.length > 0) return;
 
     try {
@@ -86,18 +95,6 @@ export function useHangulLessons() {
   useEffect(() => {
     fetchLessons();
   }, [fetchLessons]);
-
-  const handleNext = useCallback(() => {
-    if (currentLessonIndex < filteredLessons.length - 1) {
-      setCurrentLessonIndex(prev => prev + 1);
-    }
-  }, [currentLessonIndex, filteredLessons.length]);
-
-  const handlePrevious = useCallback(() => {
-    if (currentLessonIndex > 0) {
-      setCurrentLessonIndex(prev => prev - 1);
-    }
-  }, [currentLessonIndex]);
 
   return {
     lessons: filteredLessons,

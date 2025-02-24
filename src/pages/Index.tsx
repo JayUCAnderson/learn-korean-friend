@@ -1,4 +1,5 @@
 
+import { useCallback, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import WelcomeAssessment from "@/components/WelcomeAssessment";
 import LearningInterface from "@/components/LearningInterface";
@@ -10,6 +11,17 @@ const Index = () => {
   const { userData, isInitialized } = useAppState();
   const { toast } = useToast();
   const navigate = useNavigate();
+
+  const handleAssessmentComplete = useCallback((data: any) => {
+    toast({
+      title: "Welcome to KoreanPal! 환영합니다!",
+      description: "We've personalized your learning experience based on your preferences.",
+    });
+  }, [toast]);
+
+  const shouldShowAssessment = useMemo(() => {
+    return !userData?.level || !userData?.learning_goal;
+  }, [userData?.level, userData?.learning_goal]);
 
   // Only show loading spinner if we haven't completed initial session check
   if (!isInitialized) {
@@ -30,7 +42,7 @@ const Index = () => {
     <div className="min-h-screen bg-gradient-to-b from-white to-gray-50">
       <Header />
       <main className="pt-16 md:pt-20">
-        {(!userData.level || !userData.learning_goal) ? (
+        {shouldShowAssessment ? (
           <WelcomeAssessment onComplete={handleAssessmentComplete} />
         ) : (
           <LearningInterface userData={userData} />
@@ -38,13 +50,6 @@ const Index = () => {
       </main>
     </div>
   );
-
-  function handleAssessmentComplete(data: any) {
-    toast({
-      title: "Welcome to KoreanPal! 환영합니다!",
-      description: "We've personalized your learning experience based on your preferences.",
-    });
-  }
 };
 
 export default Index;
