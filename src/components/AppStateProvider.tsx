@@ -1,5 +1,5 @@
 
-import { useEffect, useCallback, useState, useRef } from 'react';
+import { useEffect, useCallback, useState, useMemo } from 'react';
 import { AppStateContext } from '@/contexts/AppStateContext';
 import { useAppState } from '@/hooks/useAppState';
 import { supabase } from '@/integrations/supabase/client';
@@ -12,11 +12,10 @@ export function AppStateProvider({ children }: { children: React.ReactNode }) {
   const { checkSession, setUserData, setInitialized } = useAppState();
   const navigate = useNavigate();
   const [globalLessons, setGlobalLessons] = useState<HangulLessonType[]>([]);
-  const isInitializing = useRef(true);
-  const hasFetchedLessons = useRef(false);
+  const hasFetchedLessons = useState(false);
 
   const fetchLessons = useCallback(async () => {
-    if (hasFetchedLessons.current) return;
+    if (hasFetchedLessons) return;
     
     try {
       console.log("📚 Fetching global Hangul lessons...");
@@ -29,22 +28,19 @@ export function AppStateProvider({ children }: { children: React.ReactNode }) {
 
       console.log("✅ Global lessons fetched successfully:", lessonsData?.length);
       setGlobalLessons(lessonsData || []);
-      hasFetchedLessons.current = true;
     } catch (error) {
       console.error("❌ Error fetching global Hangul lessons:", error);
     }
-  }, []);
+  }, [hasFetchedLessons]);
 
   const handleAuthChange = useCallback(async (event: string, session: any) => {
-    if (!isInitializing.current) {
-      console.log("🔒 Auth state changed:", event, "Session present:", !!session);
-      
-      if (event === 'SIGNED_OUT') {
-        console.log("👋 User signed out, clearing data and redirecting to auth");
-        setUserData(null);
-        setInitialized(true);
-        navigate("/auth");
-      }
+    console.log("🔒 Auth state changed:", event, "Session present:", !!session);
+    
+    if (event === 'SIGNED_OUT') {
+      console.log("👋 User signed out, clearing data and redirecting to auth");
+      setUserData(null);
+      setInitialized(true);
+      navigate("/auth");
     }
   }, [navigate, setUserData, setInitialized]);
 
@@ -57,7 +53,6 @@ export function AppStateProvider({ children }: { children: React.ReactNode }) {
         await checkSession();
         if (mounted) {
           await fetchLessons();
-          isInitializing.current = false;
           setInitialized(true);
         }
       } catch (error) {
@@ -80,8 +75,12 @@ export function AppStateProvider({ children }: { children: React.ReactNode }) {
     };
   }, [handleAuthChange, checkSession, setInitialized, fetchLessons]);
 
+  const contextValue = useMemo(() => ({
+    globalLessons,
+  }), [globalLessons]);
+
   return (
-    <AppStateContext.Provider value={{ globalLessons }}>
+    <AppStateContext.Provider value={contextValue}>
       {children}
     </AppStateContext.Provider>
   );

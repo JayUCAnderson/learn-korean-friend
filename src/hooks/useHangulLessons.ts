@@ -1,5 +1,5 @@
 
-import { useState, useEffect, useCallback, useMemo, useRef } from "react";
+import { useState, useEffect, useCallback, useMemo } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import type { Database } from "@/integrations/supabase/types";
@@ -11,15 +11,16 @@ type HangulLessonType = Database['public']['Views']['hangul_lessons_complete']['
 export type LessonSection = 'vowels' | 'consonants';
 
 export function useHangulLessons() {
+  // 1. Initialize all state and refs first
   const [currentLessonIndex, setCurrentLessonIndex] = useState(0);
   const [isLoading, setIsLoading] = useState(true);
+  
+  // 2. All context hooks
   const { toast } = useToast();
   const location = useLocation();
-  const mountedRef = useRef(false);
-  const progressFetched = useRef(false);
   const { globalLessons } = useAppStateContext();
 
-  // Memoize the section determination
+  // 3. All memoized values
   const currentSection = useMemo((): LessonSection => {
     if (location.pathname.includes('consonants')) return 'consonants';
     return 'vowels';
@@ -31,12 +32,11 @@ export function useHangulLessons() {
     return 'consonants';
   }, []);
 
-  // Memoize filtered lessons
   const filteredLessons = useMemo(() => {
-    const filtered = globalLessons.filter(lesson => getLessonSection(lesson) === currentSection);
-    return filtered;
+    return globalLessons.filter(lesson => getLessonSection(lesson) === currentSection);
   }, [globalLessons, getLessonSection, currentSection]);
 
+  // 4. All callbacks
   const handleNext = useCallback(() => {
     if (currentLessonIndex < filteredLessons.length - 1) {
       setCurrentLessonIndex(prev => prev + 1);
@@ -49,20 +49,20 @@ export function useHangulLessons() {
     }
   }, [currentLessonIndex]);
 
-  // Effect to handle user progress
+  // 5. Effects come last
   useEffect(() => {
-    if (!mountedRef.current || filteredLessons.length === 0 || progressFetched.current) return;
-
+    let mounted = true;
+    
     const fetchUserProgress = async () => {
       try {
         const { data: { user } } = await supabase.auth.getUser();
-        if (user) {
+        if (user && mounted) {
           const { data: progress } = await supabase
             .from('hangul_progress')
             .select('character_id')
             .eq('user_id', user.id);
 
-          if (progress) {
+          if (progress && mounted) {
             const completedLessonIds = progress.map(p => p.character_id);
             const firstIncompleteIndex = filteredLessons.findIndex(lesson => 
               !completedLessonIds.includes(lesson.id)
@@ -72,25 +72,33 @@ export function useHangulLessons() {
               setCurrentLessonIndex(firstIncompleteIndex);
             }
           }
-          progressFetched.current = true;
         }
       } catch (error) {
         console.error("❌ Error fetching user progress:", error);
-        toast({
-          title: "Error",
-          description: "Failed to load your progress. Please try again.",
-          variant: "destructive",
-        });
+        if (mounted) {
+          toast({
+            title: "Error",
+            description: "Failed to load your progress. Please try again.",
+            variant: "destructive",
+          });
+        }
       } finally {
-        setIsLoading(false);
+        if (mounted) {
+          setIsLoading(false);
+        }
       }
     };
 
-    mountedRef.current = true;
-    fetchUserProgress();
+    // Only fetch progress if we have lessons
+    if (filteredLessons.length > 0) {
+      fetchUserProgress();
+    } else {
+      setIsLoading(false);
+    }
 
     return () => {
-      mountedRef.current = false;
+      console.log("🧹 Cleaning up useHangulLessons hook");
+      mounted = false;
     };
   }, [filteredLessons, toast]);
 
