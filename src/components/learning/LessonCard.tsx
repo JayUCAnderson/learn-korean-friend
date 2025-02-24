@@ -49,22 +49,22 @@ export const LessonCard = ({ lesson, themeColors }: LessonCardProps) => {
       className={`p-4 ${themeColors.border} backdrop-blur-sm bg-white/50 transition-all hover:shadow-lg cursor-pointer group`}
     >
       <div className="space-y-4">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-4">
+        <div className="flex items-center justify-between w-full">
+          <div className="flex items-start gap-4 flex-grow">
             {getStatusIcon()}
-            <div>
-              <h3 className="font-semibold group-hover:text-korean-600 transition-colors">{lesson.title}</h3>
+            <div className="flex flex-col items-start">
+              <h3 className="font-semibold group-hover:text-korean-600 transition-colors text-left">{lesson.title}</h3>
               <div className="flex items-center gap-2 text-sm text-gray-500">
                 <Clock className="h-4 w-4" />
                 <span>15-20 min</span>
               </div>
-              <p className="text-sm text-gray-500 mt-1">{lesson.description}</p>
+              <p className="text-sm text-gray-500 mt-1 text-left">{lesson.description}</p>
             </div>
           </div>
           <Button 
             variant="ghost" 
             size="icon"
-            className="transition-transform group-hover:translate-x-1"
+            className="transition-transform group-hover:translate-x-1 ml-2 flex-shrink-0"
           >
             <ChevronRight className="h-5 w-5" />
           </Button>
@@ -92,3 +92,4 @@ export const LessonCard = ({ lesson, themeColors }: LessonCardProps) => {
     </Card>
   );
 };
+
