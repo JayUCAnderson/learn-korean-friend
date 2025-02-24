@@ -69,20 +69,24 @@ export function LessonContent({ content, mnemonicImages }: LessonContentProps) {
             </div>
 
             <div className="space-y-8">
-              {parsedContent.content.dialogue.map((part: any, index: number) => (
-                <DialogueMessage
-                  key={index}
-                  speaker={part.speaker}
-                  koreanText={part.koreanText}
-                  englishText={part.englishText}
-                  showEnglish={showAllTranslations}
-                  onToggleTranslation={() => setShowAllTranslations(!showAllTranslations)}
-                  isFirst={index === 0 || parsedContent.content.dialogue[index - 1]?.speaker !== part.speaker}
-                  notes={part.notes}
-                  gender={part.gender}
-                  content=""
-                />
-              ))}
+              {parsedContent.content.dialogue.map((part: any, index: number) => {
+                console.log(`Rendering dialogue part ${index}:`, part);
+                return (
+                  <DialogueMessage
+                    key={index}
+                    speaker={part.speaker}
+                    koreanText={part.koreanText}
+                    englishText={part.englishText}
+                    showEnglish={showAllTranslations}
+                    onToggleTranslation={() => setShowAllTranslations(!showAllTranslations)}
+                    isFirst={index === 0 || parsedContent.content.dialogue[index - 1]?.speaker !== part.speaker}
+                    notes={part.notes}
+                    gender={part.gender}
+                    content=""
+                    isFirstSpeaker={index % 2 === 0} // Alternate between left (true) and right (false)
+                  />
+                );
+              })}
             </div>
 
             {parsedContent.content.cultural_notes && (
@@ -140,4 +144,3 @@ export function LessonContent({ content, mnemonicImages }: LessonContentProps) {
     </div>
   );
 }
-

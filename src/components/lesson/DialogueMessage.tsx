@@ -18,6 +18,7 @@ interface DialogueMessageProps {
   isFirst?: boolean;
   notes?: string;
   gender?: string;
+  isFirstSpeaker?: boolean;
 }
 
 export function DialogueMessage({ 
@@ -28,10 +29,10 @@ export function DialogueMessage({
   showEnglish,
   onToggleTranslation,
   isFirst,
-  notes
+  notes,
+  isFirstSpeaker = true // Default to left side if not specified
 }: DialogueMessageProps) {
   const [isHovering, setIsHovering] = useState(false);
-  const isFirstSpeaker = speaker.toLowerCase() === "jin"; // Default first speaker
   
   return (
     <div 
