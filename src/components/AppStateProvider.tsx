@@ -12,7 +12,7 @@ export function AppStateProvider({ children }: { children: React.ReactNode }) {
   const { checkSession, setUserData, setInitialized } = useAppState();
   const navigate = useNavigate();
   const [globalLessons, setGlobalLessons] = useState<HangulLessonType[]>([]);
-  const hasFetchedLessons = useState(false);
+  const [hasFetchedLessons, setHasFetchedLessons] = useState(false);
 
   const fetchLessons = useCallback(async () => {
     if (hasFetchedLessons) return;
@@ -24,10 +24,16 @@ export function AppStateProvider({ children }: { children: React.ReactNode }) {
         .select('*')
         .order('lesson_order', { ascending: true });
 
-      if (lessonsError) throw lessonsError;
+      if (lessonsError) {
+        console.error("❌ Error fetching global Hangul lessons:", lessonsError);
+        throw lessonsError;
+      }
 
-      console.log("✅ Global lessons fetched successfully:", lessonsData?.length);
-      setGlobalLessons(lessonsData || []);
+      if (lessonsData) {
+        console.log("✅ Global lessons fetched successfully:", lessonsData.length);
+        setGlobalLessons(lessonsData);
+        setHasFetchedLessons(true);
+      }
     } catch (error) {
       console.error("❌ Error fetching global Hangul lessons:", error);
     }
@@ -85,3 +91,4 @@ export function AppStateProvider({ children }: { children: React.ReactNode }) {
     </AppStateContext.Provider>
   );
 }
+
