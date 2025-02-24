@@ -16,18 +16,11 @@ export function useHangulLessons() {
   const { toast } = useToast();
   const location = useLocation();
   const mountedRef = useRef(false);
+  const progressFetched = useRef(false);
   const { globalLessons } = useAppStateContext();
-
-  console.log("🔄 useHangulLessons hook re-rendering", {
-    currentPath: location.pathname,
-    globalLessonsCount: globalLessons.length,
-    currentIndex: currentLessonIndex,
-    isLoading
-  });
 
   // Memoize the section determination
   const currentSection = useMemo((): LessonSection => {
-    console.log("📍 Calculating current section from path:", location.pathname);
     if (location.pathname.includes('consonants')) return 'consonants';
     return 'vowels';
   }, [location.pathname]);
@@ -40,26 +33,17 @@ export function useHangulLessons() {
 
   // Memoize filtered lessons
   const filteredLessons = useMemo(() => {
-    console.log("🎯 Filtering lessons for section:", currentSection);
     const filtered = globalLessons.filter(lesson => getLessonSection(lesson) === currentSection);
-    console.log("📊 Filtered lessons count:", filtered.length);
     return filtered;
   }, [globalLessons, getLessonSection, currentSection]);
 
   const handleNext = useCallback(() => {
-    console.log("⏭️ Handling next lesson", {
-      current: currentLessonIndex,
-      total: filteredLessons.length
-    });
     if (currentLessonIndex < filteredLessons.length - 1) {
       setCurrentLessonIndex(prev => prev + 1);
     }
   }, [currentLessonIndex, filteredLessons.length]);
 
   const handlePrevious = useCallback(() => {
-    console.log("⏮️ Handling previous lesson", {
-      current: currentLessonIndex
-    });
     if (currentLessonIndex > 0) {
       setCurrentLessonIndex(prev => prev - 1);
     }
@@ -67,13 +51,12 @@ export function useHangulLessons() {
 
   // Effect to handle user progress
   useEffect(() => {
-    const fetchUserProgress = async () => {
-      if (!mountedRef.current || filteredLessons.length === 0) return;
+    if (!mountedRef.current || filteredLessons.length === 0 || progressFetched.current) return;
 
+    const fetchUserProgress = async () => {
       try {
         const { data: { user } } = await supabase.auth.getUser();
         if (user) {
-          console.log("👤 Fetching user progress for:", user.id);
           const { data: progress } = await supabase
             .from('hangul_progress')
             .select('character_id')
@@ -81,17 +64,15 @@ export function useHangulLessons() {
 
           if (progress) {
             const completedLessonIds = progress.map(p => p.character_id);
-            console.log("✔️ Completed lessons:", completedLessonIds.length);
-            
             const firstIncompleteIndex = filteredLessons.findIndex(lesson => 
               !completedLessonIds.includes(lesson.id)
             );
             
             if (firstIncompleteIndex !== -1) {
-              console.log("📌 Setting current lesson index to:", firstIncompleteIndex);
               setCurrentLessonIndex(firstIncompleteIndex);
             }
           }
+          progressFetched.current = true;
         }
       } catch (error) {
         console.error("❌ Error fetching user progress:", error);
@@ -109,7 +90,6 @@ export function useHangulLessons() {
     fetchUserProgress();
 
     return () => {
-      console.log("🧹 Cleaning up useHangulLessons hook");
       mountedRef.current = false;
     };
   }, [filteredLessons, toast]);
@@ -125,4 +105,3 @@ export function useHangulLessons() {
     getLessonSection,
   };
 }
-

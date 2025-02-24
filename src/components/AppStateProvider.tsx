@@ -1,5 +1,5 @@
 
-import { useEffect, useCallback, useState } from 'react';
+import { useEffect, useCallback, useState, useRef } from 'react';
 import { AppStateContext } from '@/contexts/AppStateContext';
 import { useAppState } from '@/hooks/useAppState';
 import { supabase } from '@/integrations/supabase/client';
@@ -12,8 +12,12 @@ export function AppStateProvider({ children }: { children: React.ReactNode }) {
   const { checkSession, setUserData, setInitialized } = useAppState();
   const navigate = useNavigate();
   const [globalLessons, setGlobalLessons] = useState<HangulLessonType[]>([]);
+  const isInitializing = useRef(true);
+  const hasFetchedLessons = useRef(false);
 
   const fetchLessons = useCallback(async () => {
+    if (hasFetchedLessons.current) return;
+    
     try {
       console.log("📚 Fetching global Hangul lessons...");
       const { data: lessonsData, error: lessonsError } = await supabase
@@ -25,24 +29,26 @@ export function AppStateProvider({ children }: { children: React.ReactNode }) {
 
       console.log("✅ Global lessons fetched successfully:", lessonsData?.length);
       setGlobalLessons(lessonsData || []);
+      hasFetchedLessons.current = true;
     } catch (error) {
       console.error("❌ Error fetching global Hangul lessons:", error);
     }
   }, []);
 
   const handleAuthChange = useCallback(async (event: string, session: any) => {
-    console.log("🔒 Auth state changed:", event, "Session present:", !!session);
+    if (!isInitializing.current) {
+      console.log("🔒 Auth state changed:", event, "Session present:", !!session);
       
-    if (event === 'SIGNED_OUT') {
-      console.log("👋 User signed out, clearing data and redirecting to auth");
-      setUserData(null);
-      setInitialized(true);
-      navigate("/auth");
+      if (event === 'SIGNED_OUT') {
+        console.log("👋 User signed out, clearing data and redirecting to auth");
+        setUserData(null);
+        setInitialized(true);
+        navigate("/auth");
+      }
     }
   }, [navigate, setUserData, setInitialized]);
 
   useEffect(() => {
-    let isInitializing = true;
     let mounted = true;
 
     const initializeApp = async () => {
@@ -51,7 +57,8 @@ export function AppStateProvider({ children }: { children: React.ReactNode }) {
         await checkSession();
         if (mounted) {
           await fetchLessons();
-          isInitializing = false;
+          isInitializing.current = false;
+          setInitialized(true);
         }
       } catch (error) {
         console.error("❌ Error during initialization:", error);
