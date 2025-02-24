@@ -39,17 +39,6 @@ export function AppStateProvider({ children }: { children: React.ReactNode }) {
     }
   }, [hasFetchedLessons]);
 
-  const handleAuthChange = useCallback(async (event: string, session: any) => {
-    console.log("🔒 Auth state changed:", event, "Session present:", !!session);
-    
-    if (event === 'SIGNED_OUT') {
-      console.log("👋 User signed out, clearing data and redirecting to auth");
-      setUserData(null);
-      setInitialized(true);
-      navigate("/auth");
-    }
-  }, [navigate, setUserData, setInitialized]);
-
   useEffect(() => {
     let mounted = true;
 
@@ -69,8 +58,15 @@ export function AppStateProvider({ children }: { children: React.ReactNode }) {
       }
     };
 
-    initializeApp();
+    const handleAuthChange = (event: string) => {
+      if (event === 'SIGNED_OUT' && mounted) {
+        console.log("👋 User signed out, clearing data and redirecting to auth");
+        setUserData(null);
+        navigate("/auth");
+      }
+    };
 
+    initializeApp();
     const { data: { subscription } } = supabase.auth.onAuthStateChange(handleAuthChange);
     console.log("🎯 Auth state change listener set up");
 
@@ -79,7 +75,7 @@ export function AppStateProvider({ children }: { children: React.ReactNode }) {
       mounted = false;
       subscription.unsubscribe();
     };
-  }, [handleAuthChange, checkSession, setInitialized, fetchLessons]);
+  }, [checkSession, setInitialized, fetchLessons, navigate, setUserData]);
 
   const contextValue = useMemo(() => ({
     globalLessons,
@@ -91,4 +87,3 @@ export function AppStateProvider({ children }: { children: React.ReactNode }) {
     </AppStateContext.Provider>
   );
 }
-

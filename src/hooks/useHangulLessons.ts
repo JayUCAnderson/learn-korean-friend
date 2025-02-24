@@ -11,16 +11,14 @@ type HangulLessonType = Database['public']['Views']['hangul_lessons_complete']['
 export type LessonSection = 'vowels' | 'consonants';
 
 export function useHangulLessons() {
-  // 1. Initialize all state and refs first
   const [currentLessonIndex, setCurrentLessonIndex] = useState(0);
   const [isLoading, setIsLoading] = useState(true);
+  const [userProgress, setUserProgress] = useState<Set<string>>(new Set());
   
-  // 2. All context hooks
   const { toast } = useToast();
   const location = useLocation();
   const { globalLessons } = useAppStateContext();
 
-  // 3. All memoized values
   const currentSection = useMemo((): LessonSection => {
     if (location.pathname.includes('consonants')) return 'consonants';
     return 'vowels';
@@ -36,7 +34,6 @@ export function useHangulLessons() {
     return globalLessons.filter(lesson => getLessonSection(lesson) === currentSection);
   }, [globalLessons, getLessonSection, currentSection]);
 
-  // 4. All callbacks
   const handleNext = useCallback(() => {
     if (currentLessonIndex < filteredLessons.length - 1) {
       setCurrentLessonIndex(prev => prev + 1);
@@ -49,7 +46,6 @@ export function useHangulLessons() {
     }
   }, [currentLessonIndex]);
 
-  // 5. Effects come last
   useEffect(() => {
     let mounted = true;
     
@@ -57,15 +53,23 @@ export function useHangulLessons() {
       try {
         const { data: { user } } = await supabase.auth.getUser();
         if (user && mounted) {
-          const { data: progress } = await supabase
+          const { data: progress, error } = await supabase
             .from('hangul_progress')
             .select('character_id')
-            .eq('user_id', user.id);
+            .eq('user_id', user.id)
+            .maybeSingle();
+
+          if (error) {
+            console.error("❌ Error fetching user progress:", error);
+            return;
+          }
 
           if (progress && mounted) {
-            const completedLessonIds = progress.map(p => p.character_id);
+            const progressSet = new Set(progress.character_id);
+            setUserProgress(progressSet);
+            
             const firstIncompleteIndex = filteredLessons.findIndex(lesson => 
-              !completedLessonIds.includes(lesson.id)
+              !progressSet.has(lesson.id)
             );
             
             if (firstIncompleteIndex !== -1) {
