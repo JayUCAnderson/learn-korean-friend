@@ -16,8 +16,16 @@ export function useHangulLessons() {
   const { toast } = useToast();
   const location = useLocation();
 
+  console.log("🔄 useHangulLessons hook re-rendering", {
+    currentPath: location.pathname,
+    lessonsCount: lessons.length,
+    currentIndex: currentLessonIndex,
+    isLoading
+  });
+
   // Memoize the section determination to prevent unnecessary recalculations
   const currentSection = useMemo((): LessonSection => {
+    console.log("📍 Calculating current section from path:", location.pathname);
     if (location.pathname.includes('consonants')) return 'consonants';
     return 'vowels';
   }, [location.pathname]);
@@ -29,18 +37,27 @@ export function useHangulLessons() {
   }, []);
 
   // Memoize filtered lessons to prevent unnecessary recalculations
-  const filteredLessons = useMemo(() => 
-    lessons.filter(lesson => getLessonSection(lesson) === currentSection),
-    [lessons, getLessonSection, currentSection]
-  );
+  const filteredLessons = useMemo(() => {
+    console.log("🎯 Filtering lessons for section:", currentSection);
+    const filtered = lessons.filter(lesson => getLessonSection(lesson) === currentSection);
+    console.log("📊 Filtered lessons count:", filtered.length);
+    return filtered;
+  }, [lessons, getLessonSection, currentSection]);
 
   const handleNext = useCallback(() => {
+    console.log("⏭️ Handling next lesson", {
+      current: currentLessonIndex,
+      total: filteredLessons.length
+    });
     if (currentLessonIndex < filteredLessons.length - 1) {
       setCurrentLessonIndex(prev => prev + 1);
     }
   }, [currentLessonIndex, filteredLessons.length]);
 
   const handlePrevious = useCallback(() => {
+    console.log("⏮️ Handling previous lesson", {
+      current: currentLessonIndex
+    });
     if (currentLessonIndex > 0) {
       setCurrentLessonIndex(prev => prev - 1);
     }
@@ -50,7 +67,8 @@ export function useHangulLessons() {
   const fetchLessons = useCallback(async () => {
     console.log("🔍 Checking if lessons need to be fetched:", { 
       existingLessons: lessons.length,
-      currentSection
+      currentSection,
+      isLoading
     });
 
     // Skip fetching if we already have lessons
@@ -61,7 +79,7 @@ export function useHangulLessons() {
     }
 
     try {
-      console.log("📚 Fetching Hangul lessons...");
+      console.log("📚 Starting to fetch Hangul lessons...");
       const { data: lessonsData, error: lessonsError } = await supabase
         .from('hangul_lessons_complete')
         .select('*')
@@ -71,6 +89,7 @@ export function useHangulLessons() {
 
       const { data: { user } } = await supabase.auth.getUser();
       if (user) {
+        console.log("👤 Fetching user progress for:", user.id);
         const { data: progress } = await supabase
           .from('hangul_progress')
           .select('character_id')
@@ -78,6 +97,8 @@ export function useHangulLessons() {
 
         if (progress && lessonsData) {
           const completedLessonIds = progress.map(p => p.character_id);
+          console.log("✔️ Completed lessons:", completedLessonIds.length);
+          
           const sectionLessons = lessonsData.filter(lesson => 
             getLessonSection(lesson) === currentSection
           );
@@ -87,6 +108,7 @@ export function useHangulLessons() {
               !completedLessonIds.includes(lesson.id)
             );
             if (firstIncompleteIndex !== -1) {
+              console.log("📌 Setting current lesson index to:", firstIncompleteIndex);
               setCurrentLessonIndex(firstIncompleteIndex);
             }
           }
@@ -105,7 +127,7 @@ export function useHangulLessons() {
     } finally {
       setIsLoading(false);
     }
-  }, [currentSection, getLessonSection, lessons.length, toast]);
+  }, [currentSection, getLessonSection, lessons.length, toast, isLoading]);
 
   // Only run the effect once when the component mounts
   useEffect(() => {
