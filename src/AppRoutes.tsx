@@ -11,6 +11,7 @@ import { useAppState } from "@/hooks/useAppState";
 export function AppRoutes() {
   const { userData, isInitialized } = useAppState();
 
+  // Show loading spinner while checking authentication
   if (!isInitialized) {
     return (
       <div className="min-h-screen flex items-center justify-center">
@@ -19,6 +20,7 @@ export function AppRoutes() {
     );
   }
 
+  // If not authenticated, only show auth page
   if (!userData) {
     return (
       <Routes>
@@ -28,13 +30,12 @@ export function AppRoutes() {
     );
   }
 
+  // Show full app routes when authenticated
   return (
     <Routes>
       <Route path="/" element={<Index />} />
       <Route path="/auth" element={<Auth />} />
       <Route path="/hangul" element={<HangulLearning />} />
-      <Route path="/hangul/vowels" element={<HangulLearning />} />
-      <Route path="/hangul/consonants" element={<HangulLearning />} />
       <Route path="/lessons" element={<Lessons />} />
       <Route path="/lessons/:lessonId" element={<LessonDetail />} />
       <Route path="*" element={<NotFound />} />
