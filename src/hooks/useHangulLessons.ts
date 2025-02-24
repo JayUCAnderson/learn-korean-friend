@@ -7,7 +7,7 @@ import { useSearchParams } from 'react-router-dom';
 
 type HangulLessonType = Database['public']['Views']['hangul_lessons_complete']['Row'];
 
-export type LessonSection = 'vowels' | 'basic_consonants' | 'advanced_consonants';
+export type LessonSection = 'vowels' | 'consonants';
 
 export function useHangulLessons() {
   const [lessons, setLessons] = useState<HangulLessonType[]>([]);
@@ -19,9 +19,7 @@ export function useHangulLessons() {
 
   const getLessonSection = useCallback((lesson: HangulLessonType): LessonSection => {
     if (!lesson) return 'vowels';
-    if (lesson.character_type?.includes('vowel')) return 'vowels';
-    if (lesson.character_type?.includes('final_consonant')) return 'advanced_consonants';
-    return 'basic_consonants';
+    return lesson.character_type?.includes('vowel') ? 'vowels' : 'consonants';
   }, []);
 
   const fetchLessons = useCallback(async () => {
@@ -74,7 +72,6 @@ export function useHangulLessons() {
     fetchLessons();
   }, [fetchLessons]);
 
-  // Filter lessons by section if section parameter is present
   const filteredLessons = sectionParam
     ? lessons.filter(lesson => getLessonSection(lesson) === sectionParam)
     : lessons;
@@ -91,7 +88,6 @@ export function useHangulLessons() {
     }
   }, [currentLessonIndex]);
 
-  // Use the section from the route instead of deriving it from the current lesson
   const currentSection = sectionParam || 
     (filteredLessons[currentLessonIndex] 
       ? getLessonSection(filteredLessons[currentLessonIndex]) 

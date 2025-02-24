@@ -1,3 +1,4 @@
+
 import { useNavigate } from 'react-router-dom';
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -12,22 +13,15 @@ const sectionInfo = {
     description: "Master the basic building blocks of Hangul with vowels",
     gradient: "from-[#FFF5F7] to-[#FCE7F3]",
     examples: ["ㅏ", "ㅓ", "ㅗ"],
-    route: "/hangul/vowels"
+    route: "/hangul?section=vowels"
   },
-  basic_consonants: {
-    title: "Basic Consonants (기본 자음)",
-    description: "Learn the essential consonants of the Korean alphabet",
+  consonants: {
+    title: "Consonants (자음)",
+    description: "Learn all consonants of the Korean alphabet",
     gradient: "from-[#F3F4F6] to-[#E5E7EB]",
     examples: ["ㄱ", "ㄴ", "ㄷ"],
-    route: "/hangul/basic-consonants"
-  },
-  advanced_consonants: {
-    title: "Advanced Consonants (복합 자음)",
-    description: "Challenge yourself with complex consonant combinations",
-    gradient: "from-[#F5F3FF] to-[#EDE9FE]",
-    examples: ["ㄲ", "ㄸ", "ㅃ"],
-    route: "/hangul/advanced-consonants"
-  },
+    route: "/hangul?section=consonants"
+  }
 };
 
 export function HangulLandingPage() {
@@ -55,14 +49,9 @@ export function HangulLandingPage() {
 
   const isAvailable = (section: keyof typeof sectionInfo) => {
     if (section === 'vowels') return true;
-    if (section === 'basic_consonants') {
-      const vowelsProgress = calculateSectionProgress('vowels');
-      console.log(`[Availability] Basic consonants check - Vowels progress: ${vowelsProgress}%`);
-      return vowelsProgress === 100;
-    }
-    const basicConsonantsProgress = calculateSectionProgress('basic_consonants');
-    console.log(`[Availability] Advanced consonants check - Basic consonants progress: ${basicConsonantsProgress}%`);
-    return basicConsonantsProgress === 100;
+    const vowelsProgress = calculateSectionProgress('vowels');
+    console.log(`[Availability] Consonants check - Vowels progress: ${vowelsProgress}%`);
+    return vowelsProgress === 100;
   };
 
   const handleContinueLearning = (section: keyof typeof sectionInfo) => {
@@ -74,7 +63,7 @@ export function HangulLandingPage() {
       console.log(`[Navigation] Section ${section} is locked or no lessons available`);
       toast({
         title: "Section Locked",
-        description: "You need to complete the previous section first.",
+        description: "You need to complete the vowels section first.",
         variant: "destructive",
       });
       return;
@@ -104,7 +93,7 @@ export function HangulLandingPage() {
           <p className="text-gray-600">Master the Korean alphabet step by step</p>
         </div>
 
-        <div className="grid gap-8 md:grid-cols-2 lg:grid-cols-3">
+        <div className="grid gap-8 md:grid-cols-2">
           {(Object.entries(sectionInfo) as [keyof typeof sectionInfo, typeof sectionInfo[keyof typeof sectionInfo]][]).map(([key, section]) => {
             const progress = calculateSectionProgress(key);
             const available = isAvailable(key);
