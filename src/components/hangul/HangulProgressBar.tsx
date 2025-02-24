@@ -14,8 +14,7 @@ interface HangulProgressBarProps {
 
 const sectionColors = {
   vowels: "bg-[#FFA5B9]",
-  basic_consonants: "bg-[#93C5FD]",
-  advanced_consonants: "bg-[#C4B5FD]",
+  consonants: "bg-[#93C5FD]",
 } as const;
 
 export function HangulProgressBar({

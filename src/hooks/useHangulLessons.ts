@@ -7,7 +7,7 @@ import { useLocation } from 'react-router-dom';
 
 type HangulLessonType = Database['public']['Views']['hangul_lessons_complete']['Row'];
 
-export type LessonSection = 'vowels' | 'basic_consonants' | 'advanced_consonants';
+export type LessonSection = 'vowels' | 'consonants';
 
 export function useHangulLessons() {
   const [lessons, setLessons] = useState<HangulLessonType[]>([]);
@@ -19,13 +19,11 @@ export function useHangulLessons() {
   const getLessonSection = useCallback((lesson: HangulLessonType): LessonSection => {
     if (!lesson) return 'vowels';
     if (lesson.character_type?.includes('vowel')) return 'vowels';
-    if (lesson.character_type?.includes('final_consonant')) return 'advanced_consonants';
-    return 'basic_consonants';
+    return 'consonants';
   }, []);
 
   const getCurrentSection = useCallback((): LessonSection => {
-    if (location.pathname.includes('advanced-consonants')) return 'advanced_consonants';
-    if (location.pathname.includes('basic-consonants')) return 'basic_consonants';
+    if (location.pathname.includes('consonants')) return 'consonants';
     return 'vowels';
   }, [location]);
 
