@@ -53,19 +53,18 @@ export function useHangulLessons() {
       try {
         const { data: { user } } = await supabase.auth.getUser();
         if (user && mounted) {
-          const { data: progress, error } = await supabase
+          const { data: progressData, error } = await supabase
             .from('hangul_progress')
             .select('character_id')
-            .eq('user_id', user.id)
-            .maybeSingle();
+            .eq('user_id', user.id);
 
           if (error) {
             console.error("❌ Error fetching user progress:", error);
             return;
           }
 
-          if (progress && mounted) {
-            const progressSet = new Set(progress.character_id);
+          if (progressData && mounted) {
+            const progressSet = new Set(progressData.map(p => p.character_id));
             setUserProgress(progressSet);
             
             const firstIncompleteIndex = filteredLessons.findIndex(lesson => 
@@ -93,7 +92,6 @@ export function useHangulLessons() {
       }
     };
 
-    // Only fetch progress if we have lessons
     if (filteredLessons.length > 0) {
       fetchUserProgress();
     } else {
@@ -101,7 +99,6 @@ export function useHangulLessons() {
     }
 
     return () => {
-      console.log("🧹 Cleaning up useHangulLessons hook");
       mounted = false;
     };
   }, [filteredLessons, toast]);
@@ -115,5 +112,6 @@ export function useHangulLessons() {
     handlePrevious,
     currentSection,
     getLessonSection,
+    userProgress,
   };
 }

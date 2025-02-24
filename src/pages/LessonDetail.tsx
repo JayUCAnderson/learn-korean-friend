@@ -1,10 +1,10 @@
 
 import { useState, useEffect } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams, Link } from 'react-router-dom';
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { useToast } from "@/components/ui/use-toast";
+import { useToast } from "@/hooks/use-toast";
 import { ArrowLeft } from "lucide-react";
 import { VocabularyCard } from '@/components/lesson/VocabularyCard';
 import { LessonContent } from '@/components/lesson/LessonContent';
@@ -33,7 +33,6 @@ export default function LessonDetail() {
   const [audioUrl, setAudioUrl] = useState<string | null>(null);
   const [currentVocabIndex, setCurrentVocabIndex] = useState(0);
   const { toast } = useToast();
-  const navigate = useNavigate();
 
   useEffect(() => {
     if (id) {
@@ -125,7 +124,9 @@ export default function LessonDetail() {
       <div className="min-h-screen flex items-center justify-center">
         <div className="text-center">
           <h2 className="text-xl font-semibold mb-2">Lesson not found</h2>
-          <Button onClick={() => navigate('/lessons')}>Return to Lessons</Button>
+          <Link to="/lessons">
+            <Button>Return to Lessons</Button>
+          </Link>
         </div>
       </div>
     );
@@ -134,14 +135,15 @@ export default function LessonDetail() {
   return (
     <div className="min-h-screen bg-gradient-to-b from-korean-50 to-korean-100 p-4">
       <div className="max-w-4xl mx-auto space-y-6">
-        <Button 
-          variant="ghost" 
-          onClick={() => navigate('/lessons')}
-          className="mb-4"
-        >
-          <ArrowLeft className="h-4 w-4 mr-2" />
-          Back to Lessons
-        </Button>
+        <Link to="/lessons" className="inline-block">
+          <Button 
+            variant="ghost" 
+            className="mb-4 flex items-center gap-2"
+          >
+            <ArrowLeft className="h-4 w-4" />
+            Back to Lessons
+          </Button>
+        </Link>
 
         <Card className="p-6">
           <LessonHeader 
