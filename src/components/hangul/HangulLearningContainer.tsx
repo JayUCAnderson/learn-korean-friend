@@ -1,5 +1,5 @@
 
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, useCallback } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { HangulLesson } from "./HangulLesson";
 import { HangulProgress } from "./HangulProgress";
@@ -23,8 +23,9 @@ interface HangulLearningContainerProps {
 export function HangulLearningContainer({ onComplete, section: propSection }: HangulLearningContainerProps) {
   const navigate = useNavigate();
   const location = useLocation();
+  const { toast } = useToast();
   
-  // Memoize the section determination to prevent recalculation on every render
+  // Memoize the section determination
   const routeSection = useMemo((): LessonSection | undefined => {
     if (location.pathname === '/hangul/vowels') return 'vowels';
     if (location.pathname === '/hangul/consonants') return 'consonants';
@@ -47,22 +48,37 @@ export function HangulLearningContainer({ onComplete, section: propSection }: Ha
 
   const [showQuiz, setShowQuiz] = useState(false);
   const [showReview, setShowReview] = useState(false);
-  const { toast } = useToast();
 
-  // Memoize filtered lessons to prevent unnecessary recalculations
+  // Memoize filtered lessons
   const filteredLessons = useMemo(() => 
     section ? lessons.filter(lesson => getLessonSection(lesson) === section) : lessons,
     [section, lessons, getLessonSection]
   );
+
+  // Memoize theme-related values
+  const themeSection = useMemo(() => 
+    currentSection === 'vowels' ? 'temple' : 'hanbok',
+    [currentSection]
+  );
+
+  const themeGradients = {
+    temple: "from-[#FFF5F7] to-[#FCE7F3]",
+    hanbok: "from-[#F3F4F6] to-[#E5E7EB]",
+  };
+
+  const sectionDescriptions = {
+    vowels: "Master the building blocks of Hangul with vowels",
+    consonants: "Learn the consonants of the Korean alphabet",
+  };
 
   // Update lesson index when section changes
   useEffect(() => {
     if (filteredLessons.length > 0 && currentLessonIndex >= filteredLessons.length) {
       setCurrentLessonIndex(0);
     }
-  }, [section, filteredLessons.length]);
+  }, [section, filteredLessons.length, currentLessonIndex, setCurrentLessonIndex]);
 
-  const handleLessonComplete = () => {
+  const handleLessonComplete = useCallback(() => {
     const nextLesson = filteredLessons[currentLessonIndex + 1];
     if (nextLesson) {
       handleNext();
@@ -73,7 +89,7 @@ export function HangulLearningContainer({ onComplete, section: propSection }: Ha
       });
       navigate('/hangul');
     }
-  };
+  }, [currentLessonIndex, filteredLessons, handleNext, navigate, toast]);
 
   if (isLoading) {
     return <LoadingSpinner />;
@@ -86,28 +102,6 @@ export function HangulLearningContainer({ onComplete, section: propSection }: Ha
   if (showLanding) {
     return <HangulLandingPage />;
   }
-
-  const themeSection = currentSection === 'vowels' ? 'temple' : 'hanbok';
-  
-  const themeGradients = {
-    temple: "from-[#FFF5F7] to-[#FCE7F3]",
-    hanbok: "from-[#F3F4F6] to-[#E5E7EB]",
-  };
-
-  const sectionDescriptions = {
-    vowels: "Master the building blocks of Hangul with vowels",
-    consonants: "Learn the consonants of the Korean alphabet",
-  };
-
-  console.log('HangulLearningContainer Debug:', {
-    currentSection,
-    description: sectionDescriptions[currentSection],
-    pathname: location.pathname,
-    routeSection,
-    section,
-    currentLessonIndex,
-    filteredLessonsLength: filteredLessons.length
-  });
 
   const sectionName = currentSection.split('_')
     .map(word => word.charAt(0).toUpperCase() + word.slice(1))

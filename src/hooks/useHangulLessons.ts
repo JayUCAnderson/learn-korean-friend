@@ -1,5 +1,5 @@
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useMemo } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import type { Database } from "@/integrations/supabase/types";
@@ -16,18 +16,28 @@ export function useHangulLessons() {
   const { toast } = useToast();
   const location = useLocation();
 
+  // Memoize the section determination
+  const currentSection = useMemo((): LessonSection => {
+    if (location.pathname.includes('consonants')) return 'consonants';
+    return 'vowels';
+  }, [location.pathname]);
+
   const getLessonSection = useCallback((lesson: HangulLessonType): LessonSection => {
     if (!lesson) return 'vowels';
     if (lesson.character_type?.includes('vowel')) return 'vowels';
     return 'consonants';
   }, []);
 
-  const getCurrentSection = useCallback((): LessonSection => {
-    if (location.pathname.includes('consonants')) return 'consonants';
-    return 'vowels';
-  }, [location]);
+  // Memoize filtered lessons to prevent recalculation
+  const filteredLessons = useMemo(() => 
+    lessons.filter(lesson => getLessonSection(lesson) === currentSection),
+    [lessons, getLessonSection, currentSection]
+  );
 
   const fetchLessons = useCallback(async () => {
+    // Only fetch if we don't have lessons yet
+    if (lessons.length > 0) return;
+
     try {
       const { data: lessonsData, error: lessonsError } = await supabase
         .from('hangul_lessons_complete')
@@ -45,7 +55,6 @@ export function useHangulLessons() {
 
         if (progress && lessonsData) {
           const completedLessonIds = progress.map(p => p.character_id);
-          const currentSection = getCurrentSection();
           const sectionLessons = lessonsData.filter(lesson => 
             getLessonSection(lesson) === currentSection
           );
@@ -72,14 +81,11 @@ export function useHangulLessons() {
     } finally {
       setIsLoading(false);
     }
-  }, [toast, getLessonSection, getCurrentSection]);
+  }, [currentSection, getLessonSection, lessons.length, toast]);
 
   useEffect(() => {
     fetchLessons();
   }, [fetchLessons]);
-
-  const currentSection = getCurrentSection();
-  const filteredLessons = lessons.filter(lesson => getLessonSection(lesson) === currentSection);
 
   const handleNext = useCallback(() => {
     if (currentLessonIndex < filteredLessons.length - 1) {
@@ -102,7 +108,5 @@ export function useHangulLessons() {
     handlePrevious,
     currentSection,
     getLessonSection,
-    currentLessonInSection: currentLessonIndex + 1,
-    sectionLessons: filteredLessons.length,
   };
 }
