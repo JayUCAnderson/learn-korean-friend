@@ -36,6 +36,8 @@ export function AppRoutes() {
       <Route path="/" element={<Index />} />
       <Route path="/auth" element={<Auth />} />
       <Route path="/hangul" element={<HangulLearning />} />
+      <Route path="/hangul/vowels" element={<HangulLearning />} />
+      <Route path="/hangul/consonants" element={<HangulLearning />} />
       <Route path="/lessons" element={<Lessons />} />
       <Route path="/lessons/:lessonId" element={<LessonDetail />} />
       <Route path="*" element={<NotFound />} />
