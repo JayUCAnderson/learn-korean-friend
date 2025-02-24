@@ -16,6 +16,7 @@ export function useHangulLessons() {
   const { toast } = useToast();
   const location = useLocation();
 
+  // Memoize the section determination to prevent unnecessary recalculations
   const currentSection = useMemo((): LessonSection => {
     if (location.pathname.includes('consonants')) return 'consonants';
     return 'vowels';
@@ -27,6 +28,7 @@ export function useHangulLessons() {
     return 'consonants';
   }, []);
 
+  // Memoize filtered lessons to prevent unnecessary recalculations
   const filteredLessons = useMemo(() => 
     lessons.filter(lesson => getLessonSection(lesson) === currentSection),
     [lessons, getLessonSection, currentSection]
@@ -44,10 +46,22 @@ export function useHangulLessons() {
     }
   }, [currentLessonIndex]);
 
+  // Move fetchLessons outside of the effect to better control when it runs
   const fetchLessons = useCallback(async () => {
-    if (lessons.length > 0) return;
+    console.log("🔍 Checking if lessons need to be fetched:", { 
+      existingLessons: lessons.length,
+      currentSection
+    });
+
+    // Skip fetching if we already have lessons
+    if (lessons.length > 0) {
+      console.log("✨ Lessons already loaded, skipping fetch");
+      setIsLoading(false);
+      return;
+    }
 
     try {
+      console.log("📚 Fetching Hangul lessons...");
       const { data: lessonsData, error: lessonsError } = await supabase
         .from('hangul_lessons_complete')
         .select('*')
@@ -79,9 +93,10 @@ export function useHangulLessons() {
         }
       }
 
+      console.log("✅ Lessons fetched successfully:", lessonsData?.length);
       setLessons(lessonsData || []);
     } catch (error: any) {
-      console.error("Error fetching Hangul lessons:", error);
+      console.error("❌ Error fetching Hangul lessons:", error);
       toast({
         title: "Error",
         description: "Failed to load Hangul lessons. Please try again.",
@@ -92,7 +107,9 @@ export function useHangulLessons() {
     }
   }, [currentSection, getLessonSection, lessons.length, toast]);
 
+  // Only run the effect once when the component mounts
   useEffect(() => {
+    console.log("🚀 Initial mount - fetching lessons");
     fetchLessons();
   }, [fetchLessons]);
 
