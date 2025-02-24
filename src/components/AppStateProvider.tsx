@@ -1,5 +1,6 @@
 
 import { useEffect, useCallback, useState } from 'react';
+import { AppStateContext } from '@/contexts/AppStateContext';
 import { useAppState } from '@/hooks/useAppState';
 import { supabase } from '@/integrations/supabase/client';
 import { useNavigate } from 'react-router-dom';
@@ -78,4 +79,3 @@ export function AppStateProvider({ children }: { children: React.ReactNode }) {
     </AppStateContext.Provider>
   );
 }
-
