@@ -4,10 +4,12 @@ import { HangulProgressBar } from "./HangulProgressBar";
 
 interface HangulProgressProps {
   theme: 'temple' | 'hanbok' | 'seasonal' | 'garden' | 'palace';
+  currentLesson: number;
+  totalLessons: number;
 }
 
-export function HangulProgress({ theme }: HangulProgressProps) {
-  const { currentLessonInSection, sectionLessons, currentSection } = useHangulLessons();
+export function HangulProgress({ theme, currentLesson, totalLessons }: HangulProgressProps) {
+  const { currentSection } = useHangulLessons();
 
   const themeColors = {
     temple: "bg-[#D46A6A]",
@@ -19,8 +21,8 @@ export function HangulProgress({ theme }: HangulProgressProps) {
 
   return (
     <HangulProgressBar
-      currentLesson={currentLessonInSection}
-      totalLessons={sectionLessons}
+      currentLesson={currentLesson}
+      totalLessons={totalLessons}
       section={currentSection}
       className={themeColors[theme]}
     />

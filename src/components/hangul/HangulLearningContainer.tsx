@@ -140,7 +140,11 @@ export function HangulLearningContainer({ onComplete, section: propSection }: Ha
                 Review Section
               </Button>
             </div>
-            <HangulProgress theme={themeSection} />
+            <HangulProgress 
+              theme={themeSection} 
+              currentLesson={currentLessonIndex + 1}
+              totalLessons={filteredLessons.length}
+            />
             <p className="text-center mt-4 text-gray-600 italic">
               {sectionDescriptions[currentSection]}
             </p>
