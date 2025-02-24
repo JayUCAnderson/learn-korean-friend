@@ -3,24 +3,31 @@ import { useState, useEffect, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import type { Database } from "@/integrations/supabase/types";
-import { useSearchParams } from 'react-router-dom';
+import { useLocation } from 'react-router-dom';
 
 type HangulLessonType = Database['public']['Views']['hangul_lessons_complete']['Row'];
 
-export type LessonSection = 'vowels' | 'consonants';
+export type LessonSection = 'vowels' | 'basic_consonants' | 'advanced_consonants';
 
 export function useHangulLessons() {
   const [lessons, setLessons] = useState<HangulLessonType[]>([]);
   const [currentLessonIndex, setCurrentLessonIndex] = useState(0);
   const [isLoading, setIsLoading] = useState(true);
   const { toast } = useToast();
-  const [searchParams] = useSearchParams();
-  const sectionParam = searchParams.get('section') as LessonSection | null;
+  const location = useLocation();
 
   const getLessonSection = useCallback((lesson: HangulLessonType): LessonSection => {
     if (!lesson) return 'vowels';
-    return lesson.character_type?.includes('vowel') ? 'vowels' : 'consonants';
+    if (lesson.character_type?.includes('vowel')) return 'vowels';
+    if (lesson.character_type?.includes('final_consonant')) return 'advanced_consonants';
+    return 'basic_consonants';
   }, []);
+
+  const getCurrentSection = useCallback((): LessonSection => {
+    if (location.pathname.includes('advanced-consonants')) return 'advanced_consonants';
+    if (location.pathname.includes('basic-consonants')) return 'basic_consonants';
+    return 'vowels';
+  }, [location]);
 
   const fetchLessons = useCallback(async () => {
     try {
@@ -40,8 +47,9 @@ export function useHangulLessons() {
 
         if (progress && lessonsData) {
           const completedLessonIds = progress.map(p => p.character_id);
+          const currentSection = getCurrentSection();
           const sectionLessons = lessonsData.filter(lesson => 
-            getLessonSection(lesson) === sectionParam
+            getLessonSection(lesson) === currentSection
           );
           
           if (sectionLessons.length > 0) {
@@ -66,15 +74,14 @@ export function useHangulLessons() {
     } finally {
       setIsLoading(false);
     }
-  }, [toast, getLessonSection, sectionParam]);
+  }, [toast, getLessonSection, getCurrentSection]);
 
   useEffect(() => {
     fetchLessons();
   }, [fetchLessons]);
 
-  const filteredLessons = sectionParam
-    ? lessons.filter(lesson => getLessonSection(lesson) === sectionParam)
-    : lessons;
+  const currentSection = getCurrentSection();
+  const filteredLessons = lessons.filter(lesson => getLessonSection(lesson) === currentSection);
 
   const handleNext = useCallback(() => {
     if (currentLessonIndex < filteredLessons.length - 1) {
@@ -87,11 +94,6 @@ export function useHangulLessons() {
       setCurrentLessonIndex(prev => prev - 1);
     }
   }, [currentLessonIndex]);
-
-  const currentSection = sectionParam || 
-    (filteredLessons[currentLessonIndex] 
-      ? getLessonSection(filteredLessons[currentLessonIndex]) 
-      : 'vowels');
 
   return {
     lessons: filteredLessons,
