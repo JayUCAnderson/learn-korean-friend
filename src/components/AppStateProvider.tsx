@@ -1,12 +1,33 @@
 
-import { useEffect, useCallback } from 'react';
+import { useEffect, useCallback, useState } from 'react';
 import { useAppState } from '@/hooks/useAppState';
 import { supabase } from '@/integrations/supabase/client';
 import { useNavigate } from 'react-router-dom';
+import type { Database } from '@/integrations/supabase/types';
+
+type HangulLessonType = Database['public']['Views']['hangul_lessons_complete']['Row'];
 
 export function AppStateProvider({ children }: { children: React.ReactNode }) {
   const { checkSession, setUserData, setInitialized } = useAppState();
   const navigate = useNavigate();
+  const [globalLessons, setGlobalLessons] = useState<HangulLessonType[]>([]);
+
+  const fetchLessons = useCallback(async () => {
+    try {
+      console.log("📚 Fetching global Hangul lessons...");
+      const { data: lessonsData, error: lessonsError } = await supabase
+        .from('hangul_lessons_complete')
+        .select('*')
+        .order('lesson_order', { ascending: true });
+
+      if (lessonsError) throw lessonsError;
+
+      console.log("✅ Global lessons fetched successfully:", lessonsData?.length);
+      setGlobalLessons(lessonsData || []);
+    } catch (error) {
+      console.error("❌ Error fetching global Hangul lessons:", error);
+    }
+  }, []);
 
   const handleAuthChange = useCallback(async (event: string, session: any) => {
     console.log("🔒 Auth state changed:", event, "Session present:", !!session);
@@ -17,20 +38,25 @@ export function AppStateProvider({ children }: { children: React.ReactNode }) {
       setInitialized(true);
       navigate("/auth");
     }
-    // Remove the session check from here since it's handled by initializeApp
   }, [navigate, setUserData, setInitialized]);
 
   useEffect(() => {
     let isInitializing = true;
+    let mounted = true;
 
     const initializeApp = async () => {
       console.log("🚀 Starting app initialization");
       try {
         await checkSession();
-        isInitializing = false;
+        if (mounted) {
+          await fetchLessons();
+          isInitializing = false;
+        }
       } catch (error) {
         console.error("❌ Error during initialization:", error);
-        setInitialized(true);
+        if (mounted) {
+          setInitialized(true);
+        }
       }
     };
 
@@ -40,10 +66,16 @@ export function AppStateProvider({ children }: { children: React.ReactNode }) {
     console.log("🎯 Auth state change listener set up");
 
     return () => {
-      console.log("🧹 Cleaning up auth subscription");
+      console.log("🧹 Cleaning up app state provider");
+      mounted = false;
       subscription.unsubscribe();
     };
-  }, [handleAuthChange, checkSession, setInitialized]);
+  }, [handleAuthChange, checkSession, setInitialized, fetchLessons]);
 
-  return <>{children}</>;
+  return (
+    <AppStateContext.Provider value={{ globalLessons }}>
+      {children}
+    </AppStateContext.Provider>
+  );
 }
+

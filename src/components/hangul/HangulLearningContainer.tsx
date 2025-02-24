@@ -1,4 +1,3 @@
-
 import { useState, useEffect, useMemo, useCallback } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { HangulLesson } from "./HangulLesson";
@@ -14,6 +13,7 @@ import { BookOpen, ArrowLeft } from "lucide-react";
 import { HangulLandingPage } from "./HangulLandingPage";
 import { useNavigate, useLocation } from 'react-router-dom';
 import type { LessonSection } from "@/hooks/useHangulLessons";
+import { AudioErrorBoundary } from "./AudioErrorBoundary";
 
 interface HangulLearningContainerProps {
   onComplete?: () => void;
@@ -25,7 +25,6 @@ export function HangulLearningContainer({ onComplete, section: propSection }: Ha
   const location = useLocation();
   const { toast } = useToast();
   
-  // Memoize the section determination
   const routeSection = useMemo((): LessonSection | undefined => {
     if (location.pathname === '/hangul/vowels') return 'vowels';
     if (location.pathname === '/hangul/consonants') return 'consonants';
@@ -49,13 +48,11 @@ export function HangulLearningContainer({ onComplete, section: propSection }: Ha
   const [showQuiz, setShowQuiz] = useState(false);
   const [showReview, setShowReview] = useState(false);
 
-  // Memoize filtered lessons
   const filteredLessons = useMemo(() => 
     section ? lessons.filter(lesson => getLessonSection(lesson) === section) : lessons,
     [section, lessons, getLessonSection]
   );
 
-  // Memoize theme-related values
   const themeSection = useMemo(() => 
     currentSection === 'vowels' ? 'temple' : 'hanbok',
     [currentSection]
@@ -71,7 +68,6 @@ export function HangulLearningContainer({ onComplete, section: propSection }: Ha
     consonants: "Learn the consonants of the Korean alphabet",
   };
 
-  // Update lesson index when section changes
   useEffect(() => {
     if (filteredLessons.length > 0 && currentLessonIndex >= filteredLessons.length) {
       setCurrentLessonIndex(0);
@@ -145,12 +141,14 @@ export function HangulLearningContainer({ onComplete, section: propSection }: Ha
           </div>
           
           {filteredLessons[currentLessonIndex] && (
-            <HangulLesson 
-              lesson={filteredLessons[currentLessonIndex]}
-              onComplete={handleLessonComplete}
-              onNext={currentLessonIndex < filteredLessons.length - 1 ? handleNext : undefined}
-              onPrevious={currentLessonIndex > 0 ? handlePrevious : undefined}
-            />
+            <AudioErrorBoundary>
+              <HangulLesson 
+                lesson={filteredLessons[currentLessonIndex]}
+                onComplete={handleLessonComplete}
+                onNext={currentLessonIndex < filteredLessons.length - 1 ? handleNext : undefined}
+                onPrevious={currentLessonIndex > 0 ? handlePrevious : undefined}
+              />
+            </AudioErrorBoundary>
           )}
         </div>
       </div>

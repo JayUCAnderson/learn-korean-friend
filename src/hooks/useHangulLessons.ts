@@ -1,29 +1,31 @@
 
-import { useState, useEffect, useCallback, useMemo } from "react";
+import { useState, useEffect, useCallback, useMemo, useRef } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import type { Database } from "@/integrations/supabase/types";
 import { useLocation } from 'react-router-dom';
+import { useAppStateContext } from '@/contexts/AppStateContext';
 
 type HangulLessonType = Database['public']['Views']['hangul_lessons_complete']['Row'];
 
 export type LessonSection = 'vowels' | 'consonants';
 
 export function useHangulLessons() {
-  const [lessons, setLessons] = useState<HangulLessonType[]>([]);
   const [currentLessonIndex, setCurrentLessonIndex] = useState(0);
   const [isLoading, setIsLoading] = useState(true);
   const { toast } = useToast();
   const location = useLocation();
+  const mountedRef = useRef(false);
+  const { globalLessons } = useAppStateContext();
 
   console.log("🔄 useHangulLessons hook re-rendering", {
     currentPath: location.pathname,
-    lessonsCount: lessons.length,
+    globalLessonsCount: globalLessons.length,
     currentIndex: currentLessonIndex,
     isLoading
   });
 
-  // Memoize the section determination to prevent unnecessary recalculations
+  // Memoize the section determination
   const currentSection = useMemo((): LessonSection => {
     console.log("📍 Calculating current section from path:", location.pathname);
     if (location.pathname.includes('consonants')) return 'consonants';
@@ -36,13 +38,13 @@ export function useHangulLessons() {
     return 'consonants';
   }, []);
 
-  // Memoize filtered lessons to prevent unnecessary recalculations
+  // Memoize filtered lessons
   const filteredLessons = useMemo(() => {
     console.log("🎯 Filtering lessons for section:", currentSection);
-    const filtered = lessons.filter(lesson => getLessonSection(lesson) === currentSection);
+    const filtered = globalLessons.filter(lesson => getLessonSection(lesson) === currentSection);
     console.log("📊 Filtered lessons count:", filtered.length);
     return filtered;
-  }, [lessons, getLessonSection, currentSection]);
+  }, [globalLessons, getLessonSection, currentSection]);
 
   const handleNext = useCallback(() => {
     console.log("⏭️ Handling next lesson", {
@@ -63,77 +65,54 @@ export function useHangulLessons() {
     }
   }, [currentLessonIndex]);
 
-  // Move fetchLessons outside of the effect to better control when it runs
-  const fetchLessons = useCallback(async () => {
-    console.log("🔍 Checking if lessons need to be fetched:", { 
-      existingLessons: lessons.length,
-      currentSection,
-      isLoading
-    });
+  // Effect to handle user progress
+  useEffect(() => {
+    const fetchUserProgress = async () => {
+      if (!mountedRef.current || filteredLessons.length === 0) return;
 
-    // Skip fetching if we already have lessons
-    if (lessons.length > 0) {
-      console.log("✨ Lessons already loaded, skipping fetch");
-      setIsLoading(false);
-      return;
-    }
+      try {
+        const { data: { user } } = await supabase.auth.getUser();
+        if (user) {
+          console.log("👤 Fetching user progress for:", user.id);
+          const { data: progress } = await supabase
+            .from('hangul_progress')
+            .select('character_id')
+            .eq('user_id', user.id);
 
-    try {
-      console.log("📚 Starting to fetch Hangul lessons...");
-      const { data: lessonsData, error: lessonsError } = await supabase
-        .from('hangul_lessons_complete')
-        .select('*')
-        .order('lesson_order', { ascending: true });
-
-      if (lessonsError) throw lessonsError;
-
-      const { data: { user } } = await supabase.auth.getUser();
-      if (user) {
-        console.log("👤 Fetching user progress for:", user.id);
-        const { data: progress } = await supabase
-          .from('hangul_progress')
-          .select('character_id')
-          .eq('user_id', user.id);
-
-        if (progress && lessonsData) {
-          const completedLessonIds = progress.map(p => p.character_id);
-          console.log("✔️ Completed lessons:", completedLessonIds.length);
-          
-          const sectionLessons = lessonsData.filter(lesson => 
-            getLessonSection(lesson) === currentSection
-          );
-          
-          if (sectionLessons.length > 0) {
-            const firstIncompleteIndex = sectionLessons.findIndex(lesson => 
+          if (progress) {
+            const completedLessonIds = progress.map(p => p.character_id);
+            console.log("✔️ Completed lessons:", completedLessonIds.length);
+            
+            const firstIncompleteIndex = filteredLessons.findIndex(lesson => 
               !completedLessonIds.includes(lesson.id)
             );
+            
             if (firstIncompleteIndex !== -1) {
               console.log("📌 Setting current lesson index to:", firstIncompleteIndex);
               setCurrentLessonIndex(firstIncompleteIndex);
             }
           }
         }
+      } catch (error) {
+        console.error("❌ Error fetching user progress:", error);
+        toast({
+          title: "Error",
+          description: "Failed to load your progress. Please try again.",
+          variant: "destructive",
+        });
+      } finally {
+        setIsLoading(false);
       }
+    };
 
-      console.log("✅ Lessons fetched successfully:", lessonsData?.length);
-      setLessons(lessonsData || []);
-    } catch (error: any) {
-      console.error("❌ Error fetching Hangul lessons:", error);
-      toast({
-        title: "Error",
-        description: "Failed to load Hangul lessons. Please try again.",
-        variant: "destructive",
-      });
-    } finally {
-      setIsLoading(false);
-    }
-  }, [currentSection, getLessonSection, lessons.length, toast, isLoading]);
+    mountedRef.current = true;
+    fetchUserProgress();
 
-  // Only run the effect once when the component mounts
-  useEffect(() => {
-    console.log("🚀 Initial mount - fetching lessons");
-    fetchLessons();
-  }, [fetchLessons]);
+    return () => {
+      console.log("🧹 Cleaning up useHangulLessons hook");
+      mountedRef.current = false;
+    };
+  }, [filteredLessons, toast]);
 
   return {
     lessons: filteredLessons,
@@ -146,3 +125,4 @@ export function useHangulLessons() {
     getLessonSection,
   };
 }
+
