@@ -16,17 +16,18 @@ export function AppStateProvider({ children }: { children: React.ReactNode }) {
       setUserData(null);
       setInitialized(true);
       navigate("/auth");
-    } else if (event === 'SIGNED_IN' && session) {
-      console.log("✅ User signed in, checking session");
-      await checkSession();
     }
-  }, [checkSession, navigate, setUserData, setInitialized]);
+    // Remove the session check from here since it's handled by initializeApp
+  }, [navigate, setUserData, setInitialized]);
 
   useEffect(() => {
+    let isInitializing = true;
+
     const initializeApp = async () => {
       console.log("🚀 Starting app initialization");
       try {
         await checkSession();
+        isInitializing = false;
       } catch (error) {
         console.error("❌ Error during initialization:", error);
         setInitialized(true);
